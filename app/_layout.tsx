@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Stack } from 'expo-router';
+import { router, Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useFonts, Inter_400Regular, Inter_500Medium, Inter_600SemiBold } from '@expo-google-fonts/inter';
@@ -7,6 +7,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { ThemeProvider } from '../src/theme/ThemeProvider';
 import { themes, defaultMode, type ThemeMode } from '../src/theme';
 import { hasSession } from '../src/api/session';
+import { onSignedOut } from '../src/api/client';
 
 const queryClient = new QueryClient({ defaultOptions: { queries: { retry: 1, staleTime: 30_000 } } });
 
@@ -18,6 +19,20 @@ export default function RootLayout() {
 
   useEffect(() => {
     hasSession().then(setSignedIn);
+  }, []);
+
+  /**
+   * Endet die Sitzung — abgelaufener Refresh-Token, verworfene Sitzung, später
+   * ein Abmelden von Hand —, dann fällt der Cache und der Weg führt zur
+   * Anmeldung. Ohne das bliebe der Nutzer auf den Tabs stehen, sähe die zuletzt
+   * geladenen Werte weiter und käme mangels Zurück-Pfeil nirgends hin.
+   */
+  useEffect(() => {
+    onSignedOut(() => {
+      queryClient.clear();
+      setSignedIn(false);
+      router.replace('/login');
+    });
   }, []);
 
   if (!fontsLoaded || signedIn === null) return null;

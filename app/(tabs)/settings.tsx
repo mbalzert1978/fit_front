@@ -14,7 +14,6 @@ import {
 } from '../../src/api/hooks';
 import { newId } from '../../src/api/ids';
 import { ApiError } from '../../src/api/client';
-import type { Goals } from '../../src/api/types';
 
 type MacroKey = 'carbs' | 'protein' | 'fat';
 const macroLabel: Record<MacroKey, string> = { carbs: 'Kohlenhydrate', protein: 'Eiweiß', fat: 'Fett' };
@@ -106,7 +105,7 @@ function DailyGoal() {
           protein: { percent: Math.round(next.protein.percent) },
           fat: { percent: Math.round(next.fat.percent) },
         },
-      } as Partial<Goals>);
+      });
     }
   }
 

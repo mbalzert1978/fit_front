@@ -1,10 +1,13 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Text, TextInput, View } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
+import { useQueryClient } from '@tanstack/react-query';
 import { Screen, SectionHeading, ValueField, Segmented, ListRow, OutlineButton, SquareIconButton } from '../../src/components';
 import { useTheme } from '../../src/theme/ThemeProvider';
 import { useRecipe, useSaveRecipe, useRecipeToDiary, useSlots, useProduct } from '../../src/api/hooks';
 import { newId } from '../../src/api/ids';
+import { ApiError } from '../../src/api/client';
+import { qk } from '../../src/api/queryKeys';
 import { parseDiaryDate, today } from '../../src/api/diaryDate';
 import type { Recipe, RecipeIngredient } from '../../src/api/types';
 import type { DiaryDate } from '../../src/api/diaryDate';
@@ -29,6 +32,68 @@ function ComputedTotals({ totals, server, changed }: { totals: Totals; server?: 
         </>
       ) : null}
     </>
+  );
+}
+
+/**
+ * Speichern samt den beiden Ausgängen, die kein Erfolg sind.
+ *
+ * Ohne ETag wird gar nicht erst geschrieben: ein `PUT` ohne `If-Match`
+ * überschriebe eine fremde, zwischenzeitlich gespeicherte Fassung lautlos.
+ * Kommt der Konflikt vom Server, bleibt der Entwurf stehen und der Serverstand
+ * wird nachgeladen — verloren geht nichts.
+ */
+function SaveRecipe({
+  id,
+  isNew,
+  draft,
+  etag,
+  canSave,
+  onReload,
+}: {
+  id: string;
+  isNew: boolean;
+  draft: Draft;
+  etag?: string;
+  canSave: boolean;
+  onReload: () => void;
+}) {
+  const t = useTheme();
+  const qc = useQueryClient();
+  const save = useSaveRecipe(id);
+  const [hint, setHint] = useState<string | null>(null);
+  const missingEtag = !isNew && !etag;
+
+  async function submit() {
+    setHint(null);
+    try {
+      const saved = await save.mutateAsync({
+        id: isNew ? newId() : id,
+        name: draft.name,
+        portions: Number(draft.portions) || 1,
+        ingredients: draft.ingredients.map((i) => ({ id: i.id, productId: i.productId, grams: i.grams })),
+        etag,
+      });
+      onReload();
+      router.replace({ pathname: '/recipe/[id]', params: { id: saved.id } });
+    } catch (e) {
+      const conflict = e instanceof ApiError && e.type === 'concurrency-conflict';
+      setHint(conflict ? 'Zwischenzeitlich anderswo geändert — Stand wird neu geladen' : 'Speichern nicht möglich');
+      if (conflict) {
+        onReload();
+        qc.invalidateQueries({ queryKey: qk.recipe(id) });
+      }
+    }
+  }
+
+  const note = { color: t.color.accent, marginTop: t.space[3] };
+
+  return (
+    <View style={{ marginTop: t.space[8] }}>
+      <OutlineButton label="Rezept speichern" disabled={!canSave || save.isPending || missingEtag} onPress={submit} />
+      {missingEtag ? <Text style={[t.font.micro, note]}>Stand nicht überprüfbar — Rezept neu laden</Text> : null}
+      {hint ? <Text style={[t.font.micro, note]}>{hint}</Text> : null}
+    </View>
   );
 }
 
@@ -90,7 +155,6 @@ export default function RecipeScreen() {
   const date = params.date ? parseDiaryDate(params.date) : today();
 
   const { data: server } = useRecipe(params.id);
-  const save = useSaveRecipe(params.id);
   const { data: addedProduct } = useProduct(params.addProductId ?? '');
 
   const [draft, setDraft] = useState<Draft>({ name: '', portions: '1', ingredients: [] });
@@ -218,23 +282,14 @@ export default function RecipeScreen() {
       {hasIngredients ? <ComputedTotals totals={totals} server={server} changed={changed} /> : null}
 
       {changed ? (
-        <View style={{ marginTop: t.space[8] }}>
-          <OutlineButton
-            label="Rezept speichern"
-            disabled={!draft.name || !hasIngredients || save.isPending}
-            onPress={async () => {
-              const saved = await save.mutateAsync({
-                id: isNew ? newId() : params.id,
-                name: draft.name,
-                portions: Number(draft.portions) || 1,
-                ingredients: draft.ingredients.map((i) => ({ id: i.id, productId: i.productId, grams: i.grams })),
-                etag: server?.etag,
-              });
-              setLoaded(false);
-              router.replace({ pathname: '/recipe/[id]', params: { id: saved.id } });
-            }}
-          />
-        </View>
+        <SaveRecipe
+          id={params.id}
+          isNew={isNew}
+          draft={draft}
+          etag={server?.etag}
+          canSave={!!draft.name && hasIngredients}
+          onReload={() => setLoaded(false)}
+        />
       ) : (
         <AddToDiary recipeId={params.id} date={date} totals={totals} />
       )}

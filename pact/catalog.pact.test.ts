@@ -1,6 +1,17 @@
 import fs from 'fs';
 import path from 'path';
-import { pact, M } from './setup';
+import {
+  pact,
+  M,
+  enveloped,
+  jsonHeaders,
+  authHeaders,
+  germanAuthHeaders,
+  jsonAuthHeaders,
+  privateHeaders,
+  problem,
+  unauthorized,
+} from './setup';
 import { api, endpoints } from '../src/api/client';
 
 /**
@@ -14,7 +25,6 @@ import { api, endpoints } from '../src/api/client';
  */
 const provider = () => pact('nutritrack-catalog');
 
-const authHeaders = { Authorization: M.regex('Bearer .+', 'Bearer eyJ...'), 'Accept-Language': 'de' };
 const productId = '3f2a1b0c-4d5e-4f60-8a91-b2c3d4e5f607';
 const photoId = '7c6b5a49-3827-4160-9d5e-1f2a3b4c5d6e';
 const tableImage = path.resolve(__dirname, 'fixtures', 'naehrwerttabelle.jpg');
@@ -34,11 +44,11 @@ describe('Catalog — Produkte', () => {
     const p = provider();
     p.given('Produkt mit Barcode 4008400401027 existiert')
       .uponReceiving('Produkt-Lookup per Barcode')
-      .withRequest({ method: 'GET', path: '/api/v1/catalog/products/by-barcode/4008400401027', headers: authHeaders })
+      .withRequest({ method: 'GET', path: '/api/v1/catalog/products/by-barcode/4008400401027', headers: germanAuthHeaders })
       .willRespondWith({
         status: 200,
-        headers: { 'Content-Type': 'application/json' },
-        body: {
+        headers: jsonHeaders,
+        body: enveloped({
           id: M.uuid(),
           barcode: '4008400401027',
           name: M.string('Skyr Natur'),
@@ -52,7 +62,7 @@ describe('Catalog — Produkte', () => {
             carbsG: M.number(4),
             proteinG: M.number(11),
           },
-        },
+        }),
       });
 
     await p.executeTest(async () => {
@@ -65,16 +75,34 @@ describe('Catalog — Produkte', () => {
     const p = provider();
     p.given('kein Produkt mit Barcode 0000000000000')
       .uponReceiving('Produkt-Lookup per unbekanntem Barcode')
-      .withRequest({ method: 'GET', path: '/api/v1/catalog/products/by-barcode/0000000000000', headers: authHeaders })
-      .willRespondWith({
-        status: 404,
-        headers: { 'Content-Type': 'application/problem+json' },
-        body: { type: 'product-not-found', title: M.string('Produkt nicht gefunden'), status: 404 },
-      });
+      .withRequest({ method: 'GET', path: '/api/v1/catalog/products/by-barcode/0000000000000', headers: germanAuthHeaders })
+      .willRespondWith(problem('product-not-found', 'Produkt nicht gefunden', 404));
 
     await p.executeTest(async () => {
       // Dieser Fall ist kein Fehler im UI: er führt in den Foto-Flow.
       await expect(api(endpoints.productByBarcode('0000000000000'))).rejects.toMatchObject({ type: 'product-not-found' });
+    });
+  });
+
+  it('weist eine abgelaufene Anmeldung mit 401 ab', async () => {
+    const p = provider();
+    p.given('Access-Token ist abgelaufen')
+      .uponReceiving('Produkt-Lookup mit abgelaufenem Token')
+      .withRequest({
+        method: 'GET',
+        path: '/api/v1/catalog/products/by-barcode/4008400401027',
+        headers: germanAuthHeaders,
+      })
+      .willRespondWith(unauthorized());
+
+    await p.executeTest(async () => {
+      // 404 und 401 sind zwei verschiedene Ausgänge: der eine führt in den
+      // Foto-Flow, der andere beendet die Sitzung. Ohne Zusage stünde nicht
+      // fest, dass sie unterscheidbar bleiben.
+      await expect(api(endpoints.productByBarcode('4008400401027'))).rejects.toMatchObject({
+        type: 'token-expired',
+        status: 401,
+      });
     });
   });
 
@@ -85,12 +113,12 @@ describe('Catalog — Produkte', () => {
       .withRequest({
         method: 'GET',
         path: M.regex('/api/v1/catalog/products/[0-9a-f-]{36}', `/api/v1/catalog/products/${productId}`),
-        headers: authHeaders,
+        headers: germanAuthHeaders,
       })
       .willRespondWith({
         status: 200,
-        headers: { 'Content-Type': 'application/json' },
-        body: {
+        headers: jsonHeaders,
+        body: enveloped({
           id: M.uuid(),
           name: M.string('Skyr Natur'),
           brand: M.string('Arla'),
@@ -102,7 +130,7 @@ describe('Catalog — Produkte', () => {
             carbsG: M.number(4),
             proteinG: M.number(11),
           },
-        },
+        }),
       });
 
     await p.executeTest(async () => {
@@ -118,7 +146,7 @@ describe('Catalog — Produkte', () => {
       .withRequest({
         method: 'POST',
         path: '/api/v1/catalog/products',
-        headers: { 'Content-Type': 'application/json', 'Idempotency-Key': productId },
+        headers: { ...jsonAuthHeaders, 'Idempotency-Key': productId },
         body: {
           id: M.uuid(),
           barcode: M.string('4008400401027'),
@@ -141,12 +169,12 @@ describe('Catalog — Produkte', () => {
       })
       .willRespondWith({
         status: 201,
-        headers: { 'Content-Type': 'application/json' },
-        body: {
+        headers: privateHeaders,
+        body: enveloped({
           id: M.uuid(),
           name: M.string('Skyr Natur'),
           nutrientsPer100g: { kcal: M.integer(63), fatG: M.number(0.2), carbsG: M.number(4), proteinG: M.number(11) },
-        },
+        }),
       });
 
     await p.executeTest(async () => {
@@ -186,23 +214,25 @@ describe('Catalog — Suche', () => {
     // Scan-Screen, ob er aufs Produktblatt oder ins Rezept springt.
     p.given('Nutzer hat Produkte und Rezepte zum Suchwort skyr')
       .uponReceiving('Volltextsuche über Produkte und Rezepte')
-      .withRequest({ method: 'GET', path: '/api/v1/search', query: { query: 'skyr', take: '20' } })
+      .withRequest({ method: 'GET', path: '/api/v1/search', query: { query: 'skyr', take: '20' }, headers: authHeaders })
       .willRespondWith({
         status: 200,
-        headers: { 'Content-Type': 'application/json' },
-        body: {
-          items: M.eachLike({
+        headers: privateHeaders,
+        // Die Trefferliste steht direkt unter `data`; das frühere `items` war ein
+        // eigener kleiner Umschlag und fällt mit diesem hier weg.
+        body: enveloped(
+          M.eachLike({
             sourceType: M.regex('Product|Recipe', 'Product'),
             id: M.uuid(),
             displayName: M.string('Skyr Natur, Arla'),
             metaLine: M.string('63 kcal je 100 g'),
           }),
-        },
+        ),
       });
 
     await p.executeTest(async () => {
-      const hits = await api<{ items: unknown[] }>('/search?query=skyr&take=20');
-      expect(Array.isArray(hits.items)).toBe(true);
+      const hits = await api<unknown[]>('/search?query=skyr&take=20');
+      expect(Array.isArray(hits)).toBe(true);
     });
   });
 });
@@ -212,12 +242,17 @@ describe('Catalog — Foto-Auftrag', () => {
     const p = provider();
     p.given('Nutzer ist angemeldet')
       .uponReceiving('Nährwerttabelle hochladen')
-      .withRequestMultipartFileUpload({ method: 'POST', path: '/api/v1/catalog/photos' }, 'image/jpeg', tableImage, 'file')
+      .withRequestMultipartFileUpload(
+        { method: 'POST', path: '/api/v1/catalog/photos', headers: authHeaders },
+        'image/jpeg',
+        tableImage,
+        'file',
+      )
       .willRespondWith({
         status: 202,
-        headers: { 'Content-Type': 'application/json' },
+        headers: privateHeaders,
         // Nur die photoId wird gebraucht: auf sie fragt der Fortschritts-Screen weiter.
-        body: { photoId: M.uuid(), status: 'Processing' },
+        body: enveloped({ photoId: M.uuid(), status: 'Processing' }),
       });
 
     await p.executeTest(async () => {
@@ -235,13 +270,13 @@ describe('Catalog — Foto-Auftrag', () => {
       .withRequest({
         method: 'GET',
         path: M.regex('/api/v1/catalog/photos/[0-9a-f-]{36}', `/api/v1/catalog/photos/${photoId}`),
-        headers: authHeaders,
+        headers: germanAuthHeaders,
       })
       .willRespondWith({
         status: 200,
-        headers: { 'Content-Type': 'application/json' },
+        headers: privateHeaders,
         // `status` ist der Wert, an dem der Screen weiterschaltet — kein Matcher.
-        body: { photoId: M.uuid(), status: 'Processing' },
+        body: enveloped({ photoId: M.uuid(), status: 'Processing' }),
       });
 
     await p.executeTest(async () => {
@@ -257,12 +292,12 @@ describe('Catalog — Foto-Auftrag', () => {
       .withRequest({
         method: 'GET',
         path: M.regex('/api/v1/catalog/photos/[0-9a-f-]{36}', `/api/v1/catalog/photos/${photoId}`),
-        headers: authHeaders,
+        headers: germanAuthHeaders,
       })
       .willRespondWith({
         status: 200,
-        headers: { 'Content-Type': 'application/json' },
-        body: {
+        headers: privateHeaders,
+        body: enveloped({
           photoId: M.uuid(),
           status: 'Completed',
           barcode: M.string('4008400401027'),
@@ -278,7 +313,7 @@ describe('Catalog — Foto-Auftrag', () => {
             proteinG: { value: M.number(11), confidence: M.number(0.96) },
             saltG: { value: M.number(0.1), confidence: M.number(0.54) },
           },
-        },
+        }),
       });
 
     await p.executeTest(async () => {
@@ -295,13 +330,13 @@ describe('Catalog — Foto-Auftrag', () => {
       .withRequest({
         method: 'GET',
         path: M.regex('/api/v1/catalog/photos/[0-9a-f-]{36}', `/api/v1/catalog/photos/${photoId}`),
-        headers: authHeaders,
+        headers: germanAuthHeaders,
       })
       .willRespondWith({
         status: 200,
-        headers: { 'Content-Type': 'application/json' },
+        headers: privateHeaders,
         // Der Screen schickt den Nutzer zurück zur Kamera; `reason` unterscheidet ihn von 'Processing'.
-        body: { photoId: M.uuid(), status: 'Failed', reason: M.string('Tabelle nicht lesbar') },
+        body: enveloped({ photoId: M.uuid(), status: 'Failed', reason: M.string('Tabelle nicht lesbar') }),
       });
 
     await p.executeTest(async () => {

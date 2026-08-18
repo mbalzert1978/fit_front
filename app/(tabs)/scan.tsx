@@ -15,7 +15,7 @@ function SearchResults({ query, ctx }: { query: string; ctx: CaptureContext }) {
 
   return (
     <>
-      {(results?.items ?? []).map((hit) => (
+      {(results ?? []).map((hit) => (
         <ListRow
           key={`${hit.sourceType}-${hit.id}`}
           title={hit.displayName}

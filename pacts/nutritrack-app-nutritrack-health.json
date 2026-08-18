@@ -11,21 +11,45 @@
         }
       ],
       "request": {
+        "headers": {
+          "Authorization": "Bearer eyJ..."
+        },
+        "matchingRules": {
+          "header": {
+            "Authorization": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "Bearer .+"
+                }
+              ]
+            }
+          }
+        },
         "method": "GET",
         "path": "/api/v1/health/consent"
       },
       "response": {
         "body": {
-          "connected": false,
-          "exportNutrition": false,
-          "importActivity": false
+          "data": {
+            "connected": false,
+            "exportNutrition": false,
+            "importActivity": false
+          },
+          "meta": {
+            "apiVersion": "1",
+            "requestId": "01JQ8Z3K7V9XW2P4M6N8R0T5YB",
+            "timestamp": "2026-08-18T09:14:22Z"
+          }
         },
         "headers": {
+          "Cache-Control": "no-store",
           "Content-Type": "application/json"
         },
         "matchingRules": {
           "body": {
-            "$.connected": {
+            "$.data.connected": {
               "combine": "AND",
               "matchers": [
                 {
@@ -33,7 +57,7 @@
                 }
               ]
             },
-            "$.exportNutrition": {
+            "$.data.exportNutrition": {
               "combine": "AND",
               "matchers": [
                 {
@@ -41,7 +65,31 @@
                 }
               ]
             },
-            "$.importActivity": {
+            "$.data.importActivity": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.meta.apiVersion": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.meta.requestId": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.meta.timestamp": {
               "combine": "AND",
               "matchers": [
                 {
@@ -52,6 +100,57 @@
           }
         },
         "status": 200
+      }
+    },
+    {
+      "description": "Freigaben mit abgelaufenem Token laden",
+      "providerStates": [
+        {
+          "name": "Access-Token ist abgelaufen"
+        }
+      ],
+      "request": {
+        "headers": {
+          "Authorization": "Bearer eyJ..."
+        },
+        "matchingRules": {
+          "header": {
+            "Authorization": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "Bearer .+"
+                }
+              ]
+            }
+          }
+        },
+        "method": "GET",
+        "path": "/api/v1/health/consent"
+      },
+      "response": {
+        "body": {
+          "status": 401,
+          "title": "Anmeldung abgelaufen",
+          "type": "token-expired"
+        },
+        "headers": {
+          "Content-Type": "application/problem+json"
+        },
+        "matchingRules": {
+          "body": {
+            "$.title": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            }
+          }
+        },
+        "status": 401
       }
     }
   ],

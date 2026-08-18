@@ -1,5 +1,34 @@
 import type { DiaryDate } from './diaryDate';
 
+/**
+ * Begleitinformation, die jede Antwort mit Rumpf trägt. Kein Screen liest sie —
+ * sie ist für Support und Fehlersuche da: `requestId` spiegelt den Header
+ * `X-Request-Id`, `apiVersion` die Fassung hinter `/api/v1`.
+ */
+export type Meta = { requestId: string; timestamp: string; apiVersion: string };
+
+/**
+ * Der Umschlag jeder Antwort mit Rumpf: Nutzlast unter `data`, Begleitinformation
+ * unter `meta`. Ausgepackt wird er genau einmal — in `client.ts`. Kein Hook und
+ * kein Screen sieht ihn, deshalb steht er in keiner weiteren Signatur.
+ */
+export type Envelope<T> = { data: T; meta: Meta };
+
+/**
+ * Anmeldung und Erneuerung, benannt wie in OAuth 2. `expiresIn` und
+ * `refreshExpiresIn` sind Sekunden — die Einheit steht in dieser Zusage, nicht
+ * im Feldnamen. Die Identität ist ein Objekt, damit sie wachsen kann, ohne dass
+ * ein zweites flaches Feld daneben entsteht.
+ */
+export type AuthTokens = {
+  tokenType: 'Bearer';
+  accessToken: string;
+  expiresIn: number;
+  refreshToken: string;
+  refreshExpiresIn: number;
+  user: { id: string };
+};
+
 /** Nährwerte je 100 g. Optionale Felder dürfen fehlen — dann sind sie nicht gesetzt. */
 export type Nutrients = {
   kcal: number;
@@ -87,6 +116,7 @@ export type Recipe = {
   kcalPerPortion: number;
   macrosPerPortion: { carbsG: number; proteinG: number; fatG: number };
   ingredients: RecipeIngredient[];
+  /** Aus dem Antwort-Header `ETag`, nicht aus dem Rumpf; geht unverändert als `If-Match` zurück. */
   etag?: string;
 };
 
@@ -96,6 +126,48 @@ export type Goals = {
   energyStandard: 'Physiological' | 'Declaration';
   rounding: 'Up' | 'Down';
   includeActivityInGoal: boolean;
+};
+
+/**
+ * Was am Tagesziel geändert werden darf — jedes Feld für sich, der Screen
+ * speichert in kleinen Teilnutzlasten. Ein offener `Record<string, unknown>`
+ * stand hier vorher und ließ jedes beliebige Feld mitlaufen; abgeleitete Werte
+ * (`grams`, `kcal`) und alles, was der Server aus eigener Autorität setzt,
+ * gehören nicht in eine Anfrage.
+ */
+export type GoalsUpdate = {
+  dailyKcal?: number;
+  macros?: Partial<Record<'carbs' | 'protein' | 'fat', { percent: number }>>;
+  energyStandard?: Goals['energyStandard'];
+  rounding?: Goals['rounding'];
+  includeActivityInGoal?: boolean;
+};
+
+/**
+ * Ein neu angelegtes Produkt. `source` und `verifiedByUser` stehen hier, weil
+ * der Bestätigungs-Screen sie setzt — welchen Wert der Server davon übernimmt,
+ * ist seine Sache. Weitere Felder gibt es nicht: was nicht aufgezählt ist,
+ * kommt auch nicht mit.
+ */
+export type ProductCreate = {
+  id: string;
+  barcode: string | null;
+  name: string;
+  brand: string | null;
+  basisUnit: 'Gram';
+  source: 'Ocr' | 'Manual';
+  verifiedByUser: boolean;
+  photoId: string | null;
+  nutrientsPer100g: Record<keyof Nutrients, number | null>;
+};
+
+/** Was ein Rezept beim Speichern trägt. `etag` geht als `If-Match` hinaus, nicht in den Rumpf. */
+export type RecipeSave = {
+  id: string;
+  name: string;
+  portions: number;
+  ingredients: { id: string; productId: string; grams: number }[];
+  etag?: string;
 };
 
 export type Preferences = { theme: 'Dark' | 'Light'; language: 'de' | 'en' };

@@ -1,4 +1,4 @@
-import { pact, M } from './setup';
+import { pact, M, enveloped, authHeaders, jsonAuthHeaders, privateHeaders, unauthorized } from './setup';
 import { api } from '../src/api/client';
 
 /**
@@ -8,6 +8,9 @@ import { api } from '../src/api/client';
  * Das Speichern der Ziele passiert in mehreren, jeweils kleinen Teil-Nutzlasten
  * (nur Verteilung, nur Tagesziel, nur ein Schalter). Zugesichert ist deshalb,
  * dass eine Teilangabe genügt und die vollständigen Ziele zurückkommen.
+ *
+ * Ziele und Einstellungen gehören zu einem Nutzer: jede Anfrage weist sich aus,
+ * jede Antwort ist `no-store`.
  */
 const goals = () => pact('nutritrack-goals');
 
@@ -29,8 +32,8 @@ describe('Goals', () => {
     const p = goals();
     p.given('Nutzer hat ein Tagesziel von 2150 kcal')
       .uponReceiving('Ziele laden')
-      .withRequest({ method: 'GET', path: '/api/v1/goals' })
-      .willRespondWith({ status: 200, headers: { 'Content-Type': 'application/json' }, body: goalsBody });
+      .withRequest({ method: 'GET', path: '/api/v1/goals', headers: authHeaders })
+      .willRespondWith({ status: 200, headers: privateHeaders, body: enveloped(goalsBody) });
 
     await p.executeTest(async () => {
       const g = await api<{ dailyKcal: number }>('/goals');
@@ -45,7 +48,7 @@ describe('Goals', () => {
       .withRequest({
         method: 'PUT',
         path: '/api/v1/goals',
-        headers: { 'Content-Type': 'application/json' },
+        headers: jsonAuthHeaders,
         body: {
           macros: {
             carbs: { percent: M.integer(40) },
@@ -54,7 +57,7 @@ describe('Goals', () => {
           },
         },
       })
-      .willRespondWith({ status: 200, headers: { 'Content-Type': 'application/json' }, body: goalsBody });
+      .willRespondWith({ status: 200, headers: privateHeaders, body: enveloped(goalsBody) });
 
     await p.executeTest(async () => {
       // Die Antwort landet direkt im Cache; ein Nachladen findet nicht statt.
@@ -65,6 +68,18 @@ describe('Goals', () => {
       expect(g.macros).toBeDefined();
     });
   });
+
+  it('weist eine abgelaufene Anmeldung mit 401 ab', async () => {
+    const p = goals();
+    p.given('Access-Token ist abgelaufen')
+      .uponReceiving('Ziele mit abgelaufenem Token laden')
+      .withRequest({ method: 'GET', path: '/api/v1/goals', headers: authHeaders })
+      .willRespondWith(unauthorized());
+
+    await p.executeTest(async () => {
+      await expect(api('/goals')).rejects.toMatchObject({ type: 'token-expired', status: 401 });
+    });
+  });
 });
 
 describe('Preferences', () => {
@@ -72,11 +87,11 @@ describe('Preferences', () => {
     const p = goals();
     p.given('Nutzer hat Einstellungen')
       .uponReceiving('Einstellungen laden')
-      .withRequest({ method: 'GET', path: '/api/v1/preferences' })
+      .withRequest({ method: 'GET', path: '/api/v1/preferences', headers: authHeaders })
       .willRespondWith({
         status: 200,
-        headers: { 'Content-Type': 'application/json' },
-        body: { theme: M.regex('Dark|Light', 'Dark'), language: M.regex('de|en', 'de') },
+        headers: privateHeaders,
+        body: enveloped({ theme: M.regex('Dark|Light', 'Dark'), language: M.regex('de|en', 'de') }),
       });
 
     await p.executeTest(async () => {
@@ -92,13 +107,13 @@ describe('Preferences', () => {
       .withRequest({
         method: 'PATCH',
         path: '/api/v1/preferences',
-        headers: { 'Content-Type': 'application/json' },
+        headers: jsonAuthHeaders,
         body: { language: M.regex('de|en', 'en') },
       })
       .willRespondWith({
         status: 200,
-        headers: { 'Content-Type': 'application/json' },
-        body: { theme: M.regex('Dark|Light', 'Dark'), language: M.regex('de|en', 'en') },
+        headers: privateHeaders,
+        body: enveloped({ theme: M.regex('Dark|Light', 'Dark'), language: M.regex('de|en', 'en') }),
       });
 
     await p.executeTest(async () => {
