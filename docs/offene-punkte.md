@@ -32,14 +32,15 @@ Zu bauen: `@kingstinct/react-native-health` einbinden, Freigabe anfordern,
 Aktivitäten nach `PUT /health/activity/{date}` schreiben. Lesend für Aktivität;
 die Schreib-Freigabe für Ernährung bleibt davon getrennt.
 
-## 4 — Suchfeld auf dem Scan-Screen
+## 4 — `GET /search` ist bestellt, nicht vorhanden
 
-Steht derzeit als Anzeige-Zeile im Layout, damit der Screen vollständig aussieht.
-Zu ersetzen durch ein echtes `TextInput` mit `value={query} onChangeText={setQuery}`
-— die Debounce-Logik (300 ms) und `useSearch` hängen bereits daran. Außerdem ist
-`GET /search` in der Backend-Spezifikation noch nicht festgelegt: derzeit nimmt
-`src/api/hooks.ts` `/search?query=&take=20` mit `{ items: SearchHit[] }` an.
-**Vor dem Bauen mit dem Backend abstimmen und einen Pact dafür schreiben.**
+`GET /search` steht in der Backend-Spezifikation nicht; der Vertrag dazu
+(`pact/catalog.pact.test.ts`) ist deshalb die Bestellung, nicht die Abbildung eines
+bestehenden Endpunkts. Genau so ist consumer-driven gemeint: was die App braucht,
+steht im Vertrag, auch wenn es das Backend noch nicht gibt.
+
+Das Eingabefeld selbst ist gebaut (`TextInput` mit Debounce, 300 ms). Offen ist nur
+noch die Gegenseite.
 
 ## 5 — Registrierung, Passwort ändern, Konto löschen
 
@@ -54,10 +55,18 @@ sind deutsch fest verdrahtet. Wenn Englisch wirklich ausgeliefert wird, braucht 
 eine i18n-Schicht — dann alle Literale in eine Ressourcendatei, sonst zieht sich
 die Umstellung durch jeden Screen.
 
-## 7 — Kleinigkeiten
+## 7 — Kein Vertrag für das Verschieben eines Eintrags
+
+`useMoveEntry` (`PATCH /diary/days/{date}/entries/{id}/slot`) ist der einzige Hook ohne
+Pact-Test: kein Screen ruft ihn auf, weil die Gestik fehlt (Punkt 2). Ein Vertrag dafür
+wäre eine Zusage, die kein ViewModel einfordert. Kommt Drag & Drop, kommt der Vertrag im
+selben Commit.
+
+## 8 — Kleinigkeiten
 
 - `app.json`: Bundle-Id `de.example.nutritrack` und Slug sind Platzhalter.
 - `useRecipeToDiary` schickt keinen `Idempotency-Key` — bei Offline-Fähigkeit (Punkt 1) nachziehen.
 - Der Themenmodus wird beim Start nicht aus `/preferences` vorbelegt; bis der Wert da ist, gilt dunkel. Ein Vorablesen aus SQLite verhindert das kurze Umschalten.
 - Rundungsmodus (`rounding`) wird nur gesetzt, nicht clientseitig angewandt: alle angezeigten Werte kommen ganzzahlig vom Server. So ist es gewollt — nicht „nachrunden" einbauen.
 - Kein Test außer den Pacts. Wenn Komponententests dazukommen sollen: `jest.config.js` deckt derzeit bewusst nur `pact/` ab.
+- `NODE_EXTRA_CA_CERTS` zeigt in manchen Sitzungen auf einen Platzhalterpfad; `make.ps1` fängt das ab (Nutzer-Einstellung, sonst `--use-system-ca`). Behoben ist es damit nicht, nur umgangen.
