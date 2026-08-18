@@ -1,0 +1,20 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(.\\make.ps1:*)",
+      "PowerShell(C:\\HyperV\\vm-exec.ps1:*)",
+      "PowerShell(.\\tools\\testserver.ps1:*)",
+      "PowerShell(tools\\testserver.ps1:*)",
+      "Bash(C:/HyperV/vm-exec.ps1:*)",
+      "Bash(./tools/testserver.ps1:*)",
+      "PowerShell(C:\\\\HyperV\\\\vm-exec.ps1 -Script C:\\\\HyperV\\\\spool\\\\bestand-erweitern.ps1 2>&1)",
+      "PowerShell(C:\\\\HyperV\\\\hv-run.ps1 -Script C:\\\\HyperV\\\\spool\\\\pruefpunkt-neu.ps1 2>&1)",
+      "PowerShell(.\\\\tools\\\\testserver.ps1 status)",
+      "PowerShell(.\\\\tools\\\\testserver.ps1 reset)",
+      "PowerShell(C:\\\\HyperV\\\\vm-exec.ps1 -Script C:\\\\HyperV\\\\spool\\\\bestand-pruefen.ps1 2>&1)"
+    ]
+  },
+  "enabledPlugins": {
+    "mattpocock-skills@claude-plugins-official": true
+  }
+}
