@@ -7,12 +7,15 @@ Wächst diese Datei um einen Absatz, der etwas über das Repo behauptet, gehört
 
 ## Wo die Dinge liegen
 
-- [`README.md`](README.md) — der Einstieg und die einzige Übersicht. Vor jeder Annahme darüber,
-  welcher Screen existiert, welche Datei welchen Bereich trägt, was bewusst offen gelassen wurde
-  (§5) und was vor der Abnahme gilt (§6), zuerst hierher und nirgends sonst nachschlagen.
+- [`README.md`](README.md) — der Einstieg: was diese App ist, in fünf Sätzen, und von dort weiter.
+- [`docs/regeln.md`](docs/regeln.md) — was für jede Änderung gilt: wo Literale stehen dürfen, unter
+  welchen Regeln Verträge geschrieben werden, was vor der Abnahme durchlaufen sein muss. Vor jeder
+  Änderung an Oberfläche oder Verträgen zuerst hierher.
+- [`docs/offene-punkte.md`](docs/offene-punkte.md) — vor jeder Annahme darüber, ob etwas fehlt oder
+  bewusst offen gelassen wurde. Was dort steht, ist nicht vergessen, sondern aufgeschoben.
 - [`src/theme.ts`](src/theme.ts) — das Designsystem. Vor jedem Farb-, Schrift-, Radien- oder
-  Abstandswert zuerst hierher; die Regel, wo Literale stehen dürfen, steht im
-  [`README.md`](README.md) §3.
+  Abstandswert zuerst hierher; die Regel, wo Literale stehen dürfen, steht in
+  [`docs/regeln.md`](docs/regeln.md).
 - [`src/components/index.ts`](src/components/index.ts) — der Baukasten. Bevor eine Komponente neu
   gebaut oder ein zweiter Weg für dasselbe Element geprägt wird, zuerst hierher.
 - [`src/api/types.ts`](src/api/types.ts), [`src/api/hooks.ts`](src/api/hooks.ts),
@@ -22,7 +25,7 @@ Wächst diese Datei um einen Absatz, der etwas über das Repo behauptet, gehört
 - [`src/api/diaryDate.ts`](src/api/diaryDate.ts) — bevor ein Kalendertag angefasst wird.
 - [`src/nav.ts`](src/nav.ts) — bevor Zustand durch den Aufnahme-Ablauf gereicht wird.
 - [`pact/`](pact/) — die zugesicherten Verträge; die Regeln, unter denen sie geschrieben werden,
-  stehen im [`README.md`](README.md) §4.
+  stehen in [`docs/regeln.md`](docs/regeln.md).
 - [`../fit_back/docs/Draft/BACKEND.md`](../fit_back/docs/Draft/BACKEND.md) — die fachliche
   Spezifikation der API. Sie liegt in einem **anderen Repository**: von hier aus wird sie gelesen,
   nie geändert; weicht die App von ihr ab, wird das abgestimmt statt einseitig nachgezogen.
