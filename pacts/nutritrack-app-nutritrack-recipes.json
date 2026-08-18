@@ -109,52 +109,51 @@
       },
       "response": {
         "body": {
-          "etag": "1",
-          "id": "e2490de5-5bd3-43d5-b7c4-526e33f71304",
-          "ingredients": [
-            {
-              "computedKcal": 660,
-              "displayName": "Hähnchenbrust",
-              "grams": 600,
-              "id": "e2490de5-5bd3-43d5-b7c4-526e33f71304",
-              "productId": "e2490de5-5bd3-43d5-b7c4-526e33f71304"
-            }
-          ],
-          "macrosPerPortion": {
-            "carbsG": 38,
-            "fatG": 12,
-            "proteinG": 41
+          "data": {
+            "id": "e2490de5-5bd3-43d5-b7c4-526e33f71304",
+            "ingredients": [
+              {
+                "computedKcal": 660,
+                "displayName": "Hähnchenbrust",
+                "grams": 600,
+                "id": "e2490de5-5bd3-43d5-b7c4-526e33f71304",
+                "productId": "e2490de5-5bd3-43d5-b7c4-526e33f71304"
+              }
+            ],
+            "macrosPerPortion": {
+              "carbsG": 38,
+              "fatG": 12,
+              "proteinG": 41
+            },
+            "name": "Hähnchen-Reis-Pfanne",
+            "portions": 4
           },
-          "name": "Hähnchen-Reis-Pfanne",
-          "portions": 4
+          "meta": {
+            "apiVersion": "1",
+            "requestId": "01JQ8Z3K7V9XW2P4M6N8R0T5YB",
+            "timestamp": "2026-08-18T09:14:22Z"
+          }
         },
         "generators": {
           "body": {
-            "$.id": {
+            "$.data.id": {
               "type": "Uuid"
             },
-            "$.ingredients[*].id": {
+            "$.data.ingredients[*].id": {
               "type": "Uuid"
             },
-            "$.ingredients[*].productId": {
+            "$.data.ingredients[*].productId": {
               "type": "Uuid"
             }
           }
         },
         "headers": {
-          "Content-Type": "application/json"
+          "Content-Type": "application/json",
+          "ETag": "1"
         },
         "matchingRules": {
           "body": {
-            "$.etag": {
-              "combine": "AND",
-              "matchers": [
-                {
-                  "match": "type"
-                }
-              ]
-            },
-            "$.id": {
+            "$.data.id": {
               "combine": "AND",
               "matchers": [
                 {
@@ -163,7 +162,7 @@
                 }
               ]
             },
-            "$.ingredients": {
+            "$.data.ingredients": {
               "combine": "AND",
               "matchers": [
                 {
@@ -172,7 +171,7 @@
                 }
               ]
             },
-            "$.ingredients[*].computedKcal": {
+            "$.data.ingredients[*].computedKcal": {
               "combine": "AND",
               "matchers": [
                 {
@@ -180,7 +179,7 @@
                 }
               ]
             },
-            "$.ingredients[*].displayName": {
+            "$.data.ingredients[*].displayName": {
               "combine": "AND",
               "matchers": [
                 {
@@ -188,7 +187,7 @@
                 }
               ]
             },
-            "$.ingredients[*].grams": {
+            "$.data.ingredients[*].grams": {
               "combine": "AND",
               "matchers": [
                 {
@@ -196,7 +195,7 @@
                 }
               ]
             },
-            "$.ingredients[*].id": {
+            "$.data.ingredients[*].id": {
               "combine": "AND",
               "matchers": [
                 {
@@ -205,7 +204,7 @@
                 }
               ]
             },
-            "$.ingredients[*].productId": {
+            "$.data.ingredients[*].productId": {
               "combine": "AND",
               "matchers": [
                 {
@@ -214,7 +213,7 @@
                 }
               ]
             },
-            "$.macrosPerPortion.carbsG": {
+            "$.data.macrosPerPortion.carbsG": {
               "combine": "AND",
               "matchers": [
                 {
@@ -222,7 +221,7 @@
                 }
               ]
             },
-            "$.macrosPerPortion.fatG": {
+            "$.data.macrosPerPortion.fatG": {
               "combine": "AND",
               "matchers": [
                 {
@@ -230,7 +229,7 @@
                 }
               ]
             },
-            "$.macrosPerPortion.proteinG": {
+            "$.data.macrosPerPortion.proteinG": {
               "combine": "AND",
               "matchers": [
                 {
@@ -238,7 +237,7 @@
                 }
               ]
             },
-            "$.name": {
+            "$.data.name": {
               "combine": "AND",
               "matchers": [
                 {
@@ -246,11 +245,45 @@
                 }
               ]
             },
-            "$.portions": {
+            "$.data.portions": {
               "combine": "AND",
               "matchers": [
                 {
                   "match": "integer"
+                }
+              ]
+            },
+            "$.meta.apiVersion": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.meta.requestId": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.meta.timestamp": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            }
+          },
+          "header": {
+            "ETag": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
                 }
               ]
             }
@@ -318,13 +351,20 @@
       },
       "response": {
         "body": {
-          "entryId": "e2490de5-5bd3-43d5-b7c4-526e33f71304",
-          "grams": 338,
-          "kcal": 412
+          "data": {
+            "entryId": "e2490de5-5bd3-43d5-b7c4-526e33f71304",
+            "grams": 338,
+            "kcal": 412
+          },
+          "meta": {
+            "apiVersion": "1",
+            "requestId": "01JQ8Z3K7V9XW2P4M6N8R0T5YB",
+            "timestamp": "2026-08-18T09:14:22Z"
+          }
         },
         "generators": {
           "body": {
-            "$.entryId": {
+            "$.data.entryId": {
               "type": "Uuid"
             }
           }
@@ -334,7 +374,7 @@
         },
         "matchingRules": {
           "body": {
-            "$.entryId": {
+            "$.data.entryId": {
               "combine": "AND",
               "matchers": [
                 {
@@ -343,7 +383,7 @@
                 }
               ]
             },
-            "$.grams": {
+            "$.data.grams": {
               "combine": "AND",
               "matchers": [
                 {
@@ -351,11 +391,35 @@
                 }
               ]
             },
-            "$.kcal": {
+            "$.data.kcal": {
               "combine": "AND",
               "matchers": [
                 {
                   "match": "integer"
+                }
+              ]
+            },
+            "$.meta.apiVersion": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.meta.requestId": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.meta.timestamp": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
                 }
               ]
             }
@@ -489,52 +553,51 @@
       },
       "response": {
         "body": {
-          "etag": "8",
-          "id": "e2490de5-5bd3-43d5-b7c4-526e33f71304",
-          "ingredients": [
-            {
-              "computedKcal": 660,
-              "displayName": "Hähnchenbrust",
-              "grams": 600,
-              "id": "e2490de5-5bd3-43d5-b7c4-526e33f71304",
-              "productId": "e2490de5-5bd3-43d5-b7c4-526e33f71304"
-            }
-          ],
-          "macrosPerPortion": {
-            "carbsG": 38,
-            "fatG": 12,
-            "proteinG": 41
+          "data": {
+            "id": "e2490de5-5bd3-43d5-b7c4-526e33f71304",
+            "ingredients": [
+              {
+                "computedKcal": 660,
+                "displayName": "Hähnchenbrust",
+                "grams": 600,
+                "id": "e2490de5-5bd3-43d5-b7c4-526e33f71304",
+                "productId": "e2490de5-5bd3-43d5-b7c4-526e33f71304"
+              }
+            ],
+            "macrosPerPortion": {
+              "carbsG": 38,
+              "fatG": 12,
+              "proteinG": 41
+            },
+            "name": "Hähnchen-Reis-Pfanne",
+            "portions": 4
           },
-          "name": "Hähnchen-Reis-Pfanne",
-          "portions": 4
+          "meta": {
+            "apiVersion": "1",
+            "requestId": "01JQ8Z3K7V9XW2P4M6N8R0T5YB",
+            "timestamp": "2026-08-18T09:14:22Z"
+          }
         },
         "generators": {
           "body": {
-            "$.id": {
+            "$.data.id": {
               "type": "Uuid"
             },
-            "$.ingredients[*].id": {
+            "$.data.ingredients[*].id": {
               "type": "Uuid"
             },
-            "$.ingredients[*].productId": {
+            "$.data.ingredients[*].productId": {
               "type": "Uuid"
             }
           }
         },
         "headers": {
-          "Content-Type": "application/json"
+          "Content-Type": "application/json",
+          "ETag": "8"
         },
         "matchingRules": {
           "body": {
-            "$.etag": {
-              "combine": "AND",
-              "matchers": [
-                {
-                  "match": "type"
-                }
-              ]
-            },
-            "$.id": {
+            "$.data.id": {
               "combine": "AND",
               "matchers": [
                 {
@@ -543,7 +606,7 @@
                 }
               ]
             },
-            "$.ingredients": {
+            "$.data.ingredients": {
               "combine": "AND",
               "matchers": [
                 {
@@ -552,7 +615,7 @@
                 }
               ]
             },
-            "$.ingredients[*].computedKcal": {
+            "$.data.ingredients[*].computedKcal": {
               "combine": "AND",
               "matchers": [
                 {
@@ -560,7 +623,7 @@
                 }
               ]
             },
-            "$.ingredients[*].displayName": {
+            "$.data.ingredients[*].displayName": {
               "combine": "AND",
               "matchers": [
                 {
@@ -568,7 +631,7 @@
                 }
               ]
             },
-            "$.ingredients[*].grams": {
+            "$.data.ingredients[*].grams": {
               "combine": "AND",
               "matchers": [
                 {
@@ -576,7 +639,7 @@
                 }
               ]
             },
-            "$.ingredients[*].id": {
+            "$.data.ingredients[*].id": {
               "combine": "AND",
               "matchers": [
                 {
@@ -585,7 +648,7 @@
                 }
               ]
             },
-            "$.ingredients[*].productId": {
+            "$.data.ingredients[*].productId": {
               "combine": "AND",
               "matchers": [
                 {
@@ -594,7 +657,7 @@
                 }
               ]
             },
-            "$.macrosPerPortion.carbsG": {
+            "$.data.macrosPerPortion.carbsG": {
               "combine": "AND",
               "matchers": [
                 {
@@ -602,7 +665,7 @@
                 }
               ]
             },
-            "$.macrosPerPortion.fatG": {
+            "$.data.macrosPerPortion.fatG": {
               "combine": "AND",
               "matchers": [
                 {
@@ -610,7 +673,7 @@
                 }
               ]
             },
-            "$.macrosPerPortion.proteinG": {
+            "$.data.macrosPerPortion.proteinG": {
               "combine": "AND",
               "matchers": [
                 {
@@ -618,7 +681,7 @@
                 }
               ]
             },
-            "$.name": {
+            "$.data.name": {
               "combine": "AND",
               "matchers": [
                 {
@@ -626,11 +689,45 @@
                 }
               ]
             },
-            "$.portions": {
+            "$.data.portions": {
               "combine": "AND",
               "matchers": [
                 {
                   "match": "integer"
+                }
+              ]
+            },
+            "$.meta.apiVersion": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.meta.requestId": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.meta.timestamp": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            }
+          },
+          "header": {
+            "ETag": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
                 }
               ]
             }
@@ -663,52 +760,51 @@
       },
       "response": {
         "body": {
-          "etag": "7",
-          "id": "e2490de5-5bd3-43d5-b7c4-526e33f71304",
-          "ingredients": [
-            {
-              "computedKcal": 660,
-              "displayName": "Hähnchenbrust",
-              "grams": 600,
-              "id": "e2490de5-5bd3-43d5-b7c4-526e33f71304",
-              "productId": "e2490de5-5bd3-43d5-b7c4-526e33f71304"
-            }
-          ],
-          "macrosPerPortion": {
-            "carbsG": 38,
-            "fatG": 12,
-            "proteinG": 41
+          "data": {
+            "id": "e2490de5-5bd3-43d5-b7c4-526e33f71304",
+            "ingredients": [
+              {
+                "computedKcal": 660,
+                "displayName": "Hähnchenbrust",
+                "grams": 600,
+                "id": "e2490de5-5bd3-43d5-b7c4-526e33f71304",
+                "productId": "e2490de5-5bd3-43d5-b7c4-526e33f71304"
+              }
+            ],
+            "macrosPerPortion": {
+              "carbsG": 38,
+              "fatG": 12,
+              "proteinG": 41
+            },
+            "name": "Hähnchen-Reis-Pfanne",
+            "portions": 4
           },
-          "name": "Hähnchen-Reis-Pfanne",
-          "portions": 4
+          "meta": {
+            "apiVersion": "1",
+            "requestId": "01JQ8Z3K7V9XW2P4M6N8R0T5YB",
+            "timestamp": "2026-08-18T09:14:22Z"
+          }
         },
         "generators": {
           "body": {
-            "$.id": {
+            "$.data.id": {
               "type": "Uuid"
             },
-            "$.ingredients[*].id": {
+            "$.data.ingredients[*].id": {
               "type": "Uuid"
             },
-            "$.ingredients[*].productId": {
+            "$.data.ingredients[*].productId": {
               "type": "Uuid"
             }
           }
         },
         "headers": {
-          "Content-Type": "application/json"
+          "Content-Type": "application/json",
+          "ETag": "7"
         },
         "matchingRules": {
           "body": {
-            "$.etag": {
-              "combine": "AND",
-              "matchers": [
-                {
-                  "match": "type"
-                }
-              ]
-            },
-            "$.id": {
+            "$.data.id": {
               "combine": "AND",
               "matchers": [
                 {
@@ -717,7 +813,7 @@
                 }
               ]
             },
-            "$.ingredients": {
+            "$.data.ingredients": {
               "combine": "AND",
               "matchers": [
                 {
@@ -726,7 +822,7 @@
                 }
               ]
             },
-            "$.ingredients[*].computedKcal": {
+            "$.data.ingredients[*].computedKcal": {
               "combine": "AND",
               "matchers": [
                 {
@@ -734,7 +830,7 @@
                 }
               ]
             },
-            "$.ingredients[*].displayName": {
+            "$.data.ingredients[*].displayName": {
               "combine": "AND",
               "matchers": [
                 {
@@ -742,7 +838,7 @@
                 }
               ]
             },
-            "$.ingredients[*].grams": {
+            "$.data.ingredients[*].grams": {
               "combine": "AND",
               "matchers": [
                 {
@@ -750,7 +846,7 @@
                 }
               ]
             },
-            "$.ingredients[*].id": {
+            "$.data.ingredients[*].id": {
               "combine": "AND",
               "matchers": [
                 {
@@ -759,7 +855,7 @@
                 }
               ]
             },
-            "$.ingredients[*].productId": {
+            "$.data.ingredients[*].productId": {
               "combine": "AND",
               "matchers": [
                 {
@@ -768,7 +864,7 @@
                 }
               ]
             },
-            "$.macrosPerPortion.carbsG": {
+            "$.data.macrosPerPortion.carbsG": {
               "combine": "AND",
               "matchers": [
                 {
@@ -776,7 +872,7 @@
                 }
               ]
             },
-            "$.macrosPerPortion.fatG": {
+            "$.data.macrosPerPortion.fatG": {
               "combine": "AND",
               "matchers": [
                 {
@@ -784,7 +880,7 @@
                 }
               ]
             },
-            "$.macrosPerPortion.proteinG": {
+            "$.data.macrosPerPortion.proteinG": {
               "combine": "AND",
               "matchers": [
                 {
@@ -792,7 +888,7 @@
                 }
               ]
             },
-            "$.name": {
+            "$.data.name": {
               "combine": "AND",
               "matchers": [
                 {
@@ -800,11 +896,45 @@
                 }
               ]
             },
-            "$.portions": {
+            "$.data.portions": {
               "combine": "AND",
               "matchers": [
                 {
                   "match": "integer"
+                }
+              ]
+            },
+            "$.meta.apiVersion": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.meta.requestId": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.meta.timestamp": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            }
+          },
+          "header": {
+            "ETag": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
                 }
               ]
             }
@@ -830,18 +960,25 @@
         }
       },
       "response": {
-        "body": [
-          {
-            "gramsPerPortion": 338,
-            "id": "e2490de5-5bd3-43d5-b7c4-526e33f71304",
-            "kcalPerPortion": 412,
-            "name": "Hähnchen-Reis-Pfanne",
-            "portions": 4
+        "body": {
+          "data": [
+            {
+              "gramsPerPortion": 338,
+              "id": "e2490de5-5bd3-43d5-b7c4-526e33f71304",
+              "kcalPerPortion": 412,
+              "name": "Hähnchen-Reis-Pfanne",
+              "portions": 4
+            }
+          ],
+          "meta": {
+            "apiVersion": "1",
+            "requestId": "01JQ8Z3K7V9XW2P4M6N8R0T5YB",
+            "timestamp": "2026-08-18T09:14:22Z"
           }
-        ],
+        },
         "generators": {
           "body": {
-            "$[*].id": {
+            "$.data[*].id": {
               "type": "Uuid"
             }
           }
@@ -851,7 +988,7 @@
         },
         "matchingRules": {
           "body": {
-            "$": {
+            "$.data": {
               "combine": "AND",
               "matchers": [
                 {
@@ -860,7 +997,7 @@
                 }
               ]
             },
-            "$[*].gramsPerPortion": {
+            "$.data[*].gramsPerPortion": {
               "combine": "AND",
               "matchers": [
                 {
@@ -868,7 +1005,7 @@
                 }
               ]
             },
-            "$[*].id": {
+            "$.data[*].id": {
               "combine": "AND",
               "matchers": [
                 {
@@ -877,7 +1014,7 @@
                 }
               ]
             },
-            "$[*].kcalPerPortion": {
+            "$.data[*].kcalPerPortion": {
               "combine": "AND",
               "matchers": [
                 {
@@ -885,7 +1022,7 @@
                 }
               ]
             },
-            "$[*].name": {
+            "$.data[*].name": {
               "combine": "AND",
               "matchers": [
                 {
@@ -893,11 +1030,35 @@
                 }
               ]
             },
-            "$[*].portions": {
+            "$.data[*].portions": {
               "combine": "AND",
               "matchers": [
                 {
                   "match": "integer"
+                }
+              ]
+            },
+            "$.meta.apiVersion": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.meta.requestId": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.meta.timestamp": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
                 }
               ]
             }

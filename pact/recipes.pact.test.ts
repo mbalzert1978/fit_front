@@ -1,5 +1,5 @@
-import { pact, M } from './setup';
-import { api } from '../src/api/client';
+import { pact, M, enveloped, jsonHeaders } from './setup';
+import { api, apiWithMeta } from '../src/api/client';
 
 /**
  * Bedarf: `app/(tabs)/recipes.tsx` (Liste) und `app/recipe/[id].tsx` (Blatt,
@@ -28,14 +28,16 @@ describe('Recipes', () => {
       .withRequest({ method: 'GET', path: '/api/v1/recipes', query: { sort: 'name_desc' } })
       .willRespondWith({
         status: 200,
-        headers: { 'Content-Type': 'application/json' },
-        body: M.eachLike({
-          id: M.uuid(),
-          name: M.string('Hähnchen-Reis-Pfanne'),
-          portions: M.integer(4),
-          gramsPerPortion: M.integer(338),
-          kcalPerPortion: M.integer(412),
-        }),
+        headers: jsonHeaders,
+        body: enveloped(
+          M.eachLike({
+            id: M.uuid(),
+            name: M.string('Hähnchen-Reis-Pfanne'),
+            portions: M.integer(4),
+            gramsPerPortion: M.integer(338),
+            kcalPerPortion: M.integer(412),
+          }),
+        ),
       });
 
     await p.executeTest(async () => {
@@ -51,22 +53,22 @@ describe('Recipes', () => {
       .withRequest({ method: 'GET', path: M.regex(`/api/v1/recipes/${uuidPath}`, `/api/v1/recipes/${recipeId}`) })
       .willRespondWith({
         status: 200,
-        headers: { 'Content-Type': 'application/json' },
-        body: {
+        // Der ETag steht im gleichnamigen Header und geht unverändert als
+        // If-Match zurück; ohne ihn kein Speichern.
+        headers: { ...jsonHeaders, ETag: M.string('7') },
+        body: enveloped({
           id: M.uuid(),
           name: M.string('Hähnchen-Reis-Pfanne'),
           portions: M.integer(4),
           macrosPerPortion: { carbsG: M.integer(38), proteinG: M.integer(41), fatG: M.integer(12) },
           ingredients: M.eachLike(ingredient),
-          // Der ETag geht unverändert als If-Match zurück; ohne ihn kein Speichern.
-          etag: M.string('7'),
-        },
+        }),
       });
 
     await p.executeTest(async () => {
-      const r = await api<{ etag: string; ingredients: unknown[] }>(`/recipes/${recipeId}`);
+      const r = await apiWithMeta<{ ingredients: unknown[] }>(`/recipes/${recipeId}`);
       expect(r.etag).toBeTruthy();
-      expect(Array.isArray(r.ingredients)).toBe(true);
+      expect(Array.isArray(r.data.ingredients)).toBe(true);
     });
   });
 
@@ -87,15 +89,14 @@ describe('Recipes', () => {
       })
       .willRespondWith({
         status: 201,
-        headers: { 'Content-Type': 'application/json' },
-        body: {
+        headers: { ...jsonHeaders, ETag: M.string('1') },
+        body: enveloped({
           id: M.uuid(),
           name: M.string('Hähnchen-Reis-Pfanne'),
           portions: M.integer(4),
           macrosPerPortion: { carbsG: M.integer(38), proteinG: M.integer(41), fatG: M.integer(12) },
           ingredients: M.eachLike(ingredient),
-          etag: M.string('1'),
-        },
+        }),
       });
 
     await p.executeTest(async () => {
@@ -131,15 +132,15 @@ describe('Recipes', () => {
       })
       .willRespondWith({
         status: 200,
-        headers: { 'Content-Type': 'application/json' },
-        body: {
+        // Der neue ETag; der alte ging als If-Match in die Anfrage.
+        headers: { ...jsonHeaders, ETag: M.string('8') },
+        body: enveloped({
           id: M.uuid(),
           name: M.string('Hähnchen-Reis-Pfanne'),
           portions: M.integer(4),
           macrosPerPortion: { carbsG: M.integer(38), proteinG: M.integer(41), fatG: M.integer(12) },
           ingredients: M.eachLike(ingredient),
-          etag: M.string('8'),
-        },
+        }),
       });
 
     await p.executeTest(async () => {
@@ -169,8 +170,8 @@ describe('Recipes', () => {
       })
       .willRespondWith({
         status: 201,
-        headers: { 'Content-Type': 'application/json' },
-        body: { entryId: M.uuid(), grams: M.integer(338), kcal: M.integer(412) },
+        headers: jsonHeaders,
+        body: enveloped({ entryId: M.uuid(), grams: M.integer(338), kcal: M.integer(412) }),
       });
 
     await p.executeTest(async () => {

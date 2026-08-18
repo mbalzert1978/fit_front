@@ -1,4 +1,4 @@
-import { pact, M } from './setup';
+import { pact, M, enveloped, jsonHeaders } from './setup';
 import { api } from '../src/api/client';
 
 /**
@@ -18,12 +18,12 @@ describe('HealthSync', () => {
       .withRequest({ method: 'GET', path: '/api/v1/health/consent' })
       .willRespondWith({
         status: 200,
-        headers: { 'Content-Type': 'application/json' },
-        body: {
+        headers: jsonHeaders,
+        body: enveloped({
           connected: M.boolean(false),
           importActivity: M.boolean(false),
           exportNutrition: M.boolean(false),
-        },
+        }),
       });
 
     await p.executeTest(async () => {

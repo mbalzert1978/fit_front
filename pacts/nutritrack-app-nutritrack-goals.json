@@ -16,15 +16,22 @@
       },
       "response": {
         "body": {
-          "language": "de",
-          "theme": "Dark"
+          "data": {
+            "language": "de",
+            "theme": "Dark"
+          },
+          "meta": {
+            "apiVersion": "1",
+            "requestId": "01JQ8Z3K7V9XW2P4M6N8R0T5YB",
+            "timestamp": "2026-08-18T09:14:22Z"
+          }
         },
         "headers": {
           "Content-Type": "application/json"
         },
         "matchingRules": {
           "body": {
-            "$.language": {
+            "$.data.language": {
               "combine": "AND",
               "matchers": [
                 {
@@ -33,12 +40,36 @@
                 }
               ]
             },
-            "$.theme": {
+            "$.data.theme": {
               "combine": "AND",
               "matchers": [
                 {
                   "match": "regex",
                   "regex": "Dark|Light"
+                }
+              ]
+            },
+            "$.meta.apiVersion": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.meta.requestId": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.meta.timestamp": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
                 }
               ]
             }
@@ -104,34 +135,41 @@
       },
       "response": {
         "body": {
-          "dailyKcal": 2150,
-          "energyStandard": "Physiological",
-          "includeActivityInGoal": false,
-          "macros": {
-            "carbs": {
-              "grams": 215,
-              "kcal": 882,
-              "percent": 40
+          "data": {
+            "dailyKcal": 2150,
+            "energyStandard": "Physiological",
+            "includeActivityInGoal": false,
+            "macros": {
+              "carbs": {
+                "grams": 215,
+                "kcal": 882,
+                "percent": 40
+              },
+              "fat": {
+                "grams": 72,
+                "kcal": 670,
+                "percent": 30
+              },
+              "protein": {
+                "grams": 161,
+                "kcal": 661,
+                "percent": 30
+              }
             },
-            "fat": {
-              "grams": 72,
-              "kcal": 670,
-              "percent": 30
-            },
-            "protein": {
-              "grams": 161,
-              "kcal": 661,
-              "percent": 30
-            }
+            "rounding": "Up"
           },
-          "rounding": "Up"
+          "meta": {
+            "apiVersion": "1",
+            "requestId": "01JQ8Z3K7V9XW2P4M6N8R0T5YB",
+            "timestamp": "2026-08-18T09:14:22Z"
+          }
         },
         "headers": {
           "Content-Type": "application/json"
         },
         "matchingRules": {
           "body": {
-            "$.dailyKcal": {
+            "$.data.dailyKcal": {
               "combine": "AND",
               "matchers": [
                 {
@@ -139,7 +177,7 @@
                 }
               ]
             },
-            "$.energyStandard": {
+            "$.data.energyStandard": {
               "combine": "AND",
               "matchers": [
                 {
@@ -148,7 +186,7 @@
                 }
               ]
             },
-            "$.includeActivityInGoal": {
+            "$.data.includeActivityInGoal": {
               "combine": "AND",
               "matchers": [
                 {
@@ -156,7 +194,7 @@
                 }
               ]
             },
-            "$.macros.carbs.grams": {
+            "$.data.macros.carbs.grams": {
               "combine": "AND",
               "matchers": [
                 {
@@ -164,7 +202,7 @@
                 }
               ]
             },
-            "$.macros.carbs.kcal": {
+            "$.data.macros.carbs.kcal": {
               "combine": "AND",
               "matchers": [
                 {
@@ -172,7 +210,7 @@
                 }
               ]
             },
-            "$.macros.carbs.percent": {
+            "$.data.macros.carbs.percent": {
               "combine": "AND",
               "matchers": [
                 {
@@ -180,7 +218,7 @@
                 }
               ]
             },
-            "$.macros.fat.grams": {
+            "$.data.macros.fat.grams": {
               "combine": "AND",
               "matchers": [
                 {
@@ -188,7 +226,7 @@
                 }
               ]
             },
-            "$.macros.fat.kcal": {
+            "$.data.macros.fat.kcal": {
               "combine": "AND",
               "matchers": [
                 {
@@ -196,7 +234,7 @@
                 }
               ]
             },
-            "$.macros.fat.percent": {
+            "$.data.macros.fat.percent": {
               "combine": "AND",
               "matchers": [
                 {
@@ -204,7 +242,7 @@
                 }
               ]
             },
-            "$.macros.protein.grams": {
+            "$.data.macros.protein.grams": {
               "combine": "AND",
               "matchers": [
                 {
@@ -212,7 +250,7 @@
                 }
               ]
             },
-            "$.macros.protein.kcal": {
+            "$.data.macros.protein.kcal": {
               "combine": "AND",
               "matchers": [
                 {
@@ -220,7 +258,7 @@
                 }
               ]
             },
-            "$.macros.protein.percent": {
+            "$.data.macros.protein.percent": {
               "combine": "AND",
               "matchers": [
                 {
@@ -228,12 +266,36 @@
                 }
               ]
             },
-            "$.rounding": {
+            "$.data.rounding": {
               "combine": "AND",
               "matchers": [
                 {
                   "match": "regex",
                   "regex": "Up|Down"
+                }
+              ]
+            },
+            "$.meta.apiVersion": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.meta.requestId": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.meta.timestamp": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
                 }
               ]
             }
@@ -274,15 +336,22 @@
       },
       "response": {
         "body": {
-          "language": "en",
-          "theme": "Dark"
+          "data": {
+            "language": "en",
+            "theme": "Dark"
+          },
+          "meta": {
+            "apiVersion": "1",
+            "requestId": "01JQ8Z3K7V9XW2P4M6N8R0T5YB",
+            "timestamp": "2026-08-18T09:14:22Z"
+          }
         },
         "headers": {
           "Content-Type": "application/json"
         },
         "matchingRules": {
           "body": {
-            "$.language": {
+            "$.data.language": {
               "combine": "AND",
               "matchers": [
                 {
@@ -291,12 +360,36 @@
                 }
               ]
             },
-            "$.theme": {
+            "$.data.theme": {
               "combine": "AND",
               "matchers": [
                 {
                   "match": "regex",
                   "regex": "Dark|Light"
+                }
+              ]
+            },
+            "$.meta.apiVersion": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.meta.requestId": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.meta.timestamp": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
                 }
               ]
             }
@@ -318,34 +411,41 @@
       },
       "response": {
         "body": {
-          "dailyKcal": 2150,
-          "energyStandard": "Physiological",
-          "includeActivityInGoal": false,
-          "macros": {
-            "carbs": {
-              "grams": 215,
-              "kcal": 882,
-              "percent": 40
+          "data": {
+            "dailyKcal": 2150,
+            "energyStandard": "Physiological",
+            "includeActivityInGoal": false,
+            "macros": {
+              "carbs": {
+                "grams": 215,
+                "kcal": 882,
+                "percent": 40
+              },
+              "fat": {
+                "grams": 72,
+                "kcal": 670,
+                "percent": 30
+              },
+              "protein": {
+                "grams": 161,
+                "kcal": 661,
+                "percent": 30
+              }
             },
-            "fat": {
-              "grams": 72,
-              "kcal": 670,
-              "percent": 30
-            },
-            "protein": {
-              "grams": 161,
-              "kcal": 661,
-              "percent": 30
-            }
+            "rounding": "Up"
           },
-          "rounding": "Up"
+          "meta": {
+            "apiVersion": "1",
+            "requestId": "01JQ8Z3K7V9XW2P4M6N8R0T5YB",
+            "timestamp": "2026-08-18T09:14:22Z"
+          }
         },
         "headers": {
           "Content-Type": "application/json"
         },
         "matchingRules": {
           "body": {
-            "$.dailyKcal": {
+            "$.data.dailyKcal": {
               "combine": "AND",
               "matchers": [
                 {
@@ -353,7 +453,7 @@
                 }
               ]
             },
-            "$.energyStandard": {
+            "$.data.energyStandard": {
               "combine": "AND",
               "matchers": [
                 {
@@ -362,7 +462,7 @@
                 }
               ]
             },
-            "$.includeActivityInGoal": {
+            "$.data.includeActivityInGoal": {
               "combine": "AND",
               "matchers": [
                 {
@@ -370,7 +470,7 @@
                 }
               ]
             },
-            "$.macros.carbs.grams": {
+            "$.data.macros.carbs.grams": {
               "combine": "AND",
               "matchers": [
                 {
@@ -378,7 +478,7 @@
                 }
               ]
             },
-            "$.macros.carbs.kcal": {
+            "$.data.macros.carbs.kcal": {
               "combine": "AND",
               "matchers": [
                 {
@@ -386,7 +486,7 @@
                 }
               ]
             },
-            "$.macros.carbs.percent": {
+            "$.data.macros.carbs.percent": {
               "combine": "AND",
               "matchers": [
                 {
@@ -394,7 +494,7 @@
                 }
               ]
             },
-            "$.macros.fat.grams": {
+            "$.data.macros.fat.grams": {
               "combine": "AND",
               "matchers": [
                 {
@@ -402,7 +502,7 @@
                 }
               ]
             },
-            "$.macros.fat.kcal": {
+            "$.data.macros.fat.kcal": {
               "combine": "AND",
               "matchers": [
                 {
@@ -410,7 +510,7 @@
                 }
               ]
             },
-            "$.macros.fat.percent": {
+            "$.data.macros.fat.percent": {
               "combine": "AND",
               "matchers": [
                 {
@@ -418,7 +518,7 @@
                 }
               ]
             },
-            "$.macros.protein.grams": {
+            "$.data.macros.protein.grams": {
               "combine": "AND",
               "matchers": [
                 {
@@ -426,7 +526,7 @@
                 }
               ]
             },
-            "$.macros.protein.kcal": {
+            "$.data.macros.protein.kcal": {
               "combine": "AND",
               "matchers": [
                 {
@@ -434,7 +534,7 @@
                 }
               ]
             },
-            "$.macros.protein.percent": {
+            "$.data.macros.protein.percent": {
               "combine": "AND",
               "matchers": [
                 {
@@ -442,12 +542,36 @@
                 }
               ]
             },
-            "$.rounding": {
+            "$.data.rounding": {
               "combine": "AND",
               "matchers": [
                 {
                   "match": "regex",
                   "regex": "Up|Down"
+                }
+              ]
+            },
+            "$.meta.apiVersion": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.meta.requestId": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.meta.timestamp": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
                 }
               ]
             }

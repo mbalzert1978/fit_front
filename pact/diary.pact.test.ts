@@ -1,4 +1,4 @@
-import { pact, M } from './setup';
+import { pact, M, enveloped, jsonHeaders } from './setup';
 import { api, endpoints } from '../src/api/client';
 import { parseDiaryDate } from '../src/api/diaryDate';
 
@@ -25,8 +25,8 @@ describe('Diary — Tagesansicht', () => {
       .withRequest({ method: 'GET', path: '/api/v1/diary/days/2026-08-04', headers: { 'Accept-Language': 'de' } })
       .willRespondWith({
         status: 200,
-        headers: { 'Content-Type': 'application/json' },
-        body: {
+        headers: jsonHeaders,
+        body: enveloped({
           date: '2026-08-04',
           isFuture: M.boolean(false),
           totals: { kcal: M.integer(1583), carbsG: M.integer(142), proteinG: M.integer(118), fatG: M.integer(51) },
@@ -54,7 +54,7 @@ describe('Diary — Tagesansicht', () => {
               kcal: M.integer(264),
             }),
           },
-        },
+        }),
       });
 
     await p.executeTest(async () => {
@@ -72,8 +72,8 @@ describe('Diary — Tagesansicht', () => {
       .withRequest({ method: 'GET', path: '/api/v1/diary/days/2026-08-05', headers: { 'Accept-Language': 'de' } })
       .willRespondWith({
         status: 200,
-        headers: { 'Content-Type': 'application/json' },
-        body: {
+        headers: jsonHeaders,
+        body: enveloped({
           date: '2026-08-05',
           isFuture: M.boolean(false),
           totals: { kcal: M.integer(0), carbsG: M.integer(0), proteinG: M.integer(0), fatG: M.integer(0) },
@@ -82,7 +82,7 @@ describe('Diary — Tagesansicht', () => {
           slots: M.eachLike({ id: M.uuid(), name: M.string('Frühstück'), kcal: M.integer(0), entries: [] }),
           // Der Aktivitätsblock wird dann gar nicht gezeichnet.
           activity: null,
-        },
+        }),
       });
 
     await p.executeTest(async () => {
@@ -111,8 +111,8 @@ describe('Diary — Einträge', () => {
       })
       .willRespondWith({
         status: 201,
-        headers: { 'Content-Type': 'application/json' },
-        body: { id: M.uuid(), grams: M.integer(150), kcal: M.integer(97) },
+        headers: jsonHeaders,
+        body: enveloped({ id: M.uuid(), grams: M.integer(150), kcal: M.integer(97) }),
       });
 
     await p.executeTest(async () => {
@@ -143,8 +143,8 @@ describe('Diary — Einträge', () => {
       })
       .willRespondWith({
         status: 200,
-        headers: { 'Content-Type': 'application/json' },
-        body: { id: M.uuid(), grams: M.integer(200), kcal: M.integer(129) },
+        headers: jsonHeaders,
+        body: enveloped({ id: M.uuid(), grams: M.integer(200), kcal: M.integer(129) }),
       });
 
     await p.executeTest(async () => {
@@ -175,14 +175,16 @@ describe('Diary — Einträge', () => {
       .withRequest({ method: 'GET', path: '/api/v1/diary/recent', query: { take: '10' } })
       .willRespondWith({
         status: 200,
-        headers: { 'Content-Type': 'application/json' },
-        body: M.eachLike({
-          sourceType: M.regex('Product|Recipe', 'Product'),
-          sourceId: M.uuid(),
-          displayName: M.string('Skyr Natur, Arla'),
-          lastGrams: M.integer(150),
-          kcalPerPortion: M.integer(97),
-        }),
+        headers: jsonHeaders,
+        body: enveloped(
+          M.eachLike({
+            sourceType: M.regex('Product|Recipe', 'Product'),
+            sourceId: M.uuid(),
+            displayName: M.string('Skyr Natur, Arla'),
+            lastGrams: M.integer(150),
+            kcalPerPortion: M.integer(97),
+          }),
+        ),
       });
 
     await p.executeTest(async () => {
@@ -200,8 +202,8 @@ describe('Diary — Mahlzeiten-Slots', () => {
       .withRequest({ method: 'GET', path: '/api/v1/diary/slots' })
       .willRespondWith({
         status: 200,
-        headers: { 'Content-Type': 'application/json' },
-        body: M.eachLike({ id: M.uuid(), name: M.string('Frühstück'), position: M.integer(1) }),
+        headers: jsonHeaders,
+        body: enveloped(M.eachLike({ id: M.uuid(), name: M.string('Frühstück'), position: M.integer(1) })),
       });
 
     await p.executeTest(async () => {
@@ -222,8 +224,8 @@ describe('Diary — Mahlzeiten-Slots', () => {
       })
       .willRespondWith({
         status: 201,
-        headers: { 'Content-Type': 'application/json' },
-        body: { id: M.uuid(), name: M.string('Neue Mahlzeit'), position: M.integer(4) },
+        headers: jsonHeaders,
+        body: enveloped({ id: M.uuid(), name: M.string('Neue Mahlzeit'), position: M.integer(4) }),
       });
 
     await p.executeTest(async () => {
@@ -243,8 +245,8 @@ describe('Diary — Mahlzeiten-Slots', () => {
       })
       .willRespondWith({
         status: 200,
-        headers: { 'Content-Type': 'application/json' },
-        body: { id: M.uuid(), name: M.string('Zweites Frühstück'), position: M.integer(2) },
+        headers: jsonHeaders,
+        body: enveloped({ id: M.uuid(), name: M.string('Zweites Frühstück'), position: M.integer(2) }),
       });
 
     await p.executeTest(async () => {

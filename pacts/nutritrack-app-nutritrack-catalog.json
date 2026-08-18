@@ -143,18 +143,25 @@
       },
       "response": {
         "body": {
-          "id": "e2490de5-5bd3-43d5-b7c4-526e33f71304",
-          "name": "Skyr Natur",
-          "nutrientsPer100g": {
-            "carbsG": 4,
-            "fatG": 0.2,
-            "kcal": 63,
-            "proteinG": 11
+          "data": {
+            "id": "e2490de5-5bd3-43d5-b7c4-526e33f71304",
+            "name": "Skyr Natur",
+            "nutrientsPer100g": {
+              "carbsG": 4,
+              "fatG": 0.2,
+              "kcal": 63,
+              "proteinG": 11
+            }
+          },
+          "meta": {
+            "apiVersion": "1",
+            "requestId": "01JQ8Z3K7V9XW2P4M6N8R0T5YB",
+            "timestamp": "2026-08-18T09:14:22Z"
           }
         },
         "generators": {
           "body": {
-            "$.id": {
+            "$.data.id": {
               "type": "Uuid"
             }
           }
@@ -164,7 +171,7 @@
         },
         "matchingRules": {
           "body": {
-            "$.id": {
+            "$.data.id": {
               "combine": "AND",
               "matchers": [
                 {
@@ -173,7 +180,7 @@
                 }
               ]
             },
-            "$.name": {
+            "$.data.name": {
               "combine": "AND",
               "matchers": [
                 {
@@ -181,7 +188,7 @@
                 }
               ]
             },
-            "$.nutrientsPer100g.carbsG": {
+            "$.data.nutrientsPer100g.carbsG": {
               "combine": "AND",
               "matchers": [
                 {
@@ -189,7 +196,7 @@
                 }
               ]
             },
-            "$.nutrientsPer100g.fatG": {
+            "$.data.nutrientsPer100g.fatG": {
               "combine": "AND",
               "matchers": [
                 {
@@ -197,7 +204,7 @@
                 }
               ]
             },
-            "$.nutrientsPer100g.kcal": {
+            "$.data.nutrientsPer100g.kcal": {
               "combine": "AND",
               "matchers": [
                 {
@@ -205,11 +212,35 @@
                 }
               ]
             },
-            "$.nutrientsPer100g.proteinG": {
+            "$.data.nutrientsPer100g.proteinG": {
               "combine": "AND",
               "matchers": [
                 {
                   "match": "number"
+                }
+              ]
+            },
+            "$.meta.apiVersion": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.meta.requestId": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.meta.timestamp": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
                 }
               ]
             }
@@ -257,12 +288,19 @@
       },
       "response": {
         "body": {
-          "photoId": "e2490de5-5bd3-43d5-b7c4-526e33f71304",
-          "status": "Processing"
+          "data": {
+            "photoId": "e2490de5-5bd3-43d5-b7c4-526e33f71304",
+            "status": "Processing"
+          },
+          "meta": {
+            "apiVersion": "1",
+            "requestId": "01JQ8Z3K7V9XW2P4M6N8R0T5YB",
+            "timestamp": "2026-08-18T09:14:22Z"
+          }
         },
         "generators": {
           "body": {
-            "$.photoId": {
+            "$.data.photoId": {
               "type": "Uuid"
             }
           }
@@ -272,12 +310,36 @@
         },
         "matchingRules": {
           "body": {
-            "$.photoId": {
+            "$.data.photoId": {
               "combine": "AND",
               "matchers": [
                 {
                   "match": "regex",
                   "regex": "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
+                }
+              ]
+            },
+            "$.meta.apiVersion": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.meta.requestId": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.meta.timestamp": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
                 }
               ]
             }
@@ -325,45 +387,52 @@
       },
       "response": {
         "body": {
-          "barcode": "4008400401027",
-          "basis": "Per100g",
-          "fields": {
-            "carbsG": {
-              "confidence": 0.95,
-              "value": 4
+          "data": {
+            "barcode": "4008400401027",
+            "basis": "Per100g",
+            "fields": {
+              "carbsG": {
+                "confidence": 0.95,
+                "value": 4
+              },
+              "fatG": {
+                "confidence": 0.91,
+                "value": 0.2
+              },
+              "kcal": {
+                "confidence": 0.97,
+                "value": 63
+              },
+              "proteinG": {
+                "confidence": 0.96,
+                "value": 11
+              },
+              "saltG": {
+                "confidence": 0.54,
+                "value": 0.1
+              },
+              "saturatedFatG": {
+                "confidence": 0.62,
+                "value": 0.1
+              },
+              "sugarG": {
+                "confidence": 0.88,
+                "value": 4
+              }
             },
-            "fatG": {
-              "confidence": 0.91,
-              "value": 0.2
-            },
-            "kcal": {
-              "confidence": 0.97,
-              "value": 63
-            },
-            "proteinG": {
-              "confidence": 0.96,
-              "value": 11
-            },
-            "saltG": {
-              "confidence": 0.54,
-              "value": 0.1
-            },
-            "saturatedFatG": {
-              "confidence": 0.62,
-              "value": 0.1
-            },
-            "sugarG": {
-              "confidence": 0.88,
-              "value": 4
-            }
+            "photoId": "e2490de5-5bd3-43d5-b7c4-526e33f71304",
+            "status": "Completed",
+            "suggestedName": "Skyr Natur"
           },
-          "photoId": "e2490de5-5bd3-43d5-b7c4-526e33f71304",
-          "status": "Completed",
-          "suggestedName": "Skyr Natur"
+          "meta": {
+            "apiVersion": "1",
+            "requestId": "01JQ8Z3K7V9XW2P4M6N8R0T5YB",
+            "timestamp": "2026-08-18T09:14:22Z"
+          }
         },
         "generators": {
           "body": {
-            "$.photoId": {
+            "$.data.photoId": {
               "type": "Uuid"
             }
           }
@@ -373,7 +442,7 @@
         },
         "matchingRules": {
           "body": {
-            "$.barcode": {
+            "$.data.barcode": {
               "combine": "AND",
               "matchers": [
                 {
@@ -381,7 +450,7 @@
                 }
               ]
             },
-            "$.basis": {
+            "$.data.basis": {
               "combine": "AND",
               "matchers": [
                 {
@@ -390,7 +459,7 @@
                 }
               ]
             },
-            "$.fields.carbsG.confidence": {
+            "$.data.fields.carbsG.confidence": {
               "combine": "AND",
               "matchers": [
                 {
@@ -398,7 +467,7 @@
                 }
               ]
             },
-            "$.fields.carbsG.value": {
+            "$.data.fields.carbsG.value": {
               "combine": "AND",
               "matchers": [
                 {
@@ -406,7 +475,7 @@
                 }
               ]
             },
-            "$.fields.fatG.confidence": {
+            "$.data.fields.fatG.confidence": {
               "combine": "AND",
               "matchers": [
                 {
@@ -414,7 +483,7 @@
                 }
               ]
             },
-            "$.fields.fatG.value": {
+            "$.data.fields.fatG.value": {
               "combine": "AND",
               "matchers": [
                 {
@@ -422,7 +491,7 @@
                 }
               ]
             },
-            "$.fields.kcal.confidence": {
+            "$.data.fields.kcal.confidence": {
               "combine": "AND",
               "matchers": [
                 {
@@ -430,7 +499,7 @@
                 }
               ]
             },
-            "$.fields.kcal.value": {
+            "$.data.fields.kcal.value": {
               "combine": "AND",
               "matchers": [
                 {
@@ -438,7 +507,7 @@
                 }
               ]
             },
-            "$.fields.proteinG.confidence": {
+            "$.data.fields.proteinG.confidence": {
               "combine": "AND",
               "matchers": [
                 {
@@ -446,7 +515,7 @@
                 }
               ]
             },
-            "$.fields.proteinG.value": {
+            "$.data.fields.proteinG.value": {
               "combine": "AND",
               "matchers": [
                 {
@@ -454,7 +523,7 @@
                 }
               ]
             },
-            "$.fields.saltG.confidence": {
+            "$.data.fields.saltG.confidence": {
               "combine": "AND",
               "matchers": [
                 {
@@ -462,7 +531,7 @@
                 }
               ]
             },
-            "$.fields.saltG.value": {
+            "$.data.fields.saltG.value": {
               "combine": "AND",
               "matchers": [
                 {
@@ -470,7 +539,7 @@
                 }
               ]
             },
-            "$.fields.saturatedFatG.confidence": {
+            "$.data.fields.saturatedFatG.confidence": {
               "combine": "AND",
               "matchers": [
                 {
@@ -478,7 +547,7 @@
                 }
               ]
             },
-            "$.fields.saturatedFatG.value": {
+            "$.data.fields.saturatedFatG.value": {
               "combine": "AND",
               "matchers": [
                 {
@@ -486,7 +555,7 @@
                 }
               ]
             },
-            "$.fields.sugarG.confidence": {
+            "$.data.fields.sugarG.confidence": {
               "combine": "AND",
               "matchers": [
                 {
@@ -494,7 +563,7 @@
                 }
               ]
             },
-            "$.fields.sugarG.value": {
+            "$.data.fields.sugarG.value": {
               "combine": "AND",
               "matchers": [
                 {
@@ -502,7 +571,7 @@
                 }
               ]
             },
-            "$.photoId": {
+            "$.data.photoId": {
               "combine": "AND",
               "matchers": [
                 {
@@ -511,7 +580,31 @@
                 }
               ]
             },
-            "$.suggestedName": {
+            "$.data.suggestedName": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.meta.apiVersion": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.meta.requestId": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.meta.timestamp": {
               "combine": "AND",
               "matchers": [
                 {
@@ -563,13 +656,20 @@
       },
       "response": {
         "body": {
-          "photoId": "e2490de5-5bd3-43d5-b7c4-526e33f71304",
-          "reason": "Tabelle nicht lesbar",
-          "status": "Failed"
+          "data": {
+            "photoId": "e2490de5-5bd3-43d5-b7c4-526e33f71304",
+            "reason": "Tabelle nicht lesbar",
+            "status": "Failed"
+          },
+          "meta": {
+            "apiVersion": "1",
+            "requestId": "01JQ8Z3K7V9XW2P4M6N8R0T5YB",
+            "timestamp": "2026-08-18T09:14:22Z"
+          }
         },
         "generators": {
           "body": {
-            "$.photoId": {
+            "$.data.photoId": {
               "type": "Uuid"
             }
           }
@@ -579,7 +679,7 @@
         },
         "matchingRules": {
           "body": {
-            "$.photoId": {
+            "$.data.photoId": {
               "combine": "AND",
               "matchers": [
                 {
@@ -588,7 +688,31 @@
                 }
               ]
             },
-            "$.reason": {
+            "$.data.reason": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.meta.apiVersion": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.meta.requestId": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.meta.timestamp": {
               "combine": "AND",
               "matchers": [
                 {
@@ -609,9 +733,9 @@
         }
       ],
       "request": {
-        "body": "LS1DNzRXdXlTQ3UyV1RwdWNwDQpDb250ZW50LURpc3Bvc2l0aW9uOiBmb3JtLWRhdGE7IG5hbWU9ImZpbGUiOyBmaWxlbmFtZT0ibmFlaHJ3ZXJ0dGFiZWxsZS5qcGciDQpDb250ZW50LVR5cGU6IGltYWdlL2pwZWcNCg0K/9j/4AAQSkZJRgABAQEAYABgAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/wAALCAABAAEBAREA/8QAFAABAAAAAAAAAAAAAAAAAAAACf/EABQQAQAAAAAAAAAAAAAAAAAAAAD/2gAIAQEAAD8AKp//2Q0KLS1DNzRXdXlTQ3UyV1RwdWNwLS0NCg==",
+        "body": "LS1CbXl6R3F0STFpVGtFTFpHDQpDb250ZW50LURpc3Bvc2l0aW9uOiBmb3JtLWRhdGE7IG5hbWU9ImZpbGUiOyBmaWxlbmFtZT0ibmFlaHJ3ZXJ0dGFiZWxsZS5qcGciDQpDb250ZW50LVR5cGU6IGltYWdlL2pwZWcNCg0K/9j/4AAQSkZJRgABAQEAYABgAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/wAALCAABAAEBAREA/8QAFAABAAAAAAAAAAAAAAAAAAAACf/EABQQAQAAAAAAAAAAAAAAAAAAAAD/2gAIAQEAAD8AKp//2Q0KLS1CbXl6R3F0STFpVGtFTFpHLS0NCg==",
         "headers": {
-          "Content-Type": "multipart/form-data; boundary=C74WuySCu2WTpucp"
+          "Content-Type": "multipart/form-data; boundary=BmyzGqtI1iTkELZG"
         },
         "matchingRules": {
           "body": {
@@ -642,12 +766,19 @@
       },
       "response": {
         "body": {
-          "photoId": "e2490de5-5bd3-43d5-b7c4-526e33f71304",
-          "status": "Processing"
+          "data": {
+            "photoId": "e2490de5-5bd3-43d5-b7c4-526e33f71304",
+            "status": "Processing"
+          },
+          "meta": {
+            "apiVersion": "1",
+            "requestId": "01JQ8Z3K7V9XW2P4M6N8R0T5YB",
+            "timestamp": "2026-08-18T09:14:22Z"
+          }
         },
         "generators": {
           "body": {
-            "$.photoId": {
+            "$.data.photoId": {
               "type": "Uuid"
             }
           }
@@ -657,12 +788,36 @@
         },
         "matchingRules": {
           "body": {
-            "$.photoId": {
+            "$.data.photoId": {
               "combine": "AND",
               "matchers": [
                 {
                   "match": "regex",
                   "regex": "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
+                }
+              ]
+            },
+            "$.meta.apiVersion": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.meta.requestId": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.meta.timestamp": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
                 }
               ]
             }
@@ -701,23 +856,30 @@
       },
       "response": {
         "body": {
-          "barcode": "4008400401027",
-          "basisUnit": "Gram",
-          "brand": "Arla",
-          "id": "e2490de5-5bd3-43d5-b7c4-526e33f71304",
-          "name": "Skyr Natur",
-          "nutrientsPer100g": {
-            "carbsG": 4,
-            "fatG": 0.2,
-            "kcal": 63,
-            "proteinG": 11
+          "data": {
+            "barcode": "4008400401027",
+            "basisUnit": "Gram",
+            "brand": "Arla",
+            "id": "e2490de5-5bd3-43d5-b7c4-526e33f71304",
+            "name": "Skyr Natur",
+            "nutrientsPer100g": {
+              "carbsG": 4,
+              "fatG": 0.2,
+              "kcal": 63,
+              "proteinG": 11
+            },
+            "source": "Curated",
+            "verifiedByUser": true
           },
-          "source": "Curated",
-          "verifiedByUser": true
+          "meta": {
+            "apiVersion": "1",
+            "requestId": "01JQ8Z3K7V9XW2P4M6N8R0T5YB",
+            "timestamp": "2026-08-18T09:14:22Z"
+          }
         },
         "generators": {
           "body": {
-            "$.id": {
+            "$.data.id": {
               "type": "Uuid"
             }
           }
@@ -727,7 +889,7 @@
         },
         "matchingRules": {
           "body": {
-            "$.brand": {
+            "$.data.brand": {
               "combine": "AND",
               "matchers": [
                 {
@@ -735,7 +897,7 @@
                 }
               ]
             },
-            "$.id": {
+            "$.data.id": {
               "combine": "AND",
               "matchers": [
                 {
@@ -744,7 +906,7 @@
                 }
               ]
             },
-            "$.name": {
+            "$.data.name": {
               "combine": "AND",
               "matchers": [
                 {
@@ -752,7 +914,7 @@
                 }
               ]
             },
-            "$.nutrientsPer100g.carbsG": {
+            "$.data.nutrientsPer100g.carbsG": {
               "combine": "AND",
               "matchers": [
                 {
@@ -760,7 +922,7 @@
                 }
               ]
             },
-            "$.nutrientsPer100g.fatG": {
+            "$.data.nutrientsPer100g.fatG": {
               "combine": "AND",
               "matchers": [
                 {
@@ -768,7 +930,7 @@
                 }
               ]
             },
-            "$.nutrientsPer100g.kcal": {
+            "$.data.nutrientsPer100g.kcal": {
               "combine": "AND",
               "matchers": [
                 {
@@ -776,7 +938,7 @@
                 }
               ]
             },
-            "$.nutrientsPer100g.proteinG": {
+            "$.data.nutrientsPer100g.proteinG": {
               "combine": "AND",
               "matchers": [
                 {
@@ -784,7 +946,7 @@
                 }
               ]
             },
-            "$.source": {
+            "$.data.source": {
               "combine": "AND",
               "matchers": [
                 {
@@ -793,7 +955,31 @@
                 }
               ]
             },
-            "$.verifiedByUser": {
+            "$.data.verifiedByUser": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.meta.apiVersion": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.meta.requestId": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.meta.timestamp": {
               "combine": "AND",
               "matchers": [
                 {
@@ -897,20 +1083,27 @@
       },
       "response": {
         "body": {
-          "brand": "Arla",
-          "id": "e2490de5-5bd3-43d5-b7c4-526e33f71304",
-          "name": "Skyr Natur",
-          "nutrientsPer100g": {
-            "carbsG": 4,
-            "fatG": 0.2,
-            "kcal": 63,
-            "proteinG": 11
+          "data": {
+            "brand": "Arla",
+            "id": "e2490de5-5bd3-43d5-b7c4-526e33f71304",
+            "name": "Skyr Natur",
+            "nutrientsPer100g": {
+              "carbsG": 4,
+              "fatG": 0.2,
+              "kcal": 63,
+              "proteinG": 11
+            },
+            "source": "Curated"
           },
-          "source": "Curated"
+          "meta": {
+            "apiVersion": "1",
+            "requestId": "01JQ8Z3K7V9XW2P4M6N8R0T5YB",
+            "timestamp": "2026-08-18T09:14:22Z"
+          }
         },
         "generators": {
           "body": {
-            "$.id": {
+            "$.data.id": {
               "type": "Uuid"
             }
           }
@@ -920,7 +1113,7 @@
         },
         "matchingRules": {
           "body": {
-            "$.brand": {
+            "$.data.brand": {
               "combine": "AND",
               "matchers": [
                 {
@@ -928,7 +1121,7 @@
                 }
               ]
             },
-            "$.id": {
+            "$.data.id": {
               "combine": "AND",
               "matchers": [
                 {
@@ -937,7 +1130,7 @@
                 }
               ]
             },
-            "$.name": {
+            "$.data.name": {
               "combine": "AND",
               "matchers": [
                 {
@@ -945,7 +1138,7 @@
                 }
               ]
             },
-            "$.nutrientsPer100g.carbsG": {
+            "$.data.nutrientsPer100g.carbsG": {
               "combine": "AND",
               "matchers": [
                 {
@@ -953,7 +1146,7 @@
                 }
               ]
             },
-            "$.nutrientsPer100g.fatG": {
+            "$.data.nutrientsPer100g.fatG": {
               "combine": "AND",
               "matchers": [
                 {
@@ -961,7 +1154,7 @@
                 }
               ]
             },
-            "$.nutrientsPer100g.kcal": {
+            "$.data.nutrientsPer100g.kcal": {
               "combine": "AND",
               "matchers": [
                 {
@@ -969,7 +1162,7 @@
                 }
               ]
             },
-            "$.nutrientsPer100g.proteinG": {
+            "$.data.nutrientsPer100g.proteinG": {
               "combine": "AND",
               "matchers": [
                 {
@@ -977,12 +1170,36 @@
                 }
               ]
             },
-            "$.source": {
+            "$.data.source": {
               "combine": "AND",
               "matchers": [
                 {
                   "match": "regex",
                   "regex": "Curated|Ocr|Manual"
+                }
+              ]
+            },
+            "$.meta.apiVersion": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.meta.requestId": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.meta.timestamp": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
                 }
               ]
             }
@@ -1012,18 +1229,23 @@
       },
       "response": {
         "body": {
-          "items": [
+          "data": [
             {
               "displayName": "Skyr Natur, Arla",
               "id": "e2490de5-5bd3-43d5-b7c4-526e33f71304",
               "metaLine": "63 kcal je 100 g",
               "sourceType": "Product"
             }
-          ]
+          ],
+          "meta": {
+            "apiVersion": "1",
+            "requestId": "01JQ8Z3K7V9XW2P4M6N8R0T5YB",
+            "timestamp": "2026-08-18T09:14:22Z"
+          }
         },
         "generators": {
           "body": {
-            "$.items[*].id": {
+            "$.data[*].id": {
               "type": "Uuid"
             }
           }
@@ -1033,7 +1255,7 @@
         },
         "matchingRules": {
           "body": {
-            "$.items": {
+            "$.data": {
               "combine": "AND",
               "matchers": [
                 {
@@ -1042,7 +1264,7 @@
                 }
               ]
             },
-            "$.items[*].displayName": {
+            "$.data[*].displayName": {
               "combine": "AND",
               "matchers": [
                 {
@@ -1050,7 +1272,7 @@
                 }
               ]
             },
-            "$.items[*].id": {
+            "$.data[*].id": {
               "combine": "AND",
               "matchers": [
                 {
@@ -1059,7 +1281,7 @@
                 }
               ]
             },
-            "$.items[*].metaLine": {
+            "$.data[*].metaLine": {
               "combine": "AND",
               "matchers": [
                 {
@@ -1067,12 +1289,36 @@
                 }
               ]
             },
-            "$.items[*].sourceType": {
+            "$.data[*].sourceType": {
               "combine": "AND",
               "matchers": [
                 {
                   "match": "regex",
                   "regex": "Product|Recipe"
+                }
+              ]
+            },
+            "$.meta.apiVersion": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.meta.requestId": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.meta.timestamp": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
                 }
               ]
             }

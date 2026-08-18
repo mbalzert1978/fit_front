@@ -26,6 +26,10 @@ Consumer-driven: die App schreibt den Vertrag, das Backend verifiziert ihn.
 8. **Ein Vertrag ist eine Bestellung, keine Abbildung.** Was ein Screen braucht, steht im
    Vertrag — auch wenn das Backend es heute nicht anbietet und auch wenn seine Spezifikation es
    anders nennt. Weicht beides voneinander ab, wird das abgestimmt, nicht einseitig nachgezogen.
+9. **Jede Antwort mit Rumpf trägt den Umschlag** und jede zugesicherte Antwort ihren Status und die
+   fachlich relevanten Header. Form, Benennung und Begründung stehen in
+   [`decisions/2026-08-18-1200-data-meta-umschlag-und-oauth-benennung.md`](decisions/2026-08-18-1200-data-meta-umschlag-und-oauth-benennung.md);
+   ein Vertrag ohne `data`/`meta` ist ein Fehler, kein Sonderfall.
 
 ## Prüfliste vor der Abnahme
 

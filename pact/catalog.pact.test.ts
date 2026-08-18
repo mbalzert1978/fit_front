@@ -1,6 +1,6 @@
 import fs from 'fs';
 import path from 'path';
-import { pact, M } from './setup';
+import { pact, M, enveloped, jsonHeaders } from './setup';
 import { api, endpoints } from '../src/api/client';
 
 /**
@@ -37,8 +37,8 @@ describe('Catalog — Produkte', () => {
       .withRequest({ method: 'GET', path: '/api/v1/catalog/products/by-barcode/4008400401027', headers: authHeaders })
       .willRespondWith({
         status: 200,
-        headers: { 'Content-Type': 'application/json' },
-        body: {
+        headers: jsonHeaders,
+        body: enveloped({
           id: M.uuid(),
           barcode: '4008400401027',
           name: M.string('Skyr Natur'),
@@ -52,7 +52,7 @@ describe('Catalog — Produkte', () => {
             carbsG: M.number(4),
             proteinG: M.number(11),
           },
-        },
+        }),
       });
 
     await p.executeTest(async () => {
@@ -89,8 +89,8 @@ describe('Catalog — Produkte', () => {
       })
       .willRespondWith({
         status: 200,
-        headers: { 'Content-Type': 'application/json' },
-        body: {
+        headers: jsonHeaders,
+        body: enveloped({
           id: M.uuid(),
           name: M.string('Skyr Natur'),
           brand: M.string('Arla'),
@@ -102,7 +102,7 @@ describe('Catalog — Produkte', () => {
             carbsG: M.number(4),
             proteinG: M.number(11),
           },
-        },
+        }),
       });
 
     await p.executeTest(async () => {
@@ -141,12 +141,12 @@ describe('Catalog — Produkte', () => {
       })
       .willRespondWith({
         status: 201,
-        headers: { 'Content-Type': 'application/json' },
-        body: {
+        headers: jsonHeaders,
+        body: enveloped({
           id: M.uuid(),
           name: M.string('Skyr Natur'),
           nutrientsPer100g: { kcal: M.integer(63), fatG: M.number(0.2), carbsG: M.number(4), proteinG: M.number(11) },
-        },
+        }),
       });
 
     await p.executeTest(async () => {
@@ -189,20 +189,22 @@ describe('Catalog — Suche', () => {
       .withRequest({ method: 'GET', path: '/api/v1/search', query: { query: 'skyr', take: '20' } })
       .willRespondWith({
         status: 200,
-        headers: { 'Content-Type': 'application/json' },
-        body: {
-          items: M.eachLike({
+        headers: jsonHeaders,
+        // Die Trefferliste steht direkt unter `data`; das frühere `items` war ein
+        // eigener kleiner Umschlag und fällt mit diesem hier weg.
+        body: enveloped(
+          M.eachLike({
             sourceType: M.regex('Product|Recipe', 'Product'),
             id: M.uuid(),
             displayName: M.string('Skyr Natur, Arla'),
             metaLine: M.string('63 kcal je 100 g'),
           }),
-        },
+        ),
       });
 
     await p.executeTest(async () => {
-      const hits = await api<{ items: unknown[] }>('/search?query=skyr&take=20');
-      expect(Array.isArray(hits.items)).toBe(true);
+      const hits = await api<unknown[]>('/search?query=skyr&take=20');
+      expect(Array.isArray(hits)).toBe(true);
     });
   });
 });
@@ -215,9 +217,9 @@ describe('Catalog — Foto-Auftrag', () => {
       .withRequestMultipartFileUpload({ method: 'POST', path: '/api/v1/catalog/photos' }, 'image/jpeg', tableImage, 'file')
       .willRespondWith({
         status: 202,
-        headers: { 'Content-Type': 'application/json' },
+        headers: jsonHeaders,
         // Nur die photoId wird gebraucht: auf sie fragt der Fortschritts-Screen weiter.
-        body: { photoId: M.uuid(), status: 'Processing' },
+        body: enveloped({ photoId: M.uuid(), status: 'Processing' }),
       });
 
     await p.executeTest(async () => {
@@ -239,9 +241,9 @@ describe('Catalog — Foto-Auftrag', () => {
       })
       .willRespondWith({
         status: 200,
-        headers: { 'Content-Type': 'application/json' },
+        headers: jsonHeaders,
         // `status` ist der Wert, an dem der Screen weiterschaltet — kein Matcher.
-        body: { photoId: M.uuid(), status: 'Processing' },
+        body: enveloped({ photoId: M.uuid(), status: 'Processing' }),
       });
 
     await p.executeTest(async () => {
@@ -261,8 +263,8 @@ describe('Catalog — Foto-Auftrag', () => {
       })
       .willRespondWith({
         status: 200,
-        headers: { 'Content-Type': 'application/json' },
-        body: {
+        headers: jsonHeaders,
+        body: enveloped({
           photoId: M.uuid(),
           status: 'Completed',
           barcode: M.string('4008400401027'),
@@ -278,7 +280,7 @@ describe('Catalog — Foto-Auftrag', () => {
             proteinG: { value: M.number(11), confidence: M.number(0.96) },
             saltG: { value: M.number(0.1), confidence: M.number(0.54) },
           },
-        },
+        }),
       });
 
     await p.executeTest(async () => {
@@ -299,9 +301,9 @@ describe('Catalog — Foto-Auftrag', () => {
       })
       .willRespondWith({
         status: 200,
-        headers: { 'Content-Type': 'application/json' },
+        headers: jsonHeaders,
         // Der Screen schickt den Nutzer zurück zur Kamera; `reason` unterscheidet ihn von 'Processing'.
-        body: { photoId: M.uuid(), status: 'Failed', reason: M.string('Tabelle nicht lesbar') },
+        body: enveloped({ photoId: M.uuid(), status: 'Failed', reason: M.string('Tabelle nicht lesbar') }),
       });
 
     await p.executeTest(async () => {

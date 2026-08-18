@@ -1,4 +1,4 @@
-import { pact, M } from './setup';
+import { pact, M, enveloped, jsonHeaders } from './setup';
 import { api } from '../src/api/client';
 
 /**
@@ -30,7 +30,7 @@ describe('Goals', () => {
     p.given('Nutzer hat ein Tagesziel von 2150 kcal')
       .uponReceiving('Ziele laden')
       .withRequest({ method: 'GET', path: '/api/v1/goals' })
-      .willRespondWith({ status: 200, headers: { 'Content-Type': 'application/json' }, body: goalsBody });
+      .willRespondWith({ status: 200, headers: jsonHeaders, body: enveloped(goalsBody) });
 
     await p.executeTest(async () => {
       const g = await api<{ dailyKcal: number }>('/goals');
@@ -54,7 +54,7 @@ describe('Goals', () => {
           },
         },
       })
-      .willRespondWith({ status: 200, headers: { 'Content-Type': 'application/json' }, body: goalsBody });
+      .willRespondWith({ status: 200, headers: jsonHeaders, body: enveloped(goalsBody) });
 
     await p.executeTest(async () => {
       // Die Antwort landet direkt im Cache; ein Nachladen findet nicht statt.
@@ -75,8 +75,8 @@ describe('Preferences', () => {
       .withRequest({ method: 'GET', path: '/api/v1/preferences' })
       .willRespondWith({
         status: 200,
-        headers: { 'Content-Type': 'application/json' },
-        body: { theme: M.regex('Dark|Light', 'Dark'), language: M.regex('de|en', 'de') },
+        headers: jsonHeaders,
+        body: enveloped({ theme: M.regex('Dark|Light', 'Dark'), language: M.regex('de|en', 'de') }),
       });
 
     await p.executeTest(async () => {
@@ -97,8 +97,8 @@ describe('Preferences', () => {
       })
       .willRespondWith({
         status: 200,
-        headers: { 'Content-Type': 'application/json' },
-        body: { theme: M.regex('Dark|Light', 'Dark'), language: M.regex('de|en', 'en') },
+        headers: jsonHeaders,
+        body: enveloped({ theme: M.regex('Dark|Light', 'Dark'), language: M.regex('de|en', 'en') }),
       });
 
     await p.executeTest(async () => {

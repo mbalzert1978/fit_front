@@ -1,5 +1,34 @@
 import type { DiaryDate } from './diaryDate';
 
+/**
+ * Begleitinformation, die jede Antwort mit Rumpf trägt. Kein Screen liest sie —
+ * sie ist für Support und Fehlersuche da: `requestId` spiegelt den Header
+ * `X-Request-Id`, `apiVersion` die Fassung hinter `/api/v1`.
+ */
+export type Meta = { requestId: string; timestamp: string; apiVersion: string };
+
+/**
+ * Der Umschlag jeder Antwort mit Rumpf: Nutzlast unter `data`, Begleitinformation
+ * unter `meta`. Ausgepackt wird er genau einmal — in `client.ts`. Kein Hook und
+ * kein Screen sieht ihn, deshalb steht er in keiner weiteren Signatur.
+ */
+export type Envelope<T> = { data: T; meta: Meta };
+
+/**
+ * Anmeldung und Erneuerung, benannt wie in OAuth 2. `expiresIn` und
+ * `refreshExpiresIn` sind Sekunden — die Einheit steht in dieser Zusage, nicht
+ * im Feldnamen. Die Identität ist ein Objekt, damit sie wachsen kann, ohne dass
+ * ein zweites flaches Feld daneben entsteht.
+ */
+export type AuthTokens = {
+  tokenType: 'Bearer';
+  accessToken: string;
+  expiresIn: number;
+  refreshToken: string;
+  refreshExpiresIn: number;
+  user: { id: string };
+};
+
 /** Nährwerte je 100 g. Optionale Felder dürfen fehlen — dann sind sie nicht gesetzt. */
 export type Nutrients = {
   kcal: number;
@@ -87,6 +116,7 @@ export type Recipe = {
   kcalPerPortion: number;
   macrosPerPortion: { carbsG: number; proteinG: number; fatG: number };
   ingredients: RecipeIngredient[];
+  /** Aus dem Antwort-Header `ETag`, nicht aus dem Rumpf; geht unverändert als `If-Match` zurück. */
   etag?: string;
 };
 

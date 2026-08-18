@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { api, endpoints } from './client';
+import { api, apiWithMeta, endpoints, type ApiResponse } from './client';
 import { qk } from './queryKeys';
 import type { DiaryDate } from './diaryDate';
 import type { DiaryDay, Goals, HealthConsent, MealSlot, Preferences, Product, RecentItem, Recipe, SearchHit, PhotoJob } from './types';
@@ -19,7 +19,7 @@ export const useProduct = (id: string) =>
 export const useSearch = (query: string) =>
   useQuery({
     queryKey: qk.search(query),
-    queryFn: () => api<{ items: SearchHit[] }>(`/search?query=${encodeURIComponent(query)}&take=20`),
+    queryFn: () => api<SearchHit[]>(`/search?query=${encodeURIComponent(query)}&take=20`),
     enabled: query.trim().length > 0,
   });
 
@@ -33,8 +33,18 @@ export const usePhotoJob = (photoId: string, attempts: number) =>
 
 export const useRecipes = () => useQuery({ queryKey: qk.recipes(), queryFn: () => api<Recipe[]>('/recipes?sort=name_desc') });
 
+/**
+ * Der ETag steht im gleichnamigen Header, nicht im Rumpf. Er wird ans Rezept
+ * geheftet, weil genau von dort das Speichern ihn als `If-Match` wieder aufnimmt.
+ */
+const withEtag = async (r: ApiResponse<Recipe>): Promise<Recipe> => ({ ...r.data, etag: r.etag ?? undefined });
+
 export const useRecipe = (id: string) =>
-  useQuery({ queryKey: qk.recipe(id), queryFn: () => api<Recipe>(`/recipes/${id}`), enabled: id !== 'neu' });
+  useQuery({
+    queryKey: qk.recipe(id),
+    queryFn: () => apiWithMeta<Recipe>(`/recipes/${id}`).then(withEtag),
+    enabled: id !== 'neu',
+  });
 
 export const useGoals = () => useQuery({ queryKey: qk.goals(), queryFn: () => api<Goals>('/goals') });
 
@@ -128,8 +138,8 @@ export function useSaveRecipe(id: string) {
       etag?: string;
     }) =>
       id === 'neu'
-        ? api<Recipe>('/recipes', { method: 'POST', body, idempotencyKey: body.id })
-        : api<Recipe>(`/recipes/${id}`, { method: 'PUT', body, ifMatch: body.etag }),
+        ? apiWithMeta<Recipe>('/recipes', { method: 'POST', body, idempotencyKey: body.id }).then(withEtag)
+        : apiWithMeta<Recipe>(`/recipes/${id}`, { method: 'PUT', body, ifMatch: body.etag }).then(withEtag),
     onSuccess: () => qc.invalidateQueries({ queryKey: qk.recipes() }),
   });
 }
