@@ -7,11 +7,7 @@ import { Screen, CameraFrame, OutlineButton } from '../../src/components';
 import { useTheme } from '../../src/theme/ThemeProvider';
 import { api } from '../../src/api/client';
 
-const hints = [
-  'Ganze Tabelle inklusive Kopfzeile erfassen',
-  'Gerade halten, Reflexionen vermeiden',
-  'Angaben pro 100 g bevorzugen',
-];
+const hints = ['Ganze Tabelle inklusive Kopfzeile erfassen', 'Gerade halten, Reflexionen vermeiden', 'Angaben pro 100 g bevorzugen'];
 
 export default function PhotoScreen() {
   const t = useTheme();
@@ -46,9 +42,7 @@ export default function PhotoScreen() {
       <CameraFrame height={360} style={{ marginTop: t.space[4] }}>
         {permission?.granted ? <CameraView ref={cam} style={{ flex: 1 }} /> : null}
       </CameraFrame>
-      {params.notice ? (
-        <Text style={[t.font.body, { color: t.color.accent, marginTop: t.space[4] }]}>{params.notice}</Text>
-      ) : null}
+      {params.notice ? <Text style={[t.font.body, { color: t.color.accent, marginTop: t.space[4] }]}>{params.notice}</Text> : null}
       <View style={{ gap: t.space[2], marginTop: t.space[6] }}>
         {hints.map((h) => (
           <Text key={h} style={[t.font.micro, { color: t.color.textMuted }]}>

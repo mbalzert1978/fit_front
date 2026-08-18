@@ -3,7 +3,15 @@ import { Text, TextInput, View } from 'react-native';
 import Slider from '@react-native-community/slider';
 import { Screen, SectionHeading, ValueField, Segmented, Toggle, OutlineButton, SquareIconButton } from '../../src/components';
 import { useTheme, useThemeMode } from '../../src/theme/ThemeProvider';
-import { useGoals, useSaveGoals, usePreferences, useSavePreferences, useSlots, useSlotMutations, useHealthConsent } from '../../src/api/hooks';
+import {
+  useGoals,
+  useSaveGoals,
+  usePreferences,
+  useSavePreferences,
+  useSlots,
+  useSlotMutations,
+  useHealthConsent,
+} from '../../src/api/hooks';
 import { newId } from '../../src/api/ids';
 import { ApiError } from '../../src/api/client';
 import type { Goals } from '../../src/api/types';
@@ -11,19 +19,66 @@ import type { Goals } from '../../src/api/types';
 type MacroKey = 'carbs' | 'protein' | 'fat';
 const macroLabel: Record<MacroKey, string> = { carbs: 'Kohlenhydrate', protein: 'Eiweiß', fat: 'Fett' };
 
-export default function SettingsScreen() {
+function SlotList() {
   const t = useTheme();
-  const { mode, setMode } = useThemeMode();
   const { data: slots } = useSlots();
-  const { data: goals } = useGoals();
-  const { data: prefs } = usePreferences();
-  const { data: health } = useHealthConsent();
-  const saveGoals = useSaveGoals();
-  const savePrefs = useSavePreferences();
   const slotOps = useSlotMutations();
-
   const [slotError, setSlotError] = useState<string | null>(null);
   const [names, setNames] = useState<Record<string, string>>({});
+  const list = slots ?? [];
+
+  return (
+    <>
+      <SectionHeading>Mahlzeiten-Slots</SectionHeading>
+      {list.map((s, i) => (
+        <View key={s.id} style={{ flexDirection: 'row', alignItems: 'center', gap: t.space[3], paddingVertical: t.space[2] }}>
+          <Text style={[t.font.micro, t.tabular, { color: t.color.textMuted, width: 18 }]}>{i + 1}</Text>
+          <TextInput
+            value={names[s.id] ?? s.name}
+            onChangeText={(v) => setNames((n) => ({ ...n, [s.id]: v }))}
+            onEndEditing={() => slotOps.rename.mutate({ id: s.id, name: names[s.id] ?? s.name })}
+            style={[
+              t.font.body,
+              {
+                flex: 1,
+                color: t.color.text,
+                backgroundColor: t.color.inputBg,
+                borderWidth: 1,
+                borderColor: t.color.neutral600,
+                borderRadius: t.radius.md,
+                paddingHorizontal: t.space[3],
+                minHeight: t.hit,
+              },
+            ]}
+          />
+          <SquareIconButton
+            glyph="−"
+            label={`${s.name} entfernen`}
+            onPress={() => {
+              if (list.length <= 1) return; // letzter Slot bleibt
+              setSlotError(null);
+              slotOps.remove.mutate(s.id, {
+                onError: (e) =>
+                  setSlotError(e instanceof ApiError && e.type === 'slot-not-empty' ? 'Dieser Slot enthält noch Einträge' : null),
+              });
+            }}
+          />
+        </View>
+      ))}
+      {slotError ? <Text style={[t.font.micro, { color: t.color.accent, marginTop: t.space[2] }]}>{slotError}</Text> : null}
+      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', gap: t.space[3], marginTop: t.space[4] }}>
+        <Text style={[t.font.body, { color: t.color.textMuted }]}>Slot hinzufügen</Text>
+        <SquareIconButton glyph="+" label="Slot hinzufügen" onPress={() => slotOps.add.mutate({ id: newId(), name: 'Neue Mahlzeit' })} />
+      </View>
+    </>
+  );
+}
+
+function DailyGoal() {
+  const t = useTheme();
+  const { data: goals } = useGoals();
+  const saveGoals = useSaveGoals();
+  const dailyKcal = goals?.dailyKcal;
 
   /** Lokale Verteilung; das Tagesziel friert ein, solange die Summe ≠ 100 ist. */
   const [dist, setDist] = useState<Record<MacroKey, { percent: number; grams: number }> | null>(null);
@@ -55,67 +110,15 @@ export default function SettingsScreen() {
     }
   }
 
-  const kcalPerGram = (m: MacroKey) =>
-    goals?.energyStandard === 'Physiological' ? (m === 'fat' ? 9.3 : 4.1) : m === 'fat' ? 9 : 4;
+  const kcalPerGram = (m: MacroKey) => (goals?.energyStandard === 'Physiological' ? (m === 'fat' ? 9.3 : 4.1) : m === 'fat' ? 9 : 4);
 
   return (
-    <Screen>
-      <Text style={[t.font.title, { color: t.color.text }]}>Mehr</Text>
-
-      <SectionHeading>Mahlzeiten-Slots</SectionHeading>
-      {(slots ?? []).map((s, i) => (
-        <View key={s.id} style={{ flexDirection: 'row', alignItems: 'center', gap: t.space[3], paddingVertical: t.space[2] }}>
-          <Text style={[t.font.micro, t.tabular, { color: t.color.textMuted, width: 18 }]}>{i + 1}</Text>
-          <TextInput
-            value={names[s.id] ?? s.name}
-            onChangeText={(v) => setNames((n) => ({ ...n, [s.id]: v }))}
-            onEndEditing={() => slotOps.rename.mutate({ id: s.id, name: names[s.id] ?? s.name })}
-            style={[
-              t.font.body,
-              {
-                flex: 1,
-                color: t.color.text,
-                backgroundColor: t.color.inputBg,
-                borderWidth: 1,
-                borderColor: t.color.neutral600,
-                borderRadius: t.radius.md,
-                paddingHorizontal: t.space[3],
-                minHeight: t.hit,
-              },
-            ]}
-          />
-          <SquareIconButton
-            glyph="−"
-            label={`${s.name} entfernen`}
-            onPress={() => {
-              if ((slots ?? []).length <= 1) return; // letzter Slot bleibt
-              setSlotError(null);
-              slotOps.remove.mutate(s.id, {
-                onError: (e) => setSlotError(e instanceof ApiError && e.type === 'slot-not-empty' ? 'Dieser Slot enthält noch Einträge' : null),
-              });
-            }}
-          />
-        </View>
-      ))}
-      {slotError ? <Text style={[t.font.micro, { color: t.color.accent, marginTop: t.space[2] }]}>{slotError}</Text> : null}
-      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', gap: t.space[3], marginTop: t.space[4] }}>
-        <Text style={[t.font.body, { color: t.color.textMuted }]}>Slot hinzufügen</Text>
-        <SquareIconButton glyph="+" label="Slot hinzufügen" onPress={() => slotOps.add.mutate({ id: newId(), name: 'Neue Mahlzeit' })} />
-      </View>
-
+    <>
       <SectionHeading>Tagesziel</SectionHeading>
-      <ValueField
-        value={kcalDraft ?? String(goals?.dailyKcal ?? '')}
-        onChangeText={setKcalDraft}
-        unit="kcal"
-        large
-      />
-      {kcalDraft !== null && Number(kcalDraft) !== goals?.dailyKcal ? (
+      <ValueField value={kcalDraft ?? String(dailyKcal ?? '')} onChangeText={setKcalDraft} unit="kcal" large />
+      {kcalDraft !== null && Number(kcalDraft) !== dailyKcal ? (
         <View style={{ marginTop: t.space[4] }}>
-          <OutlineButton
-            label="Tagesziel übernehmen"
-            onPress={() => saveGoals.mutate({ dailyKcal: Number(kcalDraft) || 0 })}
-          />
+          <OutlineButton label="Tagesziel übernehmen" onPress={() => saveGoals.mutate({ dailyKcal: Number(kcalDraft) || 0 })} />
         </View>
       ) : null}
 
@@ -141,7 +144,7 @@ export default function SettingsScreen() {
                 onValueChange={(percent) =>
                   setDist((d) => {
                     if (!d || !goals) return d;
-                    const grams = Math.round(((goals.dailyKcal * percent) / 100) / kcalPerGram(m));
+                    const grams = Math.round((goals.dailyKcal * percent) / 100 / kcalPerGram(m));
                     return { ...d, [m]: { percent, grams } };
                   })
                 }
@@ -174,7 +177,16 @@ export default function SettingsScreen() {
           Verteilung ergibt {Math.round(sum)} % — Tagesziel aktualisiert sich bei 100 %.
         </Text>
       ) : null}
+    </>
+  );
+}
 
+function MacroCalc() {
+  const { data: goals } = useGoals();
+  const saveGoals = useSaveGoals();
+
+  return (
+    <>
       <SectionHeading>Makro-Berechnung</SectionHeading>
       <Toggle
         label="Physiologisch"
@@ -188,14 +200,36 @@ export default function SettingsScreen() {
         value={goals?.energyStandard === 'Declaration'}
         onChange={() => saveGoals.mutate({ energyStandard: 'Declaration' })}
       />
-      <Toggle label="Aufrunden" hint="nie zu wenig gezählt" value={goals?.rounding === 'Up'} onChange={() => saveGoals.mutate({ rounding: 'Up' })} />
-      <Toggle label="Abrunden" hint="nie zu viel gezählt" value={goals?.rounding === 'Down'} onChange={() => saveGoals.mutate({ rounding: 'Down' })} />
+      <Toggle
+        label="Aufrunden"
+        hint="nie zu wenig gezählt"
+        value={goals?.rounding === 'Up'}
+        onChange={() => saveGoals.mutate({ rounding: 'Up' })}
+      />
+      <Toggle
+        label="Abrunden"
+        hint="nie zu viel gezählt"
+        value={goals?.rounding === 'Down'}
+        onChange={() => saveGoals.mutate({ rounding: 'Down' })}
+      />
+    </>
+  );
+}
 
+function HealthSection() {
+  const t = useTheme();
+  const { data: health } = useHealthConsent();
+  const { data: goals } = useGoals();
+  const saveGoals = useSaveGoals();
+  const connected = !!health?.connected;
+
+  return (
+    <>
       <SectionHeading>Apple Health</SectionHeading>
       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', minHeight: t.hit }}>
-        <Text style={[t.font.body, { color: t.color.textMuted }]}>{health?.connected ? 'Verbunden' : 'Nicht verbunden'}</Text>
+        <Text style={[t.font.body, { color: t.color.textMuted }]}>{connected ? 'Verbunden' : 'Nicht verbunden'}</Text>
         <View style={{ minWidth: 130 }}>
-          <OutlineButton label={health?.connected ? 'Trennen' : 'Verbinden'} variant={health?.connected ? 'muted' : 'primary'} />
+          <OutlineButton label={connected ? 'Trennen' : 'Verbinden'} variant={connected ? 'muted' : 'primary'} />
         </View>
       </View>
       <Toggle label="Aktivität & Verbrauch importieren" value={!!health?.importActivity} onChange={() => {}} />
@@ -208,7 +242,17 @@ export default function SettingsScreen() {
       <Text style={[t.font.micro, { color: t.color.textMuted, marginTop: t.space[3] }]}>
         Android nutzt Health Connect mit denselben Datentypen.
       </Text>
+    </>
+  );
+}
 
+function Appearance() {
+  const { mode, setMode } = useThemeMode();
+  const { data: prefs } = usePreferences();
+  const savePrefs = useSavePreferences();
+
+  return (
+    <>
       <SectionHeading>Darstellung</SectionHeading>
       <Segmented
         options={[
@@ -231,6 +275,21 @@ export default function SettingsScreen() {
         value={prefs?.language ?? 'de'}
         onChange={(language) => savePrefs.mutate({ language })}
       />
+    </>
+  );
+}
+
+export default function SettingsScreen() {
+  const t = useTheme();
+
+  return (
+    <Screen>
+      <Text style={[t.font.title, { color: t.color.text }]}>Mehr</Text>
+      <SlotList />
+      <DailyGoal />
+      <MacroCalc />
+      <HealthSection />
+      <Appearance />
     </Screen>
   );
 }

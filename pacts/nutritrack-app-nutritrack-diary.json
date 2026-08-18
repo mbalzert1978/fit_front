@@ -1,0 +1,1138 @@
+{
+  "consumer": {
+    "name": "nutritrack-app"
+  },
+  "interactions": [
+    {
+      "description": "Belegten Slot löschen",
+      "providerStates": [
+        {
+          "name": "Slot enthält Einträge"
+        }
+      ],
+      "request": {
+        "matchingRules": {
+          "path": {
+            "combine": "AND",
+            "matchers": [
+              {
+                "match": "regex",
+                "regex": "/api/v1/diary/slots/[0-9a-f-]{36}"
+              }
+            ]
+          }
+        },
+        "method": "DELETE",
+        "path": "/api/v1/diary/slots/66666666-7777-8888-9999-000000000000"
+      },
+      "response": {
+        "body": {
+          "status": 409,
+          "title": "Slot enthält noch Einträge",
+          "type": "slot-not-empty"
+        },
+        "headers": {
+          "Content-Type": "application/problem+json"
+        },
+        "matchingRules": {
+          "body": {
+            "$.title": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            }
+          }
+        },
+        "status": 409
+      }
+    },
+    {
+      "description": "Eintrag ins Tagebuch schreiben",
+      "providerStates": [
+        {
+          "name": "Mahlzeiten-Slot existiert"
+        }
+      ],
+      "request": {
+        "body": {
+          "grams": 150,
+          "id": "e2490de5-5bd3-43d5-b7c4-526e33f71304",
+          "mealSlotId": "e2490de5-5bd3-43d5-b7c4-526e33f71304",
+          "sourceId": "e2490de5-5bd3-43d5-b7c4-526e33f71304",
+          "sourceType": "Product"
+        },
+        "generators": {
+          "body": {
+            "$.id": {
+              "type": "Uuid"
+            },
+            "$.mealSlotId": {
+              "type": "Uuid"
+            },
+            "$.sourceId": {
+              "type": "Uuid"
+            }
+          }
+        },
+        "headers": {
+          "Accept-Language": "de",
+          "Content-Type": "application/json",
+          "Idempotency-Key": "5a9b0c1d-2e3f-4a5b-8c9d-0e1f2a3b4c5d"
+        },
+        "matchingRules": {
+          "body": {
+            "$.grams": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "integer"
+                }
+              ]
+            },
+            "$.id": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
+                }
+              ]
+            },
+            "$.mealSlotId": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
+                }
+              ]
+            },
+            "$.sourceId": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
+                }
+              ]
+            }
+          }
+        },
+        "method": "POST",
+        "path": "/api/v1/diary/days/2026-08-04/entries"
+      },
+      "response": {
+        "body": {
+          "grams": 150,
+          "id": "e2490de5-5bd3-43d5-b7c4-526e33f71304",
+          "kcal": 97
+        },
+        "generators": {
+          "body": {
+            "$.id": {
+              "type": "Uuid"
+            }
+          }
+        },
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "matchingRules": {
+          "body": {
+            "$.grams": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "integer"
+                }
+              ]
+            },
+            "$.id": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
+                }
+              ]
+            },
+            "$.kcal": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "integer"
+                }
+              ]
+            }
+          }
+        },
+        "status": 201
+      }
+    },
+    {
+      "description": "Eintrag löschen",
+      "providerStates": [
+        {
+          "name": "Eintrag existiert am 2026-08-04"
+        }
+      ],
+      "request": {
+        "matchingRules": {
+          "path": {
+            "combine": "AND",
+            "matchers": [
+              {
+                "match": "regex",
+                "regex": "/api/v1/diary/days/2026-08-04/entries/[0-9a-f-]{36}"
+              }
+            ]
+          }
+        },
+        "method": "DELETE",
+        "path": "/api/v1/diary/days/2026-08-04/entries/5a9b0c1d-2e3f-4a5b-8c9d-0e1f2a3b4c5d"
+      },
+      "response": {
+        "status": 204
+      }
+    },
+    {
+      "description": "Leeren Slot löschen",
+      "providerStates": [
+        {
+          "name": "Slot ist leer"
+        }
+      ],
+      "request": {
+        "matchingRules": {
+          "path": {
+            "combine": "AND",
+            "matchers": [
+              {
+                "match": "regex",
+                "regex": "/api/v1/diary/slots/[0-9a-f-]{36}"
+              }
+            ]
+          }
+        },
+        "method": "DELETE",
+        "path": "/api/v1/diary/slots/66666666-7777-8888-9999-000000000000"
+      },
+      "response": {
+        "status": 204
+      }
+    },
+    {
+      "description": "Letzte Einträge laden",
+      "providerStates": [
+        {
+          "name": "Nutzer hat kürzlich Einträge erfasst"
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "path": "/api/v1/diary/recent",
+        "query": {
+          "take": [
+            "10"
+          ]
+        }
+      },
+      "response": {
+        "body": [
+          {
+            "displayName": "Skyr Natur, Arla",
+            "kcalPerPortion": 97,
+            "lastGrams": 150,
+            "sourceId": "e2490de5-5bd3-43d5-b7c4-526e33f71304",
+            "sourceType": "Product"
+          }
+        ],
+        "generators": {
+          "body": {
+            "$[*].sourceId": {
+              "type": "Uuid"
+            }
+          }
+        },
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "matchingRules": {
+          "body": {
+            "$": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type",
+                  "min": 1
+                }
+              ]
+            },
+            "$[*].displayName": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$[*].kcalPerPortion": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "integer"
+                }
+              ]
+            },
+            "$[*].lastGrams": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "integer"
+                }
+              ]
+            },
+            "$[*].sourceId": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
+                }
+              ]
+            },
+            "$[*].sourceType": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "Product|Recipe"
+                }
+              ]
+            }
+          }
+        },
+        "status": 200
+      }
+    },
+    {
+      "description": "Mahlzeiten-Slot anlegen",
+      "providerStates": [
+        {
+          "name": "Nutzer hat die drei Standard-Slots"
+        }
+      ],
+      "request": {
+        "body": {
+          "id": "e2490de5-5bd3-43d5-b7c4-526e33f71304",
+          "name": "Neue Mahlzeit"
+        },
+        "generators": {
+          "body": {
+            "$.id": {
+              "type": "Uuid"
+            }
+          }
+        },
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "matchingRules": {
+          "body": {
+            "$.id": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
+                }
+              ]
+            }
+          }
+        },
+        "method": "POST",
+        "path": "/api/v1/diary/slots"
+      },
+      "response": {
+        "body": {
+          "id": "e2490de5-5bd3-43d5-b7c4-526e33f71304",
+          "name": "Neue Mahlzeit",
+          "position": 4
+        },
+        "generators": {
+          "body": {
+            "$.id": {
+              "type": "Uuid"
+            }
+          }
+        },
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "matchingRules": {
+          "body": {
+            "$.id": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
+                }
+              ]
+            },
+            "$.name": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.position": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "integer"
+                }
+              ]
+            }
+          }
+        },
+        "status": 201
+      }
+    },
+    {
+      "description": "Mahlzeiten-Slot umbenennen",
+      "providerStates": [
+        {
+          "name": "Mahlzeiten-Slot existiert"
+        }
+      ],
+      "request": {
+        "body": {
+          "name": "Zweites Frühstück"
+        },
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "matchingRules": {
+          "body": {
+            "$.name": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            }
+          },
+          "path": {
+            "combine": "AND",
+            "matchers": [
+              {
+                "match": "regex",
+                "regex": "/api/v1/diary/slots/[0-9a-f-]{36}"
+              }
+            ]
+          }
+        },
+        "method": "PATCH",
+        "path": "/api/v1/diary/slots/66666666-7777-8888-9999-000000000000"
+      },
+      "response": {
+        "body": {
+          "id": "e2490de5-5bd3-43d5-b7c4-526e33f71304",
+          "name": "Zweites Frühstück",
+          "position": 2
+        },
+        "generators": {
+          "body": {
+            "$.id": {
+              "type": "Uuid"
+            }
+          }
+        },
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "matchingRules": {
+          "body": {
+            "$.id": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
+                }
+              ]
+            },
+            "$.name": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.position": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "integer"
+                }
+              ]
+            }
+          }
+        },
+        "status": 200
+      }
+    },
+    {
+      "description": "Mahlzeiten-Slots laden",
+      "providerStates": [
+        {
+          "name": "Nutzer hat die drei Standard-Slots"
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "path": "/api/v1/diary/slots"
+      },
+      "response": {
+        "body": [
+          {
+            "id": "e2490de5-5bd3-43d5-b7c4-526e33f71304",
+            "name": "Frühstück",
+            "position": 1
+          }
+        ],
+        "generators": {
+          "body": {
+            "$[*].id": {
+              "type": "Uuid"
+            }
+          }
+        },
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "matchingRules": {
+          "body": {
+            "$": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type",
+                  "min": 1
+                }
+              ]
+            },
+            "$[*].id": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
+                }
+              ]
+            },
+            "$[*].name": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$[*].position": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "integer"
+                }
+              ]
+            }
+          }
+        },
+        "status": 200
+      }
+    },
+    {
+      "description": "Menge eines Eintrags ändern",
+      "providerStates": [
+        {
+          "name": "Eintrag existiert am 2026-08-04"
+        }
+      ],
+      "request": {
+        "body": {
+          "grams": 200
+        },
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "matchingRules": {
+          "body": {
+            "$.grams": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "integer"
+                }
+              ]
+            }
+          },
+          "path": {
+            "combine": "AND",
+            "matchers": [
+              {
+                "match": "regex",
+                "regex": "/api/v1/diary/days/2026-08-04/entries/[0-9a-f-]{36}"
+              }
+            ]
+          }
+        },
+        "method": "PATCH",
+        "path": "/api/v1/diary/days/2026-08-04/entries/5a9b0c1d-2e3f-4a5b-8c9d-0e1f2a3b4c5d"
+      },
+      "response": {
+        "body": {
+          "grams": 200,
+          "id": "e2490de5-5bd3-43d5-b7c4-526e33f71304",
+          "kcal": 129
+        },
+        "generators": {
+          "body": {
+            "$.id": {
+              "type": "Uuid"
+            }
+          }
+        },
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "matchingRules": {
+          "body": {
+            "$.grams": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "integer"
+                }
+              ]
+            },
+            "$.id": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
+                }
+              ]
+            },
+            "$.kcal": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "integer"
+                }
+              ]
+            }
+          }
+        },
+        "status": 200
+      }
+    },
+    {
+      "description": "Tagesansicht laden",
+      "providerStates": [
+        {
+          "name": "Nutzer hat am 2026-08-04 Einträge und eine verbundene Aktivitätsquelle"
+        }
+      ],
+      "request": {
+        "headers": {
+          "Accept-Language": "de"
+        },
+        "method": "GET",
+        "path": "/api/v1/diary/days/2026-08-04"
+      },
+      "response": {
+        "body": {
+          "activity": {
+            "connected": true,
+            "entries": [
+              {
+                "detail": "38 min · 7,2 km",
+                "externalId": "hk-9d2f",
+                "kcal": 264,
+                "name": "Laufen"
+              }
+            ],
+            "totalKcal": 412
+          },
+          "date": "2026-08-04",
+          "goal": {
+            "carbsG": 215,
+            "dailyKcal": 2150,
+            "fatG": 72,
+            "proteinG": 161
+          },
+          "isFuture": false,
+          "remainingKcal": 567,
+          "slots": [
+            {
+              "entries": [
+                {
+                  "displayName": "Skyr Natur, Arla",
+                  "grams": 150,
+                  "id": "e2490de5-5bd3-43d5-b7c4-526e33f71304",
+                  "kcal": 97,
+                  "portionText": "150 g"
+                }
+              ],
+              "id": "e2490de5-5bd3-43d5-b7c4-526e33f71304",
+              "kcal": 412,
+              "name": "Frühstück"
+            }
+          ],
+          "totals": {
+            "carbsG": 142,
+            "fatG": 51,
+            "kcal": 1583,
+            "proteinG": 118
+          }
+        },
+        "generators": {
+          "body": {
+            "$.slots[*].entries[*].id": {
+              "type": "Uuid"
+            },
+            "$.slots[*].id": {
+              "type": "Uuid"
+            }
+          }
+        },
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "matchingRules": {
+          "body": {
+            "$.activity.connected": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.activity.entries": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type",
+                  "min": 1
+                }
+              ]
+            },
+            "$.activity.entries[*].detail": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.activity.entries[*].externalId": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.activity.entries[*].kcal": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "integer"
+                }
+              ]
+            },
+            "$.activity.entries[*].name": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.activity.totalKcal": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "integer"
+                }
+              ]
+            },
+            "$.goal.carbsG": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "integer"
+                }
+              ]
+            },
+            "$.goal.dailyKcal": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "integer"
+                }
+              ]
+            },
+            "$.goal.fatG": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "integer"
+                }
+              ]
+            },
+            "$.goal.proteinG": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "integer"
+                }
+              ]
+            },
+            "$.isFuture": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.remainingKcal": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "integer"
+                }
+              ]
+            },
+            "$.slots": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type",
+                  "min": 1
+                }
+              ]
+            },
+            "$.slots[*].entries": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type",
+                  "min": 1
+                }
+              ]
+            },
+            "$.slots[*].entries[*].displayName": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.slots[*].entries[*].grams": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "integer"
+                }
+              ]
+            },
+            "$.slots[*].entries[*].id": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
+                }
+              ]
+            },
+            "$.slots[*].entries[*].kcal": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "integer"
+                }
+              ]
+            },
+            "$.slots[*].entries[*].portionText": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.slots[*].id": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
+                }
+              ]
+            },
+            "$.slots[*].kcal": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "integer"
+                }
+              ]
+            },
+            "$.slots[*].name": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.totals.carbsG": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "integer"
+                }
+              ]
+            },
+            "$.totals.fatG": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "integer"
+                }
+              ]
+            },
+            "$.totals.kcal": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "integer"
+                }
+              ]
+            },
+            "$.totals.proteinG": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "integer"
+                }
+              ]
+            }
+          }
+        },
+        "status": 200
+      }
+    },
+    {
+      "description": "Tagesansicht ohne Aktivitätsquelle laden",
+      "providerStates": [
+        {
+          "name": "Nutzer hat am 2026-08-05 Einträge und keine Aktivitätsquelle"
+        }
+      ],
+      "request": {
+        "headers": {
+          "Accept-Language": "de"
+        },
+        "method": "GET",
+        "path": "/api/v1/diary/days/2026-08-05"
+      },
+      "response": {
+        "body": {
+          "activity": null,
+          "date": "2026-08-05",
+          "goal": {
+            "carbsG": 215,
+            "dailyKcal": 2150,
+            "fatG": 72,
+            "proteinG": 161
+          },
+          "isFuture": false,
+          "remainingKcal": 2150,
+          "slots": [
+            {
+              "entries": [],
+              "id": "e2490de5-5bd3-43d5-b7c4-526e33f71304",
+              "kcal": 0,
+              "name": "Frühstück"
+            }
+          ],
+          "totals": {
+            "carbsG": 0,
+            "fatG": 0,
+            "kcal": 0,
+            "proteinG": 0
+          }
+        },
+        "generators": {
+          "body": {
+            "$.slots[*].id": {
+              "type": "Uuid"
+            }
+          }
+        },
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "matchingRules": {
+          "body": {
+            "$.goal.carbsG": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "integer"
+                }
+              ]
+            },
+            "$.goal.dailyKcal": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "integer"
+                }
+              ]
+            },
+            "$.goal.fatG": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "integer"
+                }
+              ]
+            },
+            "$.goal.proteinG": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "integer"
+                }
+              ]
+            },
+            "$.isFuture": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.remainingKcal": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "integer"
+                }
+              ]
+            },
+            "$.slots": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type",
+                  "min": 1
+                }
+              ]
+            },
+            "$.slots[*].id": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
+                }
+              ]
+            },
+            "$.slots[*].kcal": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "integer"
+                }
+              ]
+            },
+            "$.slots[*].name": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.totals.carbsG": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "integer"
+                }
+              ]
+            },
+            "$.totals.fatG": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "integer"
+                }
+              ]
+            },
+            "$.totals.kcal": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "integer"
+                }
+              ]
+            },
+            "$.totals.proteinG": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "integer"
+                }
+              ]
+            }
+          }
+        },
+        "status": 200
+      }
+    }
+  ],
+  "metadata": {
+    "pact-js": {
+      "version": "17.1.2"
+    },
+    "pactRust": {
+      "ffi": "0.5.6",
+      "models": "1.3.14"
+    },
+    "pactSpecification": {
+      "version": "3.0.0"
+    }
+  },
+  "provider": {
+    "name": "nutritrack-diary"
+  }
+}

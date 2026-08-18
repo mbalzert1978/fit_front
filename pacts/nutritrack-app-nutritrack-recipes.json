@@ -1,0 +1,925 @@
+{
+  "consumer": {
+    "name": "nutritrack-app"
+  },
+  "interactions": [
+    {
+      "description": "Neues Rezept anlegen",
+      "providerStates": [
+        {
+          "name": "Produkt existiert als Zutat"
+        }
+      ],
+      "request": {
+        "body": {
+          "id": "e2490de5-5bd3-43d5-b7c4-526e33f71304",
+          "ingredients": [
+            {
+              "grams": 600,
+              "id": "e2490de5-5bd3-43d5-b7c4-526e33f71304",
+              "productId": "e2490de5-5bd3-43d5-b7c4-526e33f71304"
+            }
+          ],
+          "name": "Hähnchen-Reis-Pfanne",
+          "portions": 4
+        },
+        "generators": {
+          "body": {
+            "$.id": {
+              "type": "Uuid"
+            },
+            "$.ingredients[*].id": {
+              "type": "Uuid"
+            },
+            "$.ingredients[*].productId": {
+              "type": "Uuid"
+            }
+          }
+        },
+        "headers": {
+          "Content-Type": "application/json",
+          "Idempotency-Key": "2f1c9b7e-1111-4222-8333-444455556666"
+        },
+        "matchingRules": {
+          "body": {
+            "$.id": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
+                }
+              ]
+            },
+            "$.ingredients": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type",
+                  "min": 1
+                }
+              ]
+            },
+            "$.ingredients[*].grams": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "integer"
+                }
+              ]
+            },
+            "$.ingredients[*].id": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
+                }
+              ]
+            },
+            "$.ingredients[*].productId": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
+                }
+              ]
+            },
+            "$.name": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.portions": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "integer"
+                }
+              ]
+            }
+          }
+        },
+        "method": "POST",
+        "path": "/api/v1/recipes"
+      },
+      "response": {
+        "body": {
+          "etag": "1",
+          "id": "e2490de5-5bd3-43d5-b7c4-526e33f71304",
+          "ingredients": [
+            {
+              "computedKcal": 660,
+              "displayName": "Hähnchenbrust",
+              "grams": 600,
+              "id": "e2490de5-5bd3-43d5-b7c4-526e33f71304",
+              "productId": "e2490de5-5bd3-43d5-b7c4-526e33f71304"
+            }
+          ],
+          "macrosPerPortion": {
+            "carbsG": 38,
+            "fatG": 12,
+            "proteinG": 41
+          },
+          "name": "Hähnchen-Reis-Pfanne",
+          "portions": 4
+        },
+        "generators": {
+          "body": {
+            "$.id": {
+              "type": "Uuid"
+            },
+            "$.ingredients[*].id": {
+              "type": "Uuid"
+            },
+            "$.ingredients[*].productId": {
+              "type": "Uuid"
+            }
+          }
+        },
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "matchingRules": {
+          "body": {
+            "$.etag": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.id": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
+                }
+              ]
+            },
+            "$.ingredients": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type",
+                  "min": 1
+                }
+              ]
+            },
+            "$.ingredients[*].computedKcal": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "integer"
+                }
+              ]
+            },
+            "$.ingredients[*].displayName": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.ingredients[*].grams": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "integer"
+                }
+              ]
+            },
+            "$.ingredients[*].id": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
+                }
+              ]
+            },
+            "$.ingredients[*].productId": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
+                }
+              ]
+            },
+            "$.macrosPerPortion.carbsG": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "integer"
+                }
+              ]
+            },
+            "$.macrosPerPortion.fatG": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "integer"
+                }
+              ]
+            },
+            "$.macrosPerPortion.proteinG": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "integer"
+                }
+              ]
+            },
+            "$.name": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.portions": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "integer"
+                }
+              ]
+            }
+          }
+        },
+        "status": 201
+      }
+    },
+    {
+      "description": "Portionen ins Tagebuch übernehmen",
+      "providerStates": [
+        {
+          "name": "Rezept und Mahlzeiten-Slot existieren"
+        }
+      ],
+      "request": {
+        "body": {
+          "amount": 1,
+          "date": "2026-08-04",
+          "mealSlotId": "e2490de5-5bd3-43d5-b7c4-526e33f71304",
+          "unit": "Portion"
+        },
+        "generators": {
+          "body": {
+            "$.mealSlotId": {
+              "type": "Uuid"
+            }
+          }
+        },
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "matchingRules": {
+          "body": {
+            "$.amount": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "integer"
+                }
+              ]
+            },
+            "$.mealSlotId": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
+                }
+              ]
+            }
+          },
+          "path": {
+            "combine": "AND",
+            "matchers": [
+              {
+                "match": "regex",
+                "regex": "/api/v1/recipes/[0-9a-f-]{36}/portions-to-diary"
+              }
+            ]
+          }
+        },
+        "method": "POST",
+        "path": "/api/v1/recipes/2f1c9b7e-1111-4222-8333-444455556666/portions-to-diary"
+      },
+      "response": {
+        "body": {
+          "entryId": "e2490de5-5bd3-43d5-b7c4-526e33f71304",
+          "grams": 338,
+          "kcal": 412
+        },
+        "generators": {
+          "body": {
+            "$.entryId": {
+              "type": "Uuid"
+            }
+          }
+        },
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "matchingRules": {
+          "body": {
+            "$.entryId": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
+                }
+              ]
+            },
+            "$.grams": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "integer"
+                }
+              ]
+            },
+            "$.kcal": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "integer"
+                }
+              ]
+            }
+          }
+        },
+        "status": 201
+      }
+    },
+    {
+      "description": "Rezept ändern",
+      "providerStates": [
+        {
+          "name": "Rezept existiert"
+        }
+      ],
+      "request": {
+        "body": {
+          "id": "e2490de5-5bd3-43d5-b7c4-526e33f71304",
+          "ingredients": [
+            {
+              "grams": 600,
+              "id": "e2490de5-5bd3-43d5-b7c4-526e33f71304",
+              "productId": "e2490de5-5bd3-43d5-b7c4-526e33f71304"
+            }
+          ],
+          "name": "Hähnchen-Reis-Pfanne",
+          "portions": 4
+        },
+        "generators": {
+          "body": {
+            "$.id": {
+              "type": "Uuid"
+            },
+            "$.ingredients[*].id": {
+              "type": "Uuid"
+            },
+            "$.ingredients[*].productId": {
+              "type": "Uuid"
+            }
+          }
+        },
+        "headers": {
+          "Content-Type": "application/json",
+          "If-Match": "7"
+        },
+        "matchingRules": {
+          "body": {
+            "$.id": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
+                }
+              ]
+            },
+            "$.ingredients": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type",
+                  "min": 1
+                }
+              ]
+            },
+            "$.ingredients[*].grams": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "integer"
+                }
+              ]
+            },
+            "$.ingredients[*].id": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
+                }
+              ]
+            },
+            "$.ingredients[*].productId": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
+                }
+              ]
+            },
+            "$.name": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.portions": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "integer"
+                }
+              ]
+            }
+          },
+          "header": {
+            "If-Match": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            }
+          },
+          "path": {
+            "combine": "AND",
+            "matchers": [
+              {
+                "match": "regex",
+                "regex": "/api/v1/recipes/[0-9a-f-]{36}"
+              }
+            ]
+          }
+        },
+        "method": "PUT",
+        "path": "/api/v1/recipes/2f1c9b7e-1111-4222-8333-444455556666"
+      },
+      "response": {
+        "body": {
+          "etag": "8",
+          "id": "e2490de5-5bd3-43d5-b7c4-526e33f71304",
+          "ingredients": [
+            {
+              "computedKcal": 660,
+              "displayName": "Hähnchenbrust",
+              "grams": 600,
+              "id": "e2490de5-5bd3-43d5-b7c4-526e33f71304",
+              "productId": "e2490de5-5bd3-43d5-b7c4-526e33f71304"
+            }
+          ],
+          "macrosPerPortion": {
+            "carbsG": 38,
+            "fatG": 12,
+            "proteinG": 41
+          },
+          "name": "Hähnchen-Reis-Pfanne",
+          "portions": 4
+        },
+        "generators": {
+          "body": {
+            "$.id": {
+              "type": "Uuid"
+            },
+            "$.ingredients[*].id": {
+              "type": "Uuid"
+            },
+            "$.ingredients[*].productId": {
+              "type": "Uuid"
+            }
+          }
+        },
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "matchingRules": {
+          "body": {
+            "$.etag": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.id": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
+                }
+              ]
+            },
+            "$.ingredients": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type",
+                  "min": 1
+                }
+              ]
+            },
+            "$.ingredients[*].computedKcal": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "integer"
+                }
+              ]
+            },
+            "$.ingredients[*].displayName": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.ingredients[*].grams": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "integer"
+                }
+              ]
+            },
+            "$.ingredients[*].id": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
+                }
+              ]
+            },
+            "$.ingredients[*].productId": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
+                }
+              ]
+            },
+            "$.macrosPerPortion.carbsG": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "integer"
+                }
+              ]
+            },
+            "$.macrosPerPortion.fatG": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "integer"
+                }
+              ]
+            },
+            "$.macrosPerPortion.proteinG": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "integer"
+                }
+              ]
+            },
+            "$.name": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.portions": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "integer"
+                }
+              ]
+            }
+          }
+        },
+        "status": 200
+      }
+    },
+    {
+      "description": "Rezeptblatt laden",
+      "providerStates": [
+        {
+          "name": "Rezept existiert"
+        }
+      ],
+      "request": {
+        "matchingRules": {
+          "path": {
+            "combine": "AND",
+            "matchers": [
+              {
+                "match": "regex",
+                "regex": "/api/v1/recipes/[0-9a-f-]{36}"
+              }
+            ]
+          }
+        },
+        "method": "GET",
+        "path": "/api/v1/recipes/2f1c9b7e-1111-4222-8333-444455556666"
+      },
+      "response": {
+        "body": {
+          "etag": "7",
+          "id": "e2490de5-5bd3-43d5-b7c4-526e33f71304",
+          "ingredients": [
+            {
+              "computedKcal": 660,
+              "displayName": "Hähnchenbrust",
+              "grams": 600,
+              "id": "e2490de5-5bd3-43d5-b7c4-526e33f71304",
+              "productId": "e2490de5-5bd3-43d5-b7c4-526e33f71304"
+            }
+          ],
+          "macrosPerPortion": {
+            "carbsG": 38,
+            "fatG": 12,
+            "proteinG": 41
+          },
+          "name": "Hähnchen-Reis-Pfanne",
+          "portions": 4
+        },
+        "generators": {
+          "body": {
+            "$.id": {
+              "type": "Uuid"
+            },
+            "$.ingredients[*].id": {
+              "type": "Uuid"
+            },
+            "$.ingredients[*].productId": {
+              "type": "Uuid"
+            }
+          }
+        },
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "matchingRules": {
+          "body": {
+            "$.etag": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.id": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
+                }
+              ]
+            },
+            "$.ingredients": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type",
+                  "min": 1
+                }
+              ]
+            },
+            "$.ingredients[*].computedKcal": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "integer"
+                }
+              ]
+            },
+            "$.ingredients[*].displayName": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.ingredients[*].grams": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "integer"
+                }
+              ]
+            },
+            "$.ingredients[*].id": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
+                }
+              ]
+            },
+            "$.ingredients[*].productId": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
+                }
+              ]
+            },
+            "$.macrosPerPortion.carbsG": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "integer"
+                }
+              ]
+            },
+            "$.macrosPerPortion.fatG": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "integer"
+                }
+              ]
+            },
+            "$.macrosPerPortion.proteinG": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "integer"
+                }
+              ]
+            },
+            "$.name": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.portions": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "integer"
+                }
+              ]
+            }
+          }
+        },
+        "status": 200
+      }
+    },
+    {
+      "description": "Rezeptliste laden",
+      "providerStates": [
+        {
+          "name": "Nutzer hat zwei Rezepte"
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "path": "/api/v1/recipes",
+        "query": {
+          "sort": [
+            "name_desc"
+          ]
+        }
+      },
+      "response": {
+        "body": [
+          {
+            "gramsPerPortion": 338,
+            "id": "e2490de5-5bd3-43d5-b7c4-526e33f71304",
+            "kcalPerPortion": 412,
+            "name": "Hähnchen-Reis-Pfanne",
+            "portions": 4
+          }
+        ],
+        "generators": {
+          "body": {
+            "$[*].id": {
+              "type": "Uuid"
+            }
+          }
+        },
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "matchingRules": {
+          "body": {
+            "$": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type",
+                  "min": 1
+                }
+              ]
+            },
+            "$[*].gramsPerPortion": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "integer"
+                }
+              ]
+            },
+            "$[*].id": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
+                }
+              ]
+            },
+            "$[*].kcalPerPortion": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "integer"
+                }
+              ]
+            },
+            "$[*].name": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$[*].portions": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "integer"
+                }
+              ]
+            }
+          }
+        },
+        "status": 200
+      }
+    }
+  ],
+  "metadata": {
+    "pact-js": {
+      "version": "17.1.2"
+    },
+    "pactRust": {
+      "ffi": "0.5.6",
+      "models": "1.3.14"
+    },
+    "pactSpecification": {
+      "version": "3.0.0"
+    }
+  },
+  "provider": {
+    "name": "nutritrack-recipes"
+  }
+}

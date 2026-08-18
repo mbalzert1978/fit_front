@@ -7,6 +7,7 @@ import { usePhotoJob, useCreateProduct } from '../../src/api/hooks';
 import { newId } from '../../src/api/ids';
 import { ctxParams } from '../../src/nav';
 import { parseDiaryDate, today } from '../../src/api/diaryDate';
+import type { PhotoJob } from '../../src/api/types';
 
 type Key = 'kcal' | 'fatG' | 'saturatedFatG' | 'carbsG' | 'sugarG' | 'proteinG' | 'saltG';
 
@@ -20,11 +21,54 @@ const rows: { key: Key; label: string; unit: string; required: boolean }[] = [
   { key: 'saltG', label: 'Salz', unit: 'g', required: false },
 ];
 
+function ProductHeader({
+  name,
+  onChangeName,
+  suggested,
+  barcode,
+}: {
+  name: string | null;
+  onChangeName: (v: string) => void;
+  suggested: string | null | undefined;
+  barcode: string | null | undefined;
+}) {
+  const t = useTheme();
+
+  return (
+    <View style={{ flexDirection: 'row', gap: t.space[4] }}>
+      <View style={{ width: 64, height: 64, backgroundColor: t.color.surface, borderWidth: 1, borderColor: t.color.divider }} />
+      <View style={{ flex: 1 }}>
+        <TextInput
+          value={name ?? suggested ?? ''}
+          onChangeText={onChangeName}
+          placeholder="Produktname"
+          placeholderTextColor={t.color.textMuted}
+          style={[
+            t.font.body,
+            {
+              color: t.color.text,
+              backgroundColor: t.color.inputBg,
+              borderWidth: 1,
+              borderColor: t.color.neutral600,
+              borderRadius: t.radius.md,
+              paddingHorizontal: t.space[3],
+              minHeight: t.hit,
+            },
+          ]}
+        />
+        <Text style={[t.font.micro, t.tabular, { color: t.color.textMuted, marginTop: t.space[2] }]}>
+          {barcode ?? 'ohne Barcode'} · Angaben pro 100 g
+        </Text>
+      </View>
+    </View>
+  );
+}
+
 export default function ConfirmScreen() {
   const t = useTheme();
   const params = useLocalSearchParams<Record<string, string>>();
   const date = params.date ? parseDiaryDate(params.date) : today();
-  const { data: job } = usePhotoJob(params.photoId ?? '', 99);
+  const job: PhotoJob | undefined = usePhotoJob(params.photoId ?? '', 99).data;
   const extracted = job?.status === 'Completed' ? job : null;
 
   const [name, setName] = useState<string | null>(null);
@@ -66,38 +110,21 @@ export default function ConfirmScreen() {
     if (params.target === 'recipe') {
       router.replace({ pathname: '/recipe/[id]', params: { id: params.recipeId!, addProductId: product.id, date } });
     } else {
-      router.replace({ pathname: '/product/[id]', params: { id: product.id, ...ctxParams({ date, slotId: params.slotId, target: 'diary' }) } });
+      router.replace({
+        pathname: '/product/[id]',
+        params: { id: product.id, ...ctxParams({ date, slotId: params.slotId, target: 'diary' }) },
+      });
     }
   }
 
   return (
     <Screen>
-      <View style={{ flexDirection: 'row', gap: t.space[4] }}>
-        <View style={{ width: 64, height: 64, backgroundColor: t.color.surface, borderWidth: 1, borderColor: t.color.divider }} />
-        <View style={{ flex: 1 }}>
-          <TextInput
-            value={name ?? extracted?.suggestedName ?? ''}
-            onChangeText={setName}
-            placeholder="Produktname"
-            placeholderTextColor={t.color.textMuted}
-            style={[
-              t.font.body,
-              {
-                color: t.color.text,
-                backgroundColor: t.color.inputBg,
-                borderWidth: 1,
-                borderColor: t.color.neutral600,
-                borderRadius: t.radius.md,
-                paddingHorizontal: t.space[3],
-                minHeight: t.hit,
-              },
-            ]}
-          />
-          <Text style={[t.font.micro, t.tabular, { color: t.color.textMuted, marginTop: t.space[2] }]}>
-            {params.barcode ?? extracted?.barcode ?? 'ohne Barcode'} · Angaben pro 100 g
-          </Text>
-        </View>
-      </View>
+      <ProductHeader
+        name={name}
+        onChangeName={setName}
+        suggested={extracted?.suggestedName}
+        barcode={params.barcode ?? extracted?.barcode}
+      />
 
       <View style={{ marginTop: t.space[8] }}>
         {rows.map((r) => {
@@ -119,12 +146,7 @@ export default function ConfirmScreen() {
                 <Text style={[t.font.body, { color: t.color.text }]}>{r.label}</Text>
                 <ConfidenceBadge level={confidenceOf(extracted?.fields?.[r.key]?.confidence, raw.trim() !== '')} />
               </View>
-              <ValueField
-                value={raw}
-                onChangeText={(v) => setEdits((e) => ({ ...e, [r.key]: v }))}
-                unit={r.unit}
-                missing={isMissing}
-              />
+              <ValueField value={raw} onChangeText={(v) => setEdits((e) => ({ ...e, [r.key]: v }))} unit={r.unit} missing={isMissing} />
             </View>
           );
         })}

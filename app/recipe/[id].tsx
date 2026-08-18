@@ -6,9 +6,82 @@ import { useTheme } from '../../src/theme/ThemeProvider';
 import { useRecipe, useSaveRecipe, useRecipeToDiary, useSlots, useProduct } from '../../src/api/hooks';
 import { newId } from '../../src/api/ids';
 import { parseDiaryDate, today } from '../../src/api/diaryDate';
-import type { RecipeIngredient } from '../../src/api/types';
+import type { Recipe, RecipeIngredient } from '../../src/api/types';
+import type { DiaryDate } from '../../src/api/diaryDate';
 
 type Draft = { name: string; portions: string; ingredients: RecipeIngredient[] };
+type Totals = { grams: number; kcal: number; perPortionG: number; perPortionKcal: number; portions: number };
+
+/** Makros je Portion stehen nur, solange der Entwurf dem Serverstand entspricht. */
+function ComputedTotals({ totals, server, changed }: { totals: Totals; server?: Recipe; changed: boolean }) {
+  return (
+    <>
+      <SectionHeading>Berechnet</SectionHeading>
+      <ListRow title="Gesamtmenge" value={`${totals.grams} g`} />
+      <ListRow title="Gesamt" value={`${totals.kcal} kcal`} />
+      <ListRow title="Pro Portion" value={`${totals.perPortionG} g`} />
+      <ListRow title="Pro Portion" value={`${totals.perPortionKcal} kcal`} />
+      {server && !changed ? (
+        <>
+          <ListRow title="Kohlenhydrate je Portion" value={`${server.macrosPerPortion.carbsG} g`} />
+          <ListRow title="Eiweiß je Portion" value={`${server.macrosPerPortion.proteinG} g`} />
+          <ListRow title="Fett je Portion" value={`${server.macrosPerPortion.fatG} g`} />
+        </>
+      ) : null}
+    </>
+  );
+}
+
+function AddToDiary({ recipeId, date, totals }: { recipeId: string; date: DiaryDate; totals: Totals }) {
+  const t = useTheme();
+  const { data: slots } = useSlots();
+  const toDiary = useRecipeToDiary(recipeId);
+  const [unit, setUnit] = useState<'Portion' | 'Gram'>('Portion');
+  const [amount, setAmount] = useState('1');
+  const [slotId, setSlotId] = useState<string | null>(null);
+  const n = Number(amount) || 0;
+
+  useEffect(() => {
+    if (!slotId && slots?.length) setSlotId(slots[0].id);
+  }, [slots, slotId]);
+
+  return (
+    <>
+      <SectionHeading>Zum Tagebuch hinzufügen</SectionHeading>
+      <Segmented
+        options={[
+          { value: 'Portion', label: 'Portionen' },
+          { value: 'Gram', label: 'Gramm' },
+        ]}
+        value={unit}
+        onChange={setUnit}
+      />
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: t.space[4], marginTop: t.space[4] }}>
+        <ValueField value={amount} onChangeText={setAmount} unit={unit === 'Portion' ? '' : 'g'} />
+        <Text style={[t.font.body, t.tabular, { color: t.color.textMuted }]}>
+          {unit === 'Portion'
+            ? `${Math.round(n * totals.perPortionG)} g · ${Math.round(n * totals.perPortionKcal)} kcal`
+            : `${Math.round((n / Math.max(totals.grams, 1)) * totals.kcal)} kcal`}
+        </Text>
+      </View>
+      <View style={{ marginTop: t.space[6] }}>
+        {(slots ?? []).map((s) => (
+          <ListRow key={s.id} title={s.name} value={s.id === slotId ? '✓' : ''} onPress={() => setSlotId(s.id)} />
+        ))}
+      </View>
+      <View style={{ marginTop: t.space[6] }}>
+        <OutlineButton
+          label="Zum Tagebuch hinzufügen"
+          disabled={!slotId || toDiary.isPending}
+          onPress={async () => {
+            await toDiary.mutateAsync({ date, mealSlotId: slotId!, amount: n, unit });
+            router.replace('/(tabs)/diary');
+          }}
+        />
+      </View>
+    </>
+  );
+}
 
 export default function RecipeScreen() {
   const t = useTheme();
@@ -17,9 +90,7 @@ export default function RecipeScreen() {
   const date = params.date ? parseDiaryDate(params.date) : today();
 
   const { data: server } = useRecipe(params.id);
-  const { data: slots } = useSlots();
   const save = useSaveRecipe(params.id);
-  const toDiary = useRecipeToDiary(params.id);
   const { data: addedProduct } = useProduct(params.addProductId ?? '');
 
   const [draft, setDraft] = useState<Draft>({ name: '', portions: '1', ingredients: [] });
@@ -42,7 +113,13 @@ export default function RecipeScreen() {
             ...d,
             ingredients: [
               ...d.ingredients,
-              { id: newId(), productId: addedProduct.id, displayName: addedProduct.name, grams: 100, computedKcal: Math.round(addedProduct.nutrientsPer100g.kcal) },
+              {
+                id: newId(),
+                productId: addedProduct.id,
+                displayName: addedProduct.name,
+                grams: 100,
+                computedKcal: Math.round(addedProduct.nutrientsPer100g.kcal),
+              },
             ],
           },
     );
@@ -66,13 +143,6 @@ export default function RecipeScreen() {
   }, [draft, server, isNew]);
 
   const hasIngredients = draft.ingredients.length > 0;
-
-  const [unit, setUnit] = useState<'Portion' | 'Gram'>('Portion');
-  const [amount, setAmount] = useState('1');
-  const [slotId, setSlotId] = useState<string | null>(null);
-  useEffect(() => {
-    if (!slotId && slots?.length) setSlotId(slots[0].id);
-  }, [slots, slotId]);
 
   const nameField = {
     color: t.color.text,
@@ -99,7 +169,14 @@ export default function RecipeScreen() {
       {draft.ingredients.map((i) => (
         <View
           key={i.id}
-          style={{ flexDirection: 'row', alignItems: 'center', gap: t.space[3], paddingVertical: t.space[3], borderBottomWidth: 1, borderBottomColor: t.color.divider }}
+          style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: t.space[3],
+            paddingVertical: t.space[3],
+            borderBottomWidth: 1,
+            borderBottomColor: t.color.divider,
+          }}
         >
           <View style={{ flex: 1 }}>
             <Text style={[t.font.body, { color: t.color.text }]}>{i.displayName}</Text>
@@ -115,7 +192,11 @@ export default function RecipeScreen() {
               }))
             }
           />
-          <SquareIconButton glyph="−" label={`${i.displayName} entfernen`} onPress={() => setDraft((d) => ({ ...d, ingredients: d.ingredients.filter((x) => x.id !== i.id) }))} />
+          <SquareIconButton
+            glyph="−"
+            label={`${i.displayName} entfernen`}
+            onPress={() => setDraft((d) => ({ ...d, ingredients: d.ingredients.filter((x) => x.id !== i.id) }))}
+          />
         </View>
       ))}
       <View style={{ marginTop: t.space[6], gap: t.space[3] }}>
@@ -134,22 +215,7 @@ export default function RecipeScreen() {
         ) : null}
       </View>
 
-      {hasIngredients ? (
-        <>
-          <SectionHeading>Berechnet</SectionHeading>
-          <ListRow title="Gesamtmenge" value={`${totals.grams} g`} />
-          <ListRow title="Gesamt" value={`${totals.kcal} kcal`} />
-          <ListRow title="Pro Portion" value={`${totals.perPortionG} g`} />
-          <ListRow title="Pro Portion" value={`${totals.perPortionKcal} kcal`} />
-          {server && !changed ? (
-            <>
-              <ListRow title="Kohlenhydrate je Portion" value={`${server.macrosPerPortion.carbsG} g`} />
-              <ListRow title="Eiweiß je Portion" value={`${server.macrosPerPortion.proteinG} g`} />
-              <ListRow title="Fett je Portion" value={`${server.macrosPerPortion.fatG} g`} />
-            </>
-          ) : null}
-        </>
-      ) : null}
+      {hasIngredients ? <ComputedTotals totals={totals} server={server} changed={changed} /> : null}
 
       {changed ? (
         <View style={{ marginTop: t.space[8] }}>
@@ -170,40 +236,7 @@ export default function RecipeScreen() {
           />
         </View>
       ) : (
-        <>
-          <SectionHeading>Zum Tagebuch hinzufügen</SectionHeading>
-          <Segmented
-            options={[
-              { value: 'Portion', label: 'Portionen' },
-              { value: 'Gram', label: 'Gramm' },
-            ]}
-            value={unit}
-            onChange={setUnit}
-          />
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: t.space[4], marginTop: t.space[4] }}>
-            <ValueField value={amount} onChangeText={setAmount} unit={unit === 'Portion' ? '' : 'g'} />
-            <Text style={[t.font.body, t.tabular, { color: t.color.textMuted }]}>
-              {unit === 'Portion'
-                ? `${Math.round((Number(amount) || 0) * totals.perPortionG)} g · ${Math.round((Number(amount) || 0) * totals.perPortionKcal)} kcal`
-                : `${Math.round(((Number(amount) || 0) / Math.max(totals.grams, 1)) * totals.kcal)} kcal`}
-            </Text>
-          </View>
-          <View style={{ marginTop: t.space[6] }}>
-            {(slots ?? []).map((s) => (
-              <ListRow key={s.id} title={s.name} value={s.id === slotId ? '✓' : ''} onPress={() => setSlotId(s.id)} />
-            ))}
-          </View>
-          <View style={{ marginTop: t.space[6] }}>
-            <OutlineButton
-              label="Zum Tagebuch hinzufügen"
-              disabled={!slotId || toDiary.isPending}
-              onPress={async () => {
-                await toDiary.mutateAsync({ date, mealSlotId: slotId!, amount: Number(amount) || 0, unit });
-                router.replace('/(tabs)/diary');
-              }}
-            />
-          </View>
-        </>
+        <AddToDiary recipeId={params.id} date={date} totals={totals} />
       )}
     </Screen>
   );

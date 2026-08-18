@@ -16,9 +16,15 @@ export class ApiError extends Error {
   constructor(readonly problem: ProblemDetails) {
     super(problem.title);
   }
-  get type() { return this.problem.type; }
-  get status() { return this.problem.status; }
-  get errors() { return this.problem.errors; }
+  get type() {
+    return this.problem.type;
+  }
+  get status() {
+    return this.problem.status;
+  }
+  get errors() {
+    return this.problem.errors;
+  }
 }
 
 /** Netzwerkfehler: löst keinen Dialog aus, sondern den Rückfall auf die Outbox. */

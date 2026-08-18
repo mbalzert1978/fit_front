@@ -6,6 +6,8 @@
  * Typografie, Radien und Abstände sind modusunabhängig.
  */
 
+import type { TextStyle } from 'react-native';
+
 const palette = {
   dark: {
     bg: '#161826',
@@ -63,12 +65,12 @@ const shared = {
     micro: { fontFamily: 'Inter_400Regular', fontSize: 10 },
   },
   /** Überall dort setzen, wo Zahlen untereinander stehen. */
-  tabular: { fontVariant: ['tabular-nums'] as const },
+  tabular: { fontVariant: ['tabular-nums'] } as TextStyle,
 } as const;
 
 export const themes = {
-  dark: { mode: 'dark' as ThemeMode, color: palette.dark, ...shared },
-  light: { mode: 'light' as ThemeMode, color: palette.light, ...shared },
+  dark: { mode: 'dark' as ThemeMode, color: palette.dark as Palette, ...shared },
+  light: { mode: 'light' as ThemeMode, color: palette.light as Palette, ...shared },
 } as const;
 
 export type Theme = (typeof themes)['dark'];

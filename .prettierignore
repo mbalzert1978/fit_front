@@ -1,0 +1,15 @@
+node_modules/
+.expo/
+dist/
+ios/
+android/
+package-lock.json
+
+# Erzeugt, nicht von Hand geschrieben: Formatierung bestimmt Pact.
+pacts/
+
+# Handgeschriebene Prosa mit gewollten Zeilenumbruechen.
+**/*.md
+
+# Nicht Inhalt dieses Projekts.
+.claude/

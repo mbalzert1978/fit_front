@@ -21,9 +21,9 @@ export default function ProductScreen() {
   const scaled = useMemo(() => {
     const g = Number(grams.replace(',', '.')) || 0;
     const n = product?.nutrientsPer100g;
-    if (!n) return null;
-    const at = (v: number | null | undefined) => (v == null ? null : Math.round((v * g) / 100));
-    return { kcal: at(n.kcal), fatG: at(n.fatG), carbsG: at(n.carbsG), proteinG: at(n.proteinG) };
+    // Fehlender Nährwert zählt als 0 — so stand es auch vorher in der Anzeige.
+    const at = (v: number | null | undefined) => (v == null ? 0 : Math.round((v * g) / 100));
+    return { kcal: at(n?.kcal), fatG: at(n?.fatG), carbsG: at(n?.carbsG), proteinG: at(n?.proteinG) };
   }, [grams, product]);
 
   async function submit() {
@@ -43,18 +43,16 @@ export default function ProductScreen() {
     <Screen>
       <Text style={[t.font.label, { color: t.color.textMuted }]}>{product?.brand ?? ' '}</Text>
       <Text style={[t.font.title, { color: t.color.text, marginTop: t.space[2] }]}>{product?.name ?? ''}</Text>
-      <Text style={[t.font.micro, { color: t.color.textMuted, marginTop: t.space[2] }]}>
-        {product ? sourceText[product.source] : ''}
-      </Text>
+      <Text style={[t.font.micro, { color: t.color.textMuted, marginTop: t.space[2] }]}>{product ? sourceText[product.source] : ''}</Text>
 
       <SectionHeading>Menge</SectionHeading>
       <ValueField value={grams} onChangeText={setGrams} unit="g" large />
 
       <SectionHeading>Nährwerte für diese Menge</SectionHeading>
-      <ListRow title="Energie" value={`${scaled?.kcal ?? 0} kcal`} />
-      <ListRow title="Kohlenhydrate" value={`${scaled?.carbsG ?? 0} g`} />
-      <ListRow title="Eiweiß" value={`${scaled?.proteinG ?? 0} g`} />
-      <ListRow title="Fett" value={`${scaled?.fatG ?? 0} g`} />
+      <ListRow title="Energie" value={`${scaled.kcal} kcal`} />
+      <ListRow title="Kohlenhydrate" value={`${scaled.carbsG} g`} />
+      <ListRow title="Eiweiß" value={`${scaled.proteinG} g`} />
+      <ListRow title="Fett" value={`${scaled.fatG} g`} />
 
       <View style={{ marginTop: t.space[8] }}>
         <OutlineButton label="Hinzufügen" onPress={submit} disabled={!product || !params.slotId || add.isPending} />

@@ -10,11 +10,7 @@ export function Screen({ children, scroll = true, style }: { children: React.Rea
     return <View style={[{ flex: 1, backgroundColor: t.color.bg }, pad, style]}>{children}</View>;
   }
   return (
-    <ScrollView
-      style={{ flex: 1, backgroundColor: t.color.bg }}
-      contentContainerStyle={[pad, style]}
-      keyboardShouldPersistTaps="handled"
-    >
+    <ScrollView style={{ flex: 1, backgroundColor: t.color.bg }} contentContainerStyle={[pad, style]} keyboardShouldPersistTaps="handled">
       {children}
     </ScrollView>
   );

@@ -1,0 +1,1100 @@
+{
+  "consumer": {
+    "name": "nutritrack-app"
+  },
+  "interactions": [
+    {
+      "description": "Bestätigtes Produkt anlegen",
+      "providerStates": [
+        {
+          "name": "Foto-Auftrag ist abgeschlossen"
+        }
+      ],
+      "request": {
+        "body": {
+          "barcode": "4008400401027",
+          "basisUnit": "Gram",
+          "brand": null,
+          "id": "e2490de5-5bd3-43d5-b7c4-526e33f71304",
+          "name": "Skyr Natur",
+          "nutrientsPer100g": {
+            "carbsG": 4,
+            "fatG": 0.2,
+            "kcal": 63,
+            "proteinG": 11,
+            "saltG": 0.1,
+            "saturatedFatG": 0.1,
+            "sugarG": 4
+          },
+          "photoId": "e2490de5-5bd3-43d5-b7c4-526e33f71304",
+          "source": "Ocr",
+          "verifiedByUser": true
+        },
+        "generators": {
+          "body": {
+            "$.id": {
+              "type": "Uuid"
+            },
+            "$.photoId": {
+              "type": "Uuid"
+            }
+          }
+        },
+        "headers": {
+          "Content-Type": "application/json",
+          "Idempotency-Key": "3f2a1b0c-4d5e-4f60-8a91-b2c3d4e5f607"
+        },
+        "matchingRules": {
+          "body": {
+            "$.barcode": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.id": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
+                }
+              ]
+            },
+            "$.name": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.nutrientsPer100g.carbsG": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "number"
+                }
+              ]
+            },
+            "$.nutrientsPer100g.fatG": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "number"
+                }
+              ]
+            },
+            "$.nutrientsPer100g.kcal": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "number"
+                }
+              ]
+            },
+            "$.nutrientsPer100g.proteinG": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "number"
+                }
+              ]
+            },
+            "$.nutrientsPer100g.saltG": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "number"
+                }
+              ]
+            },
+            "$.nutrientsPer100g.saturatedFatG": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "number"
+                }
+              ]
+            },
+            "$.nutrientsPer100g.sugarG": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "number"
+                }
+              ]
+            },
+            "$.photoId": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
+                }
+              ]
+            }
+          }
+        },
+        "method": "POST",
+        "path": "/api/v1/catalog/products"
+      },
+      "response": {
+        "body": {
+          "id": "e2490de5-5bd3-43d5-b7c4-526e33f71304",
+          "name": "Skyr Natur",
+          "nutrientsPer100g": {
+            "carbsG": 4,
+            "fatG": 0.2,
+            "kcal": 63,
+            "proteinG": 11
+          }
+        },
+        "generators": {
+          "body": {
+            "$.id": {
+              "type": "Uuid"
+            }
+          }
+        },
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "matchingRules": {
+          "body": {
+            "$.id": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
+                }
+              ]
+            },
+            "$.name": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.nutrientsPer100g.carbsG": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "number"
+                }
+              ]
+            },
+            "$.nutrientsPer100g.fatG": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "number"
+                }
+              ]
+            },
+            "$.nutrientsPer100g.kcal": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "integer"
+                }
+              ]
+            },
+            "$.nutrientsPer100g.proteinG": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "number"
+                }
+              ]
+            }
+          }
+        },
+        "status": 201
+      }
+    },
+    {
+      "description": "Foto-Auftrag abfragen, solange er läuft",
+      "providerStates": [
+        {
+          "name": "Foto-Auftrag läuft noch"
+        }
+      ],
+      "request": {
+        "headers": {
+          "Accept-Language": "de",
+          "Authorization": "Bearer eyJ..."
+        },
+        "matchingRules": {
+          "header": {
+            "Authorization": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "Bearer .+"
+                }
+              ]
+            }
+          },
+          "path": {
+            "combine": "AND",
+            "matchers": [
+              {
+                "match": "regex",
+                "regex": "/api/v1/catalog/photos/[0-9a-f-]{36}"
+              }
+            ]
+          }
+        },
+        "method": "GET",
+        "path": "/api/v1/catalog/photos/7c6b5a49-3827-4160-9d5e-1f2a3b4c5d6e"
+      },
+      "response": {
+        "body": {
+          "photoId": "e2490de5-5bd3-43d5-b7c4-526e33f71304",
+          "status": "Processing"
+        },
+        "generators": {
+          "body": {
+            "$.photoId": {
+              "type": "Uuid"
+            }
+          }
+        },
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "matchingRules": {
+          "body": {
+            "$.photoId": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
+                }
+              ]
+            }
+          }
+        },
+        "status": 200
+      }
+    },
+    {
+      "description": "Foto-Auftrag abfragen, wenn er fertig ist",
+      "providerStates": [
+        {
+          "name": "Foto-Auftrag ist abgeschlossen"
+        }
+      ],
+      "request": {
+        "headers": {
+          "Accept-Language": "de",
+          "Authorization": "Bearer eyJ..."
+        },
+        "matchingRules": {
+          "header": {
+            "Authorization": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "Bearer .+"
+                }
+              ]
+            }
+          },
+          "path": {
+            "combine": "AND",
+            "matchers": [
+              {
+                "match": "regex",
+                "regex": "/api/v1/catalog/photos/[0-9a-f-]{36}"
+              }
+            ]
+          }
+        },
+        "method": "GET",
+        "path": "/api/v1/catalog/photos/7c6b5a49-3827-4160-9d5e-1f2a3b4c5d6e"
+      },
+      "response": {
+        "body": {
+          "barcode": "4008400401027",
+          "basis": "Per100g",
+          "fields": {
+            "carbsG": {
+              "confidence": 0.95,
+              "value": 4
+            },
+            "fatG": {
+              "confidence": 0.91,
+              "value": 0.2
+            },
+            "kcal": {
+              "confidence": 0.97,
+              "value": 63
+            },
+            "proteinG": {
+              "confidence": 0.96,
+              "value": 11
+            },
+            "saltG": {
+              "confidence": 0.54,
+              "value": 0.1
+            },
+            "saturatedFatG": {
+              "confidence": 0.62,
+              "value": 0.1
+            },
+            "sugarG": {
+              "confidence": 0.88,
+              "value": 4
+            }
+          },
+          "photoId": "e2490de5-5bd3-43d5-b7c4-526e33f71304",
+          "status": "Completed",
+          "suggestedName": "Skyr Natur"
+        },
+        "generators": {
+          "body": {
+            "$.photoId": {
+              "type": "Uuid"
+            }
+          }
+        },
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "matchingRules": {
+          "body": {
+            "$.barcode": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.basis": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "Per100g|PerPortion"
+                }
+              ]
+            },
+            "$.fields.carbsG.confidence": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "number"
+                }
+              ]
+            },
+            "$.fields.carbsG.value": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "number"
+                }
+              ]
+            },
+            "$.fields.fatG.confidence": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "number"
+                }
+              ]
+            },
+            "$.fields.fatG.value": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "number"
+                }
+              ]
+            },
+            "$.fields.kcal.confidence": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "number"
+                }
+              ]
+            },
+            "$.fields.kcal.value": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "number"
+                }
+              ]
+            },
+            "$.fields.proteinG.confidence": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "number"
+                }
+              ]
+            },
+            "$.fields.proteinG.value": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "number"
+                }
+              ]
+            },
+            "$.fields.saltG.confidence": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "number"
+                }
+              ]
+            },
+            "$.fields.saltG.value": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "number"
+                }
+              ]
+            },
+            "$.fields.saturatedFatG.confidence": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "number"
+                }
+              ]
+            },
+            "$.fields.saturatedFatG.value": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "number"
+                }
+              ]
+            },
+            "$.fields.sugarG.confidence": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "number"
+                }
+              ]
+            },
+            "$.fields.sugarG.value": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "number"
+                }
+              ]
+            },
+            "$.photoId": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
+                }
+              ]
+            },
+            "$.suggestedName": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            }
+          }
+        },
+        "status": 200
+      }
+    },
+    {
+      "description": "Foto-Auftrag abfragen, wenn er gescheitert ist",
+      "providerStates": [
+        {
+          "name": "Foto-Auftrag ist gescheitert"
+        }
+      ],
+      "request": {
+        "headers": {
+          "Accept-Language": "de",
+          "Authorization": "Bearer eyJ..."
+        },
+        "matchingRules": {
+          "header": {
+            "Authorization": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "Bearer .+"
+                }
+              ]
+            }
+          },
+          "path": {
+            "combine": "AND",
+            "matchers": [
+              {
+                "match": "regex",
+                "regex": "/api/v1/catalog/photos/[0-9a-f-]{36}"
+              }
+            ]
+          }
+        },
+        "method": "GET",
+        "path": "/api/v1/catalog/photos/7c6b5a49-3827-4160-9d5e-1f2a3b4c5d6e"
+      },
+      "response": {
+        "body": {
+          "photoId": "e2490de5-5bd3-43d5-b7c4-526e33f71304",
+          "reason": "Tabelle nicht lesbar",
+          "status": "Failed"
+        },
+        "generators": {
+          "body": {
+            "$.photoId": {
+              "type": "Uuid"
+            }
+          }
+        },
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "matchingRules": {
+          "body": {
+            "$.photoId": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
+                }
+              ]
+            },
+            "$.reason": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            }
+          }
+        },
+        "status": 200
+      }
+    },
+    {
+      "description": "Nährwerttabelle hochladen",
+      "providerStates": [
+        {
+          "name": "Nutzer ist angemeldet"
+        }
+      ],
+      "request": {
+        "body": "LS1DNzRXdXlTQ3UyV1RwdWNwDQpDb250ZW50LURpc3Bvc2l0aW9uOiBmb3JtLWRhdGE7IG5hbWU9ImZpbGUiOyBmaWxlbmFtZT0ibmFlaHJ3ZXJ0dGFiZWxsZS5qcGciDQpDb250ZW50LVR5cGU6IGltYWdlL2pwZWcNCg0K/9j/4AAQSkZJRgABAQEAYABgAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/wAALCAABAAEBAREA/8QAFAABAAAAAAAAAAAAAAAAAAAACf/EABQQAQAAAAAAAAAAAAAAAAAAAAD/2gAIAQEAAD8AKp//2Q0KLS1DNzRXdXlTQ3UyV1RwdWNwLS0NCg==",
+        "headers": {
+          "Content-Type": "multipart/form-data; boundary=C74WuySCu2WTpucp"
+        },
+        "matchingRules": {
+          "body": {
+            "$.file": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "contentType",
+                  "value": "image/jpeg"
+                }
+              ]
+            }
+          },
+          "header": {
+            "Content-Type": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "multipart/form-data;(\\s*charset=[^;]*;)?\\s*boundary=.*"
+                }
+              ]
+            }
+          }
+        },
+        "method": "POST",
+        "path": "/api/v1/catalog/photos"
+      },
+      "response": {
+        "body": {
+          "photoId": "e2490de5-5bd3-43d5-b7c4-526e33f71304",
+          "status": "Processing"
+        },
+        "generators": {
+          "body": {
+            "$.photoId": {
+              "type": "Uuid"
+            }
+          }
+        },
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "matchingRules": {
+          "body": {
+            "$.photoId": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
+                }
+              ]
+            }
+          }
+        },
+        "status": 202
+      }
+    },
+    {
+      "description": "Produkt-Lookup per Barcode",
+      "providerStates": [
+        {
+          "name": "Produkt mit Barcode 4008400401027 existiert"
+        }
+      ],
+      "request": {
+        "headers": {
+          "Accept-Language": "de",
+          "Authorization": "Bearer eyJ..."
+        },
+        "matchingRules": {
+          "header": {
+            "Authorization": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "Bearer .+"
+                }
+              ]
+            }
+          }
+        },
+        "method": "GET",
+        "path": "/api/v1/catalog/products/by-barcode/4008400401027"
+      },
+      "response": {
+        "body": {
+          "barcode": "4008400401027",
+          "basisUnit": "Gram",
+          "brand": "Arla",
+          "id": "e2490de5-5bd3-43d5-b7c4-526e33f71304",
+          "name": "Skyr Natur",
+          "nutrientsPer100g": {
+            "carbsG": 4,
+            "fatG": 0.2,
+            "kcal": 63,
+            "proteinG": 11
+          },
+          "source": "Curated",
+          "verifiedByUser": true
+        },
+        "generators": {
+          "body": {
+            "$.id": {
+              "type": "Uuid"
+            }
+          }
+        },
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "matchingRules": {
+          "body": {
+            "$.brand": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.id": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
+                }
+              ]
+            },
+            "$.name": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.nutrientsPer100g.carbsG": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "number"
+                }
+              ]
+            },
+            "$.nutrientsPer100g.fatG": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "number"
+                }
+              ]
+            },
+            "$.nutrientsPer100g.kcal": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "integer"
+                }
+              ]
+            },
+            "$.nutrientsPer100g.proteinG": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "number"
+                }
+              ]
+            },
+            "$.source": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "Curated|Ocr|Manual"
+                }
+              ]
+            },
+            "$.verifiedByUser": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            }
+          }
+        },
+        "status": 200
+      }
+    },
+    {
+      "description": "Produkt-Lookup per unbekanntem Barcode",
+      "providerStates": [
+        {
+          "name": "kein Produkt mit Barcode 0000000000000"
+        }
+      ],
+      "request": {
+        "headers": {
+          "Accept-Language": "de",
+          "Authorization": "Bearer eyJ..."
+        },
+        "matchingRules": {
+          "header": {
+            "Authorization": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "Bearer .+"
+                }
+              ]
+            }
+          }
+        },
+        "method": "GET",
+        "path": "/api/v1/catalog/products/by-barcode/0000000000000"
+      },
+      "response": {
+        "body": {
+          "status": 404,
+          "title": "Produkt nicht gefunden",
+          "type": "product-not-found"
+        },
+        "headers": {
+          "Content-Type": "application/problem+json"
+        },
+        "matchingRules": {
+          "body": {
+            "$.title": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            }
+          }
+        },
+        "status": 404
+      }
+    },
+    {
+      "description": "Produktblatt laden",
+      "providerStates": [
+        {
+          "name": "Produkt existiert"
+        }
+      ],
+      "request": {
+        "headers": {
+          "Accept-Language": "de",
+          "Authorization": "Bearer eyJ..."
+        },
+        "matchingRules": {
+          "header": {
+            "Authorization": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "Bearer .+"
+                }
+              ]
+            }
+          },
+          "path": {
+            "combine": "AND",
+            "matchers": [
+              {
+                "match": "regex",
+                "regex": "/api/v1/catalog/products/[0-9a-f-]{36}"
+              }
+            ]
+          }
+        },
+        "method": "GET",
+        "path": "/api/v1/catalog/products/3f2a1b0c-4d5e-4f60-8a91-b2c3d4e5f607"
+      },
+      "response": {
+        "body": {
+          "brand": "Arla",
+          "id": "e2490de5-5bd3-43d5-b7c4-526e33f71304",
+          "name": "Skyr Natur",
+          "nutrientsPer100g": {
+            "carbsG": 4,
+            "fatG": 0.2,
+            "kcal": 63,
+            "proteinG": 11
+          },
+          "source": "Curated"
+        },
+        "generators": {
+          "body": {
+            "$.id": {
+              "type": "Uuid"
+            }
+          }
+        },
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "matchingRules": {
+          "body": {
+            "$.brand": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.id": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
+                }
+              ]
+            },
+            "$.name": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.nutrientsPer100g.carbsG": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "number"
+                }
+              ]
+            },
+            "$.nutrientsPer100g.fatG": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "number"
+                }
+              ]
+            },
+            "$.nutrientsPer100g.kcal": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "integer"
+                }
+              ]
+            },
+            "$.nutrientsPer100g.proteinG": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "number"
+                }
+              ]
+            },
+            "$.source": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "Curated|Ocr|Manual"
+                }
+              ]
+            }
+          }
+        },
+        "status": 200
+      }
+    },
+    {
+      "description": "Volltextsuche über Produkte und Rezepte",
+      "providerStates": [
+        {
+          "name": "Nutzer hat Produkte und Rezepte zum Suchwort skyr"
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "path": "/api/v1/search",
+        "query": {
+          "query": [
+            "skyr"
+          ],
+          "take": [
+            "20"
+          ]
+        }
+      },
+      "response": {
+        "body": {
+          "items": [
+            {
+              "displayName": "Skyr Natur, Arla",
+              "id": "e2490de5-5bd3-43d5-b7c4-526e33f71304",
+              "metaLine": "63 kcal je 100 g",
+              "sourceType": "Product"
+            }
+          ]
+        },
+        "generators": {
+          "body": {
+            "$.items[*].id": {
+              "type": "Uuid"
+            }
+          }
+        },
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "matchingRules": {
+          "body": {
+            "$.items": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type",
+                  "min": 1
+                }
+              ]
+            },
+            "$.items[*].displayName": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.items[*].id": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
+                }
+              ]
+            },
+            "$.items[*].metaLine": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.items[*].sourceType": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "Product|Recipe"
+                }
+              ]
+            }
+          }
+        },
+        "status": 200
+      }
+    }
+  ],
+  "metadata": {
+    "pact-js": {
+      "version": "17.1.2"
+    },
+    "pactRust": {
+      "ffi": "0.5.6",
+      "models": "1.3.14"
+    },
+    "pactSpecification": {
+      "version": "3.0.0"
+    }
+  },
+  "provider": {
+    "name": "nutritrack-catalog"
+  }
+}

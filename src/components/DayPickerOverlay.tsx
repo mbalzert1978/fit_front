@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { Modal, Pressable, ScrollView, Text, View } from 'react-native';
+import { Modal, Pressable, ScrollView, Text } from 'react-native';
 import { addDays, format } from 'date-fns';
 import { de } from 'date-fns/locale';
 import { useTheme } from '../theme/ThemeProvider';

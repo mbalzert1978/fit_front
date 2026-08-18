@@ -13,12 +13,19 @@ sind die beiden Weißwerte des Kamerarahmens in `CameraFrame`, die über der Vor
 
 Consumer-driven: die App schreibt den Vertrag, das Backend verifiziert ihn.
 
-1. **Ein Pact je Bounded Context** (`nutritrack-identity`, `-catalog`, `-diary`, `-recipes`, `-goals`), nicht einer für die ganze API — so bricht eine Änderung im Catalog nicht die Diary-Verifikation.
+1. **Ein Pact je Bounded Context** (`nutritrack-identity`, `-catalog`, `-diary`, `-recipes`, `-goals`, `-health`), nicht einer für die ganze API — so bricht eine Änderung im Catalog nicht die Diary-Verifikation.
 2. **Nur prüfen, was ein Screen wirklich liest.** Felder ohne Verwendung gehören nicht in den Vertrag, sonst blockiert jede harmlose Backend-Änderung.
 3. **Matcher statt Beispielwerte** (`M.integer`, `M.uuid`, `M.eachLike`) — außer wo der Wert selbst Teil der Zusage ist: Barcode, `sourceType`, `basisUnit`, `unit`, `type` in `problem+json`.
 4. **Fehlerfälle sind Verträge.** `product-not-found` (404), `invalid-credentials` (401) und `slot-not-empty` (409) steuern Abläufe im UI und sind genauso zuzusichern wie die Erfolgsfälle.
 5. **`given(...)` benennt einen Zustand, den das Backend herstellen kann** — deutsch, kurz, ohne Ids.
 6. Neuer Endpunkt in einem Screen ⇒ neuer Pact-Test im selben Commit. Kein `fetch` ohne Vertrag.
+7. **Dieses Repo erzeugt Verträge und verifiziert nichts.** `./make.ps1 test` schreibt
+   `pacts/*.json`, und damit ist die Seite des Consumers fertig. Kein Ziel startet einen
+   Provider, ruft einen auf oder prüft, ob einer den Vertrag hält — wer das feststellt, ist der
+   Provider in seinem eigenen Repo. Die versionierte Vertragsdatei ist die Übergabe.
+8. **Ein Vertrag ist eine Bestellung, keine Abbildung.** Was ein Screen braucht, steht im
+   Vertrag — auch wenn das Backend es heute nicht anbietet und auch wenn seine Spezifikation es
+   anders nennt. Weicht beides voneinander ab, wird das abgestimmt, nicht einseitig nachgezogen.
 
 ## Prüfliste vor der Abnahme
 
