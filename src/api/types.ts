@@ -173,3 +173,20 @@ export type RecipeSave = {
 export type Preferences = { theme: 'Dark' | 'Light'; language: 'de' | 'en' };
 
 export type HealthConsent = { connected: boolean; importActivity: boolean; exportNutrition: boolean };
+
+/**
+ * Schritt 1 des Foto-Uploads: das Ziel, an das die Bytes gehen.
+ *
+ * `uploadHeaders` sind die Header, die der Server **mitsigniert** hat, und
+ * gehen unverändert an den Objektspeicher zurück. Es ist deshalb eine Abbildung
+ * vom Server und keine Liste, die der Client selbst zusammenstellt: weicht auch
+ * nur ein Header ab, weist der Objektspeicher die Bytes mit einer
+ * Signaturabweichung zurück.
+ */
+export type PhotoUploadTarget = {
+  photoId: string;
+  uploadUrl: string;
+  uploadHeaders: Record<string, string>;
+  /** Laufzeit der Signatur in Sekunden, gerechnet ab der Antwort. */
+  expiresIn: number;
+};

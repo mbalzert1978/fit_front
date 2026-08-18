@@ -57,7 +57,6 @@ type Options = {
   idempotencyKey?: string;
   ifMatch?: string;
   language?: string;
-  formData?: FormData;
 };
 
 /* Sitzung */
@@ -189,7 +188,7 @@ async function raw(path: string, o: Options, access: string | null): Promise<Res
     return await fetch(`${BASE}/api/v1${path}`, {
       method: o.method ?? 'GET',
       headers,
-      body: o.formData ?? (o.body !== undefined ? JSON.stringify(o.body) : undefined),
+      body: o.body !== undefined ? JSON.stringify(o.body) : undefined,
     });
   } catch {
     throw new OfflineError('Keine Verbindung');
@@ -311,5 +310,6 @@ export const endpoints = {
   diaryDay: (date: DiaryDate) => `/diary/days/${pathSegment(date)}`,
   productByBarcode: (ean: string) => `/catalog/products/by-barcode/${pathSegment(ean)}`,
   photo: (photoId: string) => `/catalog/photos/${pathSegment(photoId)}`,
+  photoUpload: (photoId: string) => `/catalog/photos/${pathSegment(photoId)}/upload`,
   entries: (date: DiaryDate) => `/diary/days/${pathSegment(date)}/entries`,
 } as const;
