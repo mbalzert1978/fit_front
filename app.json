@@ -1,0 +1,40 @@
+{
+  "expo": {
+    "name": "NutriTrack",
+    "slug": "nutritrack",
+    "scheme": "nutritrack",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "dark",
+    "newArchEnabled": false,
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "de.example.nutritrack",
+      "infoPlist": {
+        "NSCameraUsageDescription": "Zum Scannen von Barcodes und zum Fotografieren von Nährwerttabellen.",
+        "NSHealthShareUsageDescription": "Um deinen Kalorienverbrauch in dein Tagesziel einzurechnen.",
+        "NSHealthUpdateUsageDescription": "Um deine erfassten Nährwerte in Health zu schreiben."
+      }
+    },
+    "android": {
+      "package": "de.example.nutritrack",
+      "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.health.READ_ACTIVE_CALORIES_BURNED"
+      ]
+    },
+    "plugins": [
+      "expo-router",
+      "expo-secure-store",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Zum Scannen von Barcodes und zum Fotografieren von Nährwerttabellen."
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}

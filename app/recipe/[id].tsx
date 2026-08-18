@@ -1,0 +1,210 @@
+import React, { useEffect, useMemo, useState } from 'react';
+import { Text, TextInput, View } from 'react-native';
+import { router, useLocalSearchParams } from 'expo-router';
+import { Screen, SectionHeading, ValueField, Segmented, ListRow, OutlineButton, SquareIconButton } from '../../src/components';
+import { useTheme } from '../../src/theme/ThemeProvider';
+import { useRecipe, useSaveRecipe, useRecipeToDiary, useSlots, useProduct } from '../../src/api/hooks';
+import { newId } from '../../src/api/ids';
+import { parseDiaryDate, today } from '../../src/api/diaryDate';
+import type { RecipeIngredient } from '../../src/api/types';
+
+type Draft = { name: string; portions: string; ingredients: RecipeIngredient[] };
+
+export default function RecipeScreen() {
+  const t = useTheme();
+  const params = useLocalSearchParams<{ id: string; addProductId?: string; date?: string }>();
+  const isNew = params.id === 'neu';
+  const date = params.date ? parseDiaryDate(params.date) : today();
+
+  const { data: server } = useRecipe(params.id);
+  const { data: slots } = useSlots();
+  const save = useSaveRecipe(params.id);
+  const toDiary = useRecipeToDiary(params.id);
+  const { data: addedProduct } = useProduct(params.addProductId ?? '');
+
+  const [draft, setDraft] = useState<Draft>({ name: '', portions: '1', ingredients: [] });
+  const [loaded, setLoaded] = useState(false);
+
+  useEffect(() => {
+    if (server && !loaded) {
+      setDraft({ name: server.name, portions: String(server.portions), ingredients: server.ingredients });
+      setLoaded(true);
+    }
+  }, [server, loaded]);
+
+  // Aus dem Scan zurückgekehrt: das erfasste Produkt wird Zutat des offenen Rezepts.
+  useEffect(() => {
+    if (!addedProduct) return;
+    setDraft((d) =>
+      d.ingredients.some((i) => i.productId === addedProduct.id)
+        ? d
+        : {
+            ...d,
+            ingredients: [
+              ...d.ingredients,
+              { id: newId(), productId: addedProduct.id, displayName: addedProduct.name, grams: 100, computedKcal: Math.round(addedProduct.nutrientsPer100g.kcal) },
+            ],
+          },
+    );
+  }, [addedProduct]);
+
+  const totals = useMemo(() => {
+    const grams = draft.ingredients.reduce((s, i) => s + i.grams, 0);
+    const kcal = draft.ingredients.reduce((s, i) => s + i.computedKcal, 0);
+    const portions = Math.max(Number(draft.portions) || 1, 1);
+    return { grams, kcal, perPortionG: Math.round(grams / portions), perPortionKcal: Math.round(kcal / portions), portions };
+  }, [draft]);
+
+  // Vergleich gegen den zuletzt geladenen Serverstand: Name, Portionen, (Zutat, Gramm).
+  const changed = useMemo(() => {
+    if (isNew) return true;
+    if (!server) return false;
+    if (draft.name !== server.name) return true;
+    if (Number(draft.portions) !== server.portions) return true;
+    if (draft.ingredients.length !== server.ingredients.length) return true;
+    return draft.ingredients.some((i, n) => i.productId !== server.ingredients[n].productId || i.grams !== server.ingredients[n].grams);
+  }, [draft, server, isNew]);
+
+  const hasIngredients = draft.ingredients.length > 0;
+
+  const [unit, setUnit] = useState<'Portion' | 'Gram'>('Portion');
+  const [amount, setAmount] = useState('1');
+  const [slotId, setSlotId] = useState<string | null>(null);
+  useEffect(() => {
+    if (!slotId && slots?.length) setSlotId(slots[0].id);
+  }, [slots, slotId]);
+
+  const nameField = {
+    color: t.color.text,
+    backgroundColor: t.color.inputBg,
+    borderWidth: 1,
+    borderColor: t.color.neutral600,
+    borderRadius: t.radius.md,
+    paddingHorizontal: t.space[3],
+    minHeight: t.hit,
+  };
+
+  return (
+    <Screen>
+      <Text style={[t.font.label, { color: t.color.textMuted }]}>Rezept</Text>
+      <TextInput
+        value={draft.name}
+        onChangeText={(name) => setDraft((d) => ({ ...d, name }))}
+        placeholder="Name"
+        placeholderTextColor={t.color.textMuted}
+        style={[t.font.body, nameField, { marginTop: t.space[3] }]}
+      />
+
+      <SectionHeading>Zutaten</SectionHeading>
+      {draft.ingredients.map((i) => (
+        <View
+          key={i.id}
+          style={{ flexDirection: 'row', alignItems: 'center', gap: t.space[3], paddingVertical: t.space[3], borderBottomWidth: 1, borderBottomColor: t.color.divider }}
+        >
+          <View style={{ flex: 1 }}>
+            <Text style={[t.font.body, { color: t.color.text }]}>{i.displayName}</Text>
+            <Text style={[t.font.micro, t.tabular, { color: t.color.textMuted, marginTop: 2 }]}>{i.computedKcal} kcal</Text>
+          </View>
+          <ValueField
+            value={String(i.grams)}
+            unit="g"
+            onChangeText={(v) =>
+              setDraft((d) => ({
+                ...d,
+                ingredients: d.ingredients.map((x) => (x.id === i.id ? { ...x, grams: Number(v.replace(',', '.')) || 0 } : x)),
+              }))
+            }
+          />
+          <SquareIconButton glyph="−" label={`${i.displayName} entfernen`} onPress={() => setDraft((d) => ({ ...d, ingredients: d.ingredients.filter((x) => x.id !== i.id) }))} />
+        </View>
+      ))}
+      <View style={{ marginTop: t.space[6], gap: t.space[3] }}>
+        <OutlineButton
+          label="Zutat scannen"
+          onPress={() => router.push({ pathname: '/(tabs)/scan', params: { target: 'recipe', recipeId: params.id, date } })}
+        />
+        <Text style={[t.font.micro, { color: t.color.textMuted }]}>Zutaten kommen ausschließlich per Barcode oder OCR in die App.</Text>
+      </View>
+
+      <SectionHeading>Portionierung</SectionHeading>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: t.space[4] }}>
+        <ValueField value={draft.portions} onChangeText={(portions) => setDraft((d) => ({ ...d, portions }))} />
+        {hasIngredients ? (
+          <Text style={[t.font.body, t.tabular, { color: t.color.textMuted }]}>ergibt {totals.perPortionG} g pro Portion</Text>
+        ) : null}
+      </View>
+
+      {hasIngredients ? (
+        <>
+          <SectionHeading>Berechnet</SectionHeading>
+          <ListRow title="Gesamtmenge" value={`${totals.grams} g`} />
+          <ListRow title="Gesamt" value={`${totals.kcal} kcal`} />
+          <ListRow title="Pro Portion" value={`${totals.perPortionG} g`} />
+          <ListRow title="Pro Portion" value={`${totals.perPortionKcal} kcal`} />
+          {server && !changed ? (
+            <>
+              <ListRow title="Kohlenhydrate je Portion" value={`${server.macrosPerPortion.carbsG} g`} />
+              <ListRow title="Eiweiß je Portion" value={`${server.macrosPerPortion.proteinG} g`} />
+              <ListRow title="Fett je Portion" value={`${server.macrosPerPortion.fatG} g`} />
+            </>
+          ) : null}
+        </>
+      ) : null}
+
+      {changed ? (
+        <View style={{ marginTop: t.space[8] }}>
+          <OutlineButton
+            label="Rezept speichern"
+            disabled={!draft.name || !hasIngredients || save.isPending}
+            onPress={async () => {
+              const saved = await save.mutateAsync({
+                id: isNew ? newId() : params.id,
+                name: draft.name,
+                portions: Number(draft.portions) || 1,
+                ingredients: draft.ingredients.map((i) => ({ id: i.id, productId: i.productId, grams: i.grams })),
+                etag: server?.etag,
+              });
+              setLoaded(false);
+              router.replace({ pathname: '/recipe/[id]', params: { id: saved.id } });
+            }}
+          />
+        </View>
+      ) : (
+        <>
+          <SectionHeading>Zum Tagebuch hinzufügen</SectionHeading>
+          <Segmented
+            options={[
+              { value: 'Portion', label: 'Portionen' },
+              { value: 'Gram', label: 'Gramm' },
+            ]}
+            value={unit}
+            onChange={setUnit}
+          />
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: t.space[4], marginTop: t.space[4] }}>
+            <ValueField value={amount} onChangeText={setAmount} unit={unit === 'Portion' ? '' : 'g'} />
+            <Text style={[t.font.body, t.tabular, { color: t.color.textMuted }]}>
+              {unit === 'Portion'
+                ? `${Math.round((Number(amount) || 0) * totals.perPortionG)} g · ${Math.round((Number(amount) || 0) * totals.perPortionKcal)} kcal`
+                : `${Math.round(((Number(amount) || 0) / Math.max(totals.grams, 1)) * totals.kcal)} kcal`}
+            </Text>
+          </View>
+          <View style={{ marginTop: t.space[6] }}>
+            {(slots ?? []).map((s) => (
+              <ListRow key={s.id} title={s.name} value={s.id === slotId ? '✓' : ''} onPress={() => setSlotId(s.id)} />
+            ))}
+          </View>
+          <View style={{ marginTop: t.space[6] }}>
+            <OutlineButton
+              label="Zum Tagebuch hinzufügen"
+              disabled={!slotId || toDiary.isPending}
+              onPress={async () => {
+                await toDiary.mutateAsync({ date, mealSlotId: slotId!, amount: Number(amount) || 0, unit });
+                router.replace('/(tabs)/diary');
+              }}
+            />
+          </View>
+        </>
+      )}
+    </Screen>
+  );
+}
