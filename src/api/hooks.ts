@@ -2,10 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api, endpoints } from './client';
 import { qk } from './queryKeys';
 import type { DiaryDate } from './diaryDate';
-import type {
-  DiaryDay, Goals, HealthConsent, MealSlot, Preferences, Product, RecentItem,
-  Recipe, SearchHit, PhotoJob,
-} from './types';
+import type { DiaryDay, Goals, HealthConsent, MealSlot, Preferences, Product, RecentItem, Recipe, SearchHit, PhotoJob } from './types';
 
 /* Lesen */
 
@@ -108,8 +105,14 @@ export function useSlotMutations() {
   const qc = useQueryClient();
   const done = () => qc.invalidateQueries({ queryKey: qk.slots() });
   return {
-    add: useMutation({ mutationFn: (b: { id: string; name: string }) => api('/diary/slots', { method: 'POST', body: b }), onSuccess: done }),
-    rename: useMutation({ mutationFn: (b: { id: string; name: string }) => api(`/diary/slots/${b.id}`, { method: 'PATCH', body: { name: b.name } }), onSuccess: done }),
+    add: useMutation({
+      mutationFn: (b: { id: string; name: string }) => api('/diary/slots', { method: 'POST', body: b }),
+      onSuccess: done,
+    }),
+    rename: useMutation({
+      mutationFn: (b: { id: string; name: string }) => api(`/diary/slots/${b.id}`, { method: 'PATCH', body: { name: b.name } }),
+      onSuccess: done,
+    }),
     remove: useMutation({ mutationFn: (id: string) => api(`/diary/slots/${id}`, { method: 'DELETE' }), onSuccess: done }),
   };
 }
@@ -117,7 +120,13 @@ export function useSlotMutations() {
 export function useSaveRecipe(id: string) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (body: { id: string; name: string; portions: number; ingredients: { id: string; productId: string; grams: number }[]; etag?: string }) =>
+    mutationFn: (body: {
+      id: string;
+      name: string;
+      portions: number;
+      ingredients: { id: string; productId: string; grams: number }[];
+      etag?: string;
+    }) =>
       id === 'neu'
         ? api<Recipe>('/recipes', { method: 'POST', body, idempotencyKey: body.id })
         : api<Recipe>(`/recipes/${id}`, { method: 'PUT', body, ifMatch: body.etag }),

@@ -6,7 +6,8 @@ Expo und React Native, ein Code für iOS und Android, iOS zuerst.
 
 Das Backend liegt in einem eigenen Repository und wird von hier aus nur gelesen.
 Die API dazwischen ist consumer-driven mit Pact zugesichert: Diese App schreibt
-die Verträge, das Backend verifiziert sie.
+die Verträge nach [`pacts/`](pacts/) und ist damit fertig — verifiziert werden sie
+drüben.
 
 ## Weiter
 
@@ -15,5 +16,7 @@ die Verträge, das Backend verifiziert sie.
 - [`docs/regeln.md`](docs/regeln.md) — was für jede Änderung gilt.
 - [`docs/offene-punkte.md`](docs/offene-punkte.md) — was bewusst offen ist.
 - [`docs/decisions/`](docs/decisions/) — was entschieden wurde.
-- [`package.json`](package.json) — die Skripte sind der kanonische Weg zu
-  Typprüfung, Verträgen und Start.
+- [`make.ps1`](make.ps1) — der eine Weg durch dieses Repo: `./make.ps1 help` listet die
+  Ziele, `./make.ps1 ci` prüft alles, was hier geprüft wird.
+- [`package.json`](package.json) — die Skripte sind der kanonische Weg zu Lint,
+  Formatierung, Typprüfung, Verträgen und Start; `make.ps1` ruft sie auf, ersetzt sie nicht.

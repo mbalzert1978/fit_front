@@ -1,0 +1,199 @@
+{
+  "consumer": {
+    "name": "nutritrack-app"
+  },
+  "interactions": [
+    {
+      "description": "Anmeldung mit falschem Passwort",
+      "providerStates": [
+        {
+          "name": "Nutzer a@b.de existiert mit Passwort geheim123"
+        }
+      ],
+      "request": {
+        "body": {
+          "email": "a@b.de",
+          "password": "falsch"
+        },
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "method": "POST",
+        "path": "/api/v1/identity/login"
+      },
+      "response": {
+        "body": {
+          "status": 401,
+          "title": "Anmeldung fehlgeschlagen",
+          "type": "invalid-credentials"
+        },
+        "headers": {
+          "Content-Type": "application/problem+json"
+        },
+        "matchingRules": {
+          "body": {
+            "$.title": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            }
+          }
+        },
+        "status": 401
+      }
+    },
+    {
+      "description": "Anmeldung mit gültigen Daten",
+      "providerStates": [
+        {
+          "name": "Nutzer a@b.de existiert mit Passwort geheim123"
+        }
+      ],
+      "request": {
+        "body": {
+          "email": "a@b.de",
+          "password": "geheim123"
+        },
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "method": "POST",
+        "path": "/api/v1/identity/login"
+      },
+      "response": {
+        "body": {
+          "accessToken": "eyJhbGciOi...",
+          "expiresInSeconds": 900,
+          "refreshToken": "rt_...",
+          "userId": "e2490de5-5bd3-43d5-b7c4-526e33f71304"
+        },
+        "generators": {
+          "body": {
+            "$.userId": {
+              "type": "Uuid"
+            }
+          }
+        },
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "matchingRules": {
+          "body": {
+            "$.accessToken": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.expiresInSeconds": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "integer"
+                }
+              ]
+            },
+            "$.refreshToken": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.userId": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
+                }
+              ]
+            }
+          }
+        },
+        "status": 200
+      }
+    },
+    {
+      "description": "Sitzung erneuern",
+      "providerStates": [
+        {
+          "name": "Nutzer hat einen gültigen Refresh-Token"
+        }
+      ],
+      "request": {
+        "body": {
+          "refreshToken": "rt_..."
+        },
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "matchingRules": {
+          "body": {
+            "$.refreshToken": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            }
+          }
+        },
+        "method": "POST",
+        "path": "/api/v1/identity/refresh"
+      },
+      "response": {
+        "body": {
+          "accessToken": "eyJhbGciOi...",
+          "refreshToken": "rt_neu"
+        },
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "matchingRules": {
+          "body": {
+            "$.accessToken": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.refreshToken": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            }
+          }
+        },
+        "status": 200
+      }
+    }
+  ],
+  "metadata": {
+    "pact-js": {
+      "version": "17.1.2"
+    },
+    "pactRust": {
+      "ffi": "0.5.6",
+      "models": "1.3.14"
+    },
+    "pactSpecification": {
+      "version": "3.0.0"
+    }
+  },
+  "provider": {
+    "name": "nutritrack-identity"
+  }
+}

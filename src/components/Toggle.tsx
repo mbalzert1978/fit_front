@@ -3,7 +3,17 @@ import { Pressable, Text, View } from 'react-native';
 import { useTheme } from '../theme/ThemeProvider';
 
 /** Pillenschalter, 46 × 24, Knopf 18 px rund. */
-export function Toggle({ value, onChange, label, hint }: { value: boolean; onChange: (v: boolean) => void; label?: string; hint?: string }) {
+export function Toggle({
+  value,
+  onChange,
+  label,
+  hint,
+}: {
+  value: boolean;
+  onChange: (v: boolean) => void;
+  label?: string;
+  hint?: string;
+}) {
   const t = useTheme();
   const track = (
     <View

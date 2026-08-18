@@ -18,10 +18,7 @@
     },
     "android": {
       "package": "de.example.nutritrack",
-      "permissions": [
-        "android.permission.CAMERA",
-        "android.permission.health.READ_ACTIVE_CALORIES_BURNED"
-      ]
+      "permissions": ["android.permission.CAMERA", "android.permission.health.READ_ACTIVE_CALORIES_BURNED"]
     },
     "plugins": [
       "expo-router",

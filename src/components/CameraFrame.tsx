@@ -38,7 +38,17 @@ export function CameraFrame({
   return (
     <View style={[{ height, backgroundColor: t.color.cameraBg, overflow: 'hidden' }, style]}>
       {children}
-      <View style={{ position: 'absolute', left: 36, right: 36, top: height * 0.3, height: height * 0.4, borderWidth: 2, borderColor: 'rgba(255,255,255,0.9)' }} />
+      <View
+        style={{
+          position: 'absolute',
+          left: 36,
+          right: 36,
+          top: height * 0.3,
+          height: height * 0.4,
+          borderWidth: 2,
+          borderColor: 'rgba(255,255,255,0.9)',
+        }}
+      />
       {scanline ? (
         <Animated.View
           style={{

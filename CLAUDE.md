@@ -36,9 +36,13 @@ geraten und nicht ersatzweise erfunden — es wird nachgefragt.
 
 ## Befehle
 
-Die Skripte in [`package.json`](package.json) sind der kanonische Weg (`npm run typecheck`,
-`npm run test:pact`, …). Sie benutzen statt Ad-hoc-Kommandos; fehlt ein Weg, wird er dort ergänzt
-und nicht daneben improvisiert.
+[`make.ps1`](make.ps1) ist der kanonische Weg (`./make.ps1 ci`, `lint`, `format`, `complexity`,
+`typecheck`, `test`, …); die einzelnen Schritte stehen als Skripte in
+[`package.json`](package.json) und werden von dort aufgerufen. Beides benutzen statt
+Ad-hoc-Kommandos; fehlt ein Weg, wird er dort ergänzt und nicht daneben improvisiert.
+
+Kein Ziel greift über die Repo-Grenze: dieses Repo erzeugt Verträge, es verifiziert keine und
+startet nichts im Provider-Repo.
 
 ## Entscheidungen und Memory-Policy
 
