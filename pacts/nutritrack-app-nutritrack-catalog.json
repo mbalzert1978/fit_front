@@ -41,6 +41,7 @@
           }
         },
         "headers": {
+          "Authorization": "Bearer eyJ...",
           "Content-Type": "application/json",
           "Idempotency-Key": "3f2a1b0c-4d5e-4f60-8a91-b2c3d4e5f607"
         },
@@ -136,6 +137,17 @@
                 }
               ]
             }
+          },
+          "header": {
+            "Authorization": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "Bearer .+"
+                }
+              ]
+            }
           }
         },
         "method": "POST",
@@ -167,6 +179,7 @@
           }
         },
         "headers": {
+          "Cache-Control": "no-store",
           "Content-Type": "application/json"
         },
         "matchingRules": {
@@ -306,6 +319,7 @@
           }
         },
         "headers": {
+          "Cache-Control": "no-store",
           "Content-Type": "application/json"
         },
         "matchingRules": {
@@ -438,6 +452,7 @@
           }
         },
         "headers": {
+          "Cache-Control": "no-store",
           "Content-Type": "application/json"
         },
         "matchingRules": {
@@ -675,6 +690,7 @@
           }
         },
         "headers": {
+          "Cache-Control": "no-store",
           "Content-Type": "application/json"
         },
         "matchingRules": {
@@ -733,9 +749,10 @@
         }
       ],
       "request": {
-        "body": "LS1CbXl6R3F0STFpVGtFTFpHDQpDb250ZW50LURpc3Bvc2l0aW9uOiBmb3JtLWRhdGE7IG5hbWU9ImZpbGUiOyBmaWxlbmFtZT0ibmFlaHJ3ZXJ0dGFiZWxsZS5qcGciDQpDb250ZW50LVR5cGU6IGltYWdlL2pwZWcNCg0K/9j/4AAQSkZJRgABAQEAYABgAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/wAALCAABAAEBAREA/8QAFAABAAAAAAAAAAAAAAAAAAAACf/EABQQAQAAAAAAAAAAAAAAAAAAAAD/2gAIAQEAAD8AKp//2Q0KLS1CbXl6R3F0STFpVGtFTFpHLS0NCg==",
+        "body": "LS1BT2hSbFJZNUZ3VEp6Wk1ZDQpDb250ZW50LURpc3Bvc2l0aW9uOiBmb3JtLWRhdGE7IG5hbWU9ImZpbGUiOyBmaWxlbmFtZT0ibmFlaHJ3ZXJ0dGFiZWxsZS5qcGciDQpDb250ZW50LVR5cGU6IGltYWdlL2pwZWcNCg0K/9j/4AAQSkZJRgABAQEAYABgAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/wAALCAABAAEBAREA/8QAFAABAAAAAAAAAAAAAAAAAAAACf/EABQQAQAAAAAAAAAAAAAAAAAAAAD/2gAIAQEAAD8AKp//2Q0KLS1BT2hSbFJZNUZ3VEp6Wk1ZLS0NCg==",
         "headers": {
-          "Content-Type": "multipart/form-data; boundary=BmyzGqtI1iTkELZG"
+          "Authorization": "Bearer eyJ...",
+          "Content-Type": "multipart/form-data; boundary=AOhRlRY5FwTJzZMY"
         },
         "matchingRules": {
           "body": {
@@ -750,6 +767,15 @@
             }
           },
           "header": {
+            "Authorization": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "Bearer .+"
+                }
+              ]
+            },
             "Content-Type": {
               "combine": "AND",
               "matchers": [
@@ -784,6 +810,7 @@
           }
         },
         "headers": {
+          "Cache-Control": "no-store",
           "Content-Type": "application/json"
         },
         "matchingRules": {
@@ -824,6 +851,58 @@
           }
         },
         "status": 202
+      }
+    },
+    {
+      "description": "Produkt-Lookup mit abgelaufenem Token",
+      "providerStates": [
+        {
+          "name": "Access-Token ist abgelaufen"
+        }
+      ],
+      "request": {
+        "headers": {
+          "Accept-Language": "de",
+          "Authorization": "Bearer eyJ..."
+        },
+        "matchingRules": {
+          "header": {
+            "Authorization": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "Bearer .+"
+                }
+              ]
+            }
+          }
+        },
+        "method": "GET",
+        "path": "/api/v1/catalog/products/by-barcode/4008400401027"
+      },
+      "response": {
+        "body": {
+          "status": 401,
+          "title": "Anmeldung abgelaufen",
+          "type": "token-expired"
+        },
+        "headers": {
+          "Content-Type": "application/problem+json"
+        },
+        "matchingRules": {
+          "body": {
+            "$.title": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            }
+          }
+        },
+        "status": 401
       }
     },
     {
@@ -1216,6 +1295,22 @@
         }
       ],
       "request": {
+        "headers": {
+          "Authorization": "Bearer eyJ..."
+        },
+        "matchingRules": {
+          "header": {
+            "Authorization": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "Bearer .+"
+                }
+              ]
+            }
+          }
+        },
         "method": "GET",
         "path": "/api/v1/search",
         "query": {
@@ -1251,6 +1346,7 @@
           }
         },
         "headers": {
+          "Cache-Control": "no-store",
           "Content-Type": "application/json"
         },
         "matchingRules": {

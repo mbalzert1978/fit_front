@@ -4,6 +4,39 @@
   },
   "interactions": [
     {
+      "description": "Abmelden",
+      "providerStates": [
+        {
+          "name": "Nutzer hat einen gültigen Refresh-Token"
+        }
+      ],
+      "request": {
+        "body": {
+          "refreshToken": "rt_..."
+        },
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "matchingRules": {
+          "body": {
+            "$.refreshToken": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            }
+          }
+        },
+        "method": "POST",
+        "path": "/api/v1/identity/logout"
+      },
+      "response": {
+        "status": 204
+      }
+    },
+    {
       "description": "Anmeldung mit falschem Passwort",
       "providerStates": [
         {

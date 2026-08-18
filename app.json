@@ -13,11 +13,15 @@
       "infoPlist": {
         "NSCameraUsageDescription": "Zum Scannen von Barcodes und zum Fotografieren von Nährwerttabellen.",
         "NSHealthShareUsageDescription": "Um deinen Kalorienverbrauch in dein Tagesziel einzurechnen.",
-        "NSHealthUpdateUsageDescription": "Um deine erfassten Nährwerte in Health zu schreiben."
+        "NSHealthUpdateUsageDescription": "Um deine erfassten Nährwerte in Health zu schreiben.",
+        "NSAppTransportSecurity": {
+          "NSAllowsArbitraryLoads": false
+        }
       }
     },
     "android": {
       "package": "de.example.nutritrack",
+      "usesCleartextTraffic": false,
       "permissions": ["android.permission.CAMERA", "android.permission.health.READ_ACTIVE_CALORIES_BURNED"]
     },
     "plugins": [

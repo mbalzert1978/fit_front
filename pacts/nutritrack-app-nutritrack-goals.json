@@ -11,6 +11,22 @@
         }
       ],
       "request": {
+        "headers": {
+          "Authorization": "Bearer eyJ..."
+        },
+        "matchingRules": {
+          "header": {
+            "Authorization": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "Bearer .+"
+                }
+              ]
+            }
+          }
+        },
         "method": "GET",
         "path": "/api/v1/preferences"
       },
@@ -27,6 +43,7 @@
           }
         },
         "headers": {
+          "Cache-Control": "no-store",
           "Content-Type": "application/json"
         },
         "matchingRules": {
@@ -100,6 +117,7 @@
           }
         },
         "headers": {
+          "Authorization": "Bearer eyJ...",
           "Content-Type": "application/json"
         },
         "matchingRules": {
@@ -125,6 +143,17 @@
               "matchers": [
                 {
                   "match": "integer"
+                }
+              ]
+            }
+          },
+          "header": {
+            "Authorization": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "Bearer .+"
                 }
               ]
             }
@@ -165,6 +194,7 @@
           }
         },
         "headers": {
+          "Cache-Control": "no-store",
           "Content-Type": "application/json"
         },
         "matchingRules": {
@@ -316,6 +346,7 @@
           "language": "en"
         },
         "headers": {
+          "Authorization": "Bearer eyJ...",
           "Content-Type": "application/json"
         },
         "matchingRules": {
@@ -326,6 +357,17 @@
                 {
                   "match": "regex",
                   "regex": "de|en"
+                }
+              ]
+            }
+          },
+          "header": {
+            "Authorization": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "Bearer .+"
                 }
               ]
             }
@@ -347,6 +389,7 @@
           }
         },
         "headers": {
+          "Cache-Control": "no-store",
           "Content-Type": "application/json"
         },
         "matchingRules": {
@@ -406,6 +449,22 @@
         }
       ],
       "request": {
+        "headers": {
+          "Authorization": "Bearer eyJ..."
+        },
+        "matchingRules": {
+          "header": {
+            "Authorization": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "Bearer .+"
+                }
+              ]
+            }
+          }
+        },
         "method": "GET",
         "path": "/api/v1/goals"
       },
@@ -441,6 +500,7 @@
           }
         },
         "headers": {
+          "Cache-Control": "no-store",
           "Content-Type": "application/json"
         },
         "matchingRules": {
@@ -578,6 +638,57 @@
           }
         },
         "status": 200
+      }
+    },
+    {
+      "description": "Ziele mit abgelaufenem Token laden",
+      "providerStates": [
+        {
+          "name": "Access-Token ist abgelaufen"
+        }
+      ],
+      "request": {
+        "headers": {
+          "Authorization": "Bearer eyJ..."
+        },
+        "matchingRules": {
+          "header": {
+            "Authorization": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "Bearer .+"
+                }
+              ]
+            }
+          }
+        },
+        "method": "GET",
+        "path": "/api/v1/goals"
+      },
+      "response": {
+        "body": {
+          "status": 401,
+          "title": "Anmeldung abgelaufen",
+          "type": "token-expired"
+        },
+        "headers": {
+          "Content-Type": "application/problem+json"
+        },
+        "matchingRules": {
+          "body": {
+            "$.title": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            }
+          }
+        },
+        "status": 401
       }
     }
   ],

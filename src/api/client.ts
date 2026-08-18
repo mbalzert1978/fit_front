@@ -14,6 +14,17 @@ export type ApiResponse<T> = { data: T; meta: Meta | null; headers: Headers };
 const BASE = process.env.EXPO_PUBLIC_API_URL;
 if (!BASE) throw new Error('EXPO_PUBLIC_API_URL fehlt (.env)');
 
+/**
+ * Klartext ausschließlich gegen die eigene Maschine — Entwicklungsserver und
+ * Pact-Mock. Jede andere Basis muss `https` sein: über sie gehen Bearer-Token,
+ * Anmeldedaten und Gesundheitsdaten. Eine `.env` aus der falschen Umgebung soll
+ * die App beim Start zerreißen und nicht still im Klartext funken.
+ */
+const LOOPBACK = /^http:\/\/(127\.0\.0\.1|localhost|\[::1\]|10\.0\.2\.2)(:\d+)?\/?$/;
+if (!BASE.startsWith('https://') && !LOOPBACK.test(BASE)) {
+  throw new Error('EXPO_PUBLIC_API_URL muss https sein (Klartext nur gegen 127.0.0.1/localhost)');
+}
+
 export type ProblemDetails = {
   type: string;
   title: string;
@@ -49,20 +60,124 @@ type Options = {
   formData?: FormData;
 };
 
-async function token(key: 'accessToken' | 'refreshToken') {
-  return SecureStore.getItemAsync(key);
+/* Sitzung */
+
+/**
+ * Die Sitzung liegt als **ein** Datensatz unter **einem** Schlüssel. Zwei
+ * getrennte Schlüssel konnten einen halben Zustand hinterlassen, wenn der
+ * zweite Schreibvorgang scheitert: ein frischer Access-Token neben dem alten
+ * Refresh-Token. Der ginge bei der nächsten Erneuerung hinaus, und weil der
+ * Server ihn rotiert, gilt er dort als wiederverwendeter — was alle Sitzungen
+ * des Nutzers beendet. Ein Datensatz lässt sich nur ganz oder gar nicht
+ * schreiben.
+ */
+type StoredSession = {
+  accessToken: string;
+  refreshToken: string;
+  /** Millisekunden seit Epoche; `0`, wo der Server keine Laufzeit genannt hat. */
+  accessTokenExpiresAt: number;
+  refreshTokenExpiresAt: number;
+};
+
+const SESSION_KEY = 'session';
+
+/** Die getrennten Schlüssel der früheren Fassung; werden beim Abmelden mit entfernt. */
+const LEGACY_KEYS = ['accessToken', 'refreshToken'] as const;
+
+/**
+ * `WHEN_UNLOCKED_THIS_DEVICE_ONLY` hält die Sitzung aus iCloud- und
+ * iTunes-Backups heraus. Ohne diese Angabe wandert sie mit einem Backup auf ein
+ * zweites Gerät und meldet dort an, ohne dass jemand ein Passwort eingibt.
+ */
+const KEYCHAIN = { keychainAccessible: SecureStore.WHEN_UNLOCKED_THIS_DEVICE_ONLY };
+
+/** Vorlauf, mit dem ein Token als abgelaufen gilt — deckt Uhrenversatz ab. */
+const CLOCK_SKEW_MS = 30_000;
+
+async function readSession(): Promise<StoredSession | null> {
+  const stored = await SecureStore.getItemAsync(SESSION_KEY);
+  if (!stored) return null;
+  try {
+    const s = JSON.parse(stored) as StoredSession;
+    return typeof s?.accessToken === 'string' && s.accessToken ? s : null;
+  } catch {
+    return null;
+  }
 }
 
-/** Die einzige Stelle, an der ein Token-Paar in den sicheren Speicher geht. */
+/** Löscht die Sitzung im Gerät, ohne das Backend zu behelligen. */
+async function clearSession() {
+  await SecureStore.deleteItemAsync(SESSION_KEY);
+  for (const k of LEGACY_KEYS) await SecureStore.deleteItemAsync(k);
+}
+
+const secondsFromNow = (s: unknown) => (typeof s === 'number' && s > 0 ? Date.now() + s * 1000 : 0);
+
+/**
+ * Die einzige Stelle, an der eine Sitzung in den sicheren Speicher geht. Beide
+ * Token werden geprüft, **bevor** geschrieben wird: eine Antwort ohne
+ * vollständiges Paar darf keine halbe Sitzung hinterlassen, die `hasSession()`
+ * anschließend für gültig hält.
+ */
 export async function storeTokens(t: AuthTokens) {
-  await SecureStore.setItemAsync('accessToken', t.accessToken);
-  await SecureStore.setItemAsync('refreshToken', t.refreshToken);
+  if (!t?.accessToken || !t?.refreshToken) {
+    await clearSession();
+    throw new ApiError({ type: 'malformed-token-response', title: 'Antwort ohne vollständiges Token-Paar', status: 502 });
+  }
+  const session: StoredSession = {
+    accessToken: t.accessToken,
+    refreshToken: t.refreshToken,
+    accessTokenExpiresAt: secondsFromNow(t.expiresIn),
+    refreshTokenExpiresAt: secondsFromNow(t.refreshExpiresIn),
+  };
+  await SecureStore.setItemAsync(SESSION_KEY, JSON.stringify(session), KEYCHAIN);
 }
 
-export async function signOut() {
-  await SecureStore.deleteItemAsync('accessToken');
-  await SecureStore.deleteItemAsync('refreshToken');
+/**
+ * Angemeldet ist, wer einen Refresh-Token hat, der noch läuft. Am Access-Token
+ * allein hängt es nicht: der ist nach fünfzehn Minuten hinüber, die Sitzung
+ * deshalb aber nicht — und umgekehrt ist ein vorhandener, längst abgelaufener
+ * Access-Token kein Grund, die App hinter der Anmeldung zu starten.
+ */
+export async function hasSession() {
+  const s = await readSession();
+  if (!s?.refreshToken) return false;
+  return s.refreshTokenExpiresAt === 0 || Date.now() < s.refreshTokenExpiresAt;
 }
+
+let signedOutHandler: (() => void) | null = null;
+
+/**
+ * Was zu tun ist, wenn eine Sitzung endet: Cache leeren und zur Anmeldung
+ * führen. Registriert wird das genau einmal, in `app/_layout.tsx` — die
+ * HTTP-Schicht kennt weder Router noch Query-Cache und soll beide nicht kennen.
+ */
+export function onSignedOut(fn: () => void) {
+  signedOutHandler = fn;
+}
+
+/**
+ * Abmelden heißt: der Refresh-Token wird **serverseitig** entwertet und erst
+ * danach lokal gelöscht. Nur lokal zu löschen ließe ihn über seine volle
+ * Laufzeit gültig — wer ihn aus einem Gerätebackup zieht, hätte damit weiter
+ * Zugriff. Scheitert der Aufruf (offline, Server weg), wird trotzdem lokal
+ * abgemeldet: ein Gerät, das nicht abmelden kann, darf nicht angemeldet
+ * bleiben.
+ */
+export async function signOut() {
+  const s = await readSession();
+  if (s?.refreshToken) {
+    try {
+      await raw('/identity/logout', { method: 'POST', body: { refreshToken: s.refreshToken } }, null);
+    } catch {
+      /* Lokal wird trotzdem abgemeldet. */
+    }
+  }
+  await clearSession();
+  signedOutHandler?.();
+}
+
+/* Anfrage und Antwort */
 
 async function raw(path: string, o: Options, access: string | null): Promise<Response> {
   const headers: Record<string, string> = { Accept: 'application/json', 'Accept-Language': o.language ?? 'de' };
@@ -87,6 +202,12 @@ async function raw(path: string, o: Options, access: string | null): Promise<Res
  * `meta` und `headers` genau einmal im Repo zusammengesetzt. Fehler bleiben
  * unberührt (`problem+json` trägt keinen Umschlag), eine Antwort ohne Rumpf
  * (204) hat weder `meta` noch Nutzlast.
+ *
+ * Der Umschlag wird geprüft, nicht behauptet: ein `as`-Cast hätte eine Antwort
+ * ohne `data` als `undefined`-Nutzlast durchgereicht, und die fällt erst
+ * irgendwo im Screen auf — oder gar nicht, weil eine leere Liste harmlos
+ * aussieht. Der Umschlag ist Vorgabe; fehlt er, ist die Antwort falsch und
+ * nicht leer.
  */
 async function unwrap<T>(res: Response): Promise<ApiResponse<T>> {
   const headers = res.headers;
@@ -95,36 +216,70 @@ async function unwrap<T>(res: Response): Promise<ApiResponse<T>> {
     const problem = (await res.json().catch(() => null)) as ProblemDetails | null;
     throw new ApiError(problem ?? { type: 'about:blank', title: 'Unbekannter Fehler', status: res.status });
   }
-  const envelope = (await res.json()) as Envelope<T>;
-  return { data: envelope.data, meta: envelope.meta, headers };
+  const body = (await res.json().catch(() => null)) as Envelope<T> | null;
+  if (!body || typeof body !== 'object' || !('data' in body)) {
+    throw new ApiError({ type: 'malformed-envelope', title: 'Antwort ohne data/meta-Umschlag', status: res.status });
+  }
+  return { data: body.data, meta: body.meta ?? null, headers };
 }
 
-/** Erneuert das Token-Paar und liefert den frischen Access-Token, oder `null`. */
-async function renew(): Promise<string | null> {
-  const refreshToken = await token('refreshToken');
-  if (!refreshToken) return null;
-  const r = await raw('/identity/refresh', { method: 'POST', body: { refreshToken } }, null);
+async function renewOnce(): Promise<string | null> {
+  const s = await readSession();
+  if (!s?.refreshToken) return null;
+  const r = await raw('/identity/refresh', { method: 'POST', body: { refreshToken: s.refreshToken } }, null);
   if (!r.ok) return null;
   const fresh = (await unwrap<AuthTokens>(r)).data;
   await storeTokens(fresh);
   return fresh.accessToken;
 }
 
+let renewal: Promise<string | null> | null = null;
+
+/**
+ * Erneuert höchstens **einmal gleichzeitig**. Beim Start laufen ein halbes
+ * Dutzend Abfragen parallel; liefe jede in ihre eigene Erneuerung, gingen sechs
+ * Anfragen mit demselben Refresh-Token hinaus. Der Server rotiert ihn, also
+ * verbraucht die erste ihn und die übrigen fünf legen einen bereits entwerteten
+ * vor — was dort als Wiederverwendung gilt und alle Sitzungen des Nutzers
+ * beendet. Alle Wartenden teilen sich deshalb dieselbe Zusage.
+ */
+function renew(): Promise<string | null> {
+  renewal ??= renewOnce().finally(() => {
+    renewal = null;
+  });
+  return renewal;
+}
+
+/** Wiederholbar ist, was der Server zweimal gleich beantwortet. */
+const IDEMPOTENT = new Set(['GET', 'HEAD', 'PUT', 'DELETE']);
+
+const mayReplay = (o: Options) => IDEMPOTENT.has(o.method ?? 'GET') || !!o.idempotencyKey;
+
 /**
  * Eine einzige fetch-Hülle: Basis-URL, Authorization, Accept-Language,
- * Idempotency-Key, problem+json → ApiError. Bei 401 einmalig Token erneuern
- * und wiederholen; scheitert auch das, abmelden.
+ * Idempotency-Key, problem+json → ApiError.
+ *
+ * Erneuert wird **vorab**, sobald der Access-Token abgelaufen ist — damit
+ * braucht der Normalfall den 401-Weg gar nicht. Bleibt der 401 trotzdem (der
+ * Server hat die Sitzung verworfen), wird einmal erneuert und danach nur
+ * wiederholt, was der Server zweimal gleich beantwortet: ein `POST` oder
+ * `PATCH` ohne `Idempotency-Key` würde sonst eine bereits angewandte Wirkung
+ * ein zweites Mal auslösen. Scheitert die Erneuerung, wird abgemeldet.
  */
 async function send(path: string, o: Options): Promise<Response> {
-  const res = await raw(path, o, await token('accessToken'));
+  const s = await readSession();
+  const expired = !!s && s.accessTokenExpiresAt > 0 && Date.now() >= s.accessTokenExpiresAt - CLOCK_SKEW_MS;
+  const access = expired ? await renew() : (s?.accessToken ?? null);
+
+  const res = await raw(path, o, access);
   if (res.status !== 401) return res;
 
-  const access = await renew();
-  if (!access) {
+  const fresh = await renew();
+  if (!fresh) {
     await signOut();
     return res;
   }
-  return raw(path, o, access);
+  return mayReplay(o) ? raw(path, o, fresh) : res;
 }
 
 /**
@@ -144,9 +299,17 @@ export async function api<T>(path: string, o: Options = {}): Promise<T> {
 /* Endpunkte, die das Grundgerüst braucht. Der vollständige, typisierte Client
    wird mit openapi-typescript aus der Swagger-Datei erzeugt (npm run api:types). */
 
+/**
+ * Ein Pfadsegment, sicher eingesetzt. Ids kommen aus Deep-Links
+ * (`nutritrack://product/<id>`) und Barcodes von der Kamera — beides Eingaben
+ * von außen. Unkodiert könnte ein `/` oder ein `..` darin den Pfad verlassen
+ * und einen anderen Endpunkt treffen als den gemeinten.
+ */
+export const pathSegment = (v: string) => encodeURIComponent(v);
+
 export const endpoints = {
-  diaryDay: (date: DiaryDate) => `/diary/days/${date}`,
-  productByBarcode: (ean: string) => `/catalog/products/by-barcode/${ean}`,
-  photo: (photoId: string) => `/catalog/photos/${photoId}`,
-  entries: (date: DiaryDate) => `/diary/days/${date}/entries`,
+  diaryDay: (date: DiaryDate) => `/diary/days/${pathSegment(date)}`,
+  productByBarcode: (ean: string) => `/catalog/products/by-barcode/${pathSegment(ean)}`,
+  photo: (photoId: string) => `/catalog/photos/${pathSegment(photoId)}`,
+  entries: (date: DiaryDate) => `/diary/days/${pathSegment(date)}/entries`,
 } as const;

@@ -1,5 +1,6 @@
-import { pact, M, enveloped, jsonHeaders, authResponseHeaders } from './setup';
-import { api, apiWithMeta } from '../src/api/client';
+import { pact, M, enveloped, jsonHeaders, authResponseHeaders, problem } from './setup';
+import { api, apiWithMeta, signOut } from '../src/api/client';
+import { __seedSession, __readSession } from './stubs/expoSecureStore';
 import type { AuthTokens } from '../src/api/types';
 
 /**
@@ -72,12 +73,8 @@ describe('Identity', () => {
         headers: jsonHeaders,
         body: { email: 'a@b.de', password: 'falsch' },
       })
-      .willRespondWith({
-        status: 401,
-        // Fehler tragen keinen Umschlag: problem+json bleibt, wie es ist.
-        headers: { 'Content-Type': 'application/problem+json' },
-        body: { type: 'invalid-credentials', title: M.string('Anmeldung fehlgeschlagen'), status: 401 },
-      });
+      // Fehler tragen keinen Umschlag: problem+json bleibt, wie es ist.
+      .willRespondWith(problem('invalid-credentials', 'Anmeldung fehlgeschlagen', 401));
 
     await p.executeTest(async () => {
       await expect(api('/identity/login', { method: 'POST', body: { email: 'a@b.de', password: 'falsch' } })).rejects.toMatchObject({
@@ -113,6 +110,30 @@ describe('Identity', () => {
       expect(r.data.refreshToken).toBeTruthy();
       // Auch hier: derselbe Faden im Header wie im Rumpf.
       expect(r.headers.get('X-Request-Id')).toBe(r.meta?.requestId);
+    });
+  });
+
+  it('entwertet den Refresh-Token beim Abmelden', async () => {
+    const p = provider();
+    p.given('Nutzer hat einen gültigen Refresh-Token')
+      .uponReceiving('Abmelden')
+      .withRequest({
+        method: 'POST',
+        path: '/api/v1/identity/logout',
+        headers: jsonHeaders,
+        body: { refreshToken: M.string('rt_...') },
+      })
+      .willRespondWith({ status: 204 });
+
+    await p.executeTest(async () => {
+      __seedSession('rt_alt');
+      // Abmelden ist keine örtliche Angelegenheit: ohne diesen Aufruf bliebe der
+      // Refresh-Token seine volle Laufzeit gültig, und wer ihn aus einem
+      // Gerätebackup zieht, käme damit weiter an die Daten.
+      await signOut();
+      // Und danach ist im Gerät nichts mehr übrig, woraus sich eine Sitzung
+      // wiederherstellen ließe.
+      expect(__readSession()).toBeNull();
     });
   });
 });

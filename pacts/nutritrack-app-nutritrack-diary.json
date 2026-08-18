@@ -11,7 +11,21 @@
         }
       ],
       "request": {
+        "headers": {
+          "Authorization": "Bearer eyJ..."
+        },
         "matchingRules": {
+          "header": {
+            "Authorization": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "Bearer .+"
+                }
+              ]
+            }
+          },
           "path": {
             "combine": "AND",
             "matchers": [
@@ -79,6 +93,7 @@
         },
         "headers": {
           "Accept-Language": "de",
+          "Authorization": "Bearer eyJ...",
           "Content-Type": "application/json",
           "Idempotency-Key": "5a9b0c1d-2e3f-4a5b-8c9d-0e1f2a3b4c5d"
         },
@@ -119,6 +134,17 @@
                 }
               ]
             }
+          },
+          "header": {
+            "Authorization": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "Bearer .+"
+                }
+              ]
+            }
           }
         },
         "method": "POST",
@@ -145,6 +171,7 @@
           }
         },
         "headers": {
+          "Cache-Control": "no-store",
           "Content-Type": "application/json"
         },
         "matchingRules": {
@@ -211,7 +238,21 @@
         }
       ],
       "request": {
+        "headers": {
+          "Authorization": "Bearer eyJ..."
+        },
         "matchingRules": {
+          "header": {
+            "Authorization": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "Bearer .+"
+                }
+              ]
+            }
+          },
           "path": {
             "combine": "AND",
             "matchers": [
@@ -230,6 +271,58 @@
       }
     },
     {
+      "description": "Fremden Tagebuchtag laden",
+      "providerStates": [
+        {
+          "name": "Tagebuchtag gehört einem anderen Nutzer"
+        }
+      ],
+      "request": {
+        "headers": {
+          "Accept-Language": "de",
+          "Authorization": "Bearer eyJ..."
+        },
+        "matchingRules": {
+          "header": {
+            "Authorization": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "Bearer .+"
+                }
+              ]
+            }
+          }
+        },
+        "method": "GET",
+        "path": "/api/v1/diary/days/2026-08-06"
+      },
+      "response": {
+        "body": {
+          "status": 403,
+          "title": "Kein Zugriff auf diese Ressource",
+          "type": "forbidden"
+        },
+        "headers": {
+          "Content-Type": "application/problem+json"
+        },
+        "matchingRules": {
+          "body": {
+            "$.title": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            }
+          }
+        },
+        "status": 403
+      }
+    },
+    {
       "description": "Leeren Slot löschen",
       "providerStates": [
         {
@@ -237,7 +330,21 @@
         }
       ],
       "request": {
+        "headers": {
+          "Authorization": "Bearer eyJ..."
+        },
         "matchingRules": {
+          "header": {
+            "Authorization": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "Bearer .+"
+                }
+              ]
+            }
+          },
           "path": {
             "combine": "AND",
             "matchers": [
@@ -263,6 +370,22 @@
         }
       ],
       "request": {
+        "headers": {
+          "Authorization": "Bearer eyJ..."
+        },
+        "matchingRules": {
+          "header": {
+            "Authorization": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "Bearer .+"
+                }
+              ]
+            }
+          }
+        },
         "method": "GET",
         "path": "/api/v1/diary/recent",
         "query": {
@@ -296,6 +419,7 @@
           }
         },
         "headers": {
+          "Cache-Control": "no-store",
           "Content-Type": "application/json"
         },
         "matchingRules": {
@@ -400,7 +524,9 @@
           }
         },
         "headers": {
-          "Content-Type": "application/json"
+          "Authorization": "Bearer eyJ...",
+          "Content-Type": "application/json",
+          "Idempotency-Key": "66666666-7777-8888-9999-000000000000"
         },
         "matchingRules": {
           "body": {
@@ -410,6 +536,17 @@
                 {
                   "match": "regex",
                   "regex": "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
+                }
+              ]
+            }
+          },
+          "header": {
+            "Authorization": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "Bearer .+"
                 }
               ]
             }
@@ -439,6 +576,7 @@
           }
         },
         "headers": {
+          "Cache-Control": "no-store",
           "Content-Type": "application/json"
         },
         "matchingRules": {
@@ -509,6 +647,7 @@
           "name": "Zweites Frühstück"
         },
         "headers": {
+          "Authorization": "Bearer eyJ...",
           "Content-Type": "application/json"
         },
         "matchingRules": {
@@ -518,6 +657,17 @@
               "matchers": [
                 {
                   "match": "type"
+                }
+              ]
+            }
+          },
+          "header": {
+            "Authorization": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "Bearer .+"
                 }
               ]
             }
@@ -556,6 +706,7 @@
           }
         },
         "headers": {
+          "Cache-Control": "no-store",
           "Content-Type": "application/json"
         },
         "matchingRules": {
@@ -622,6 +773,22 @@
         }
       ],
       "request": {
+        "headers": {
+          "Authorization": "Bearer eyJ..."
+        },
+        "matchingRules": {
+          "header": {
+            "Authorization": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "Bearer .+"
+                }
+              ]
+            }
+          }
+        },
         "method": "GET",
         "path": "/api/v1/diary/slots"
       },
@@ -648,6 +815,7 @@
           }
         },
         "headers": {
+          "Cache-Control": "no-store",
           "Content-Type": "application/json"
         },
         "matchingRules": {
@@ -727,6 +895,7 @@
           "grams": 200
         },
         "headers": {
+          "Authorization": "Bearer eyJ...",
           "Content-Type": "application/json"
         },
         "matchingRules": {
@@ -736,6 +905,17 @@
               "matchers": [
                 {
                   "match": "integer"
+                }
+              ]
+            }
+          },
+          "header": {
+            "Authorization": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "Bearer .+"
                 }
               ]
             }
@@ -774,6 +954,7 @@
           }
         },
         "headers": {
+          "Cache-Control": "no-store",
           "Content-Type": "application/json"
         },
         "matchingRules": {
@@ -841,7 +1022,21 @@
       ],
       "request": {
         "headers": {
-          "Accept-Language": "de"
+          "Accept-Language": "de",
+          "Authorization": "Bearer eyJ..."
+        },
+        "matchingRules": {
+          "header": {
+            "Authorization": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "Bearer .+"
+                }
+              ]
+            }
+          }
         },
         "method": "GET",
         "path": "/api/v1/diary/days/2026-08-04"
@@ -910,6 +1105,7 @@
           }
         },
         "headers": {
+          "Cache-Control": "no-store",
           "Content-Type": "application/json"
         },
         "matchingRules": {
@@ -1165,6 +1361,58 @@
       }
     },
     {
+      "description": "Tagesansicht mit abgelaufenem Token laden",
+      "providerStates": [
+        {
+          "name": "Access-Token ist abgelaufen"
+        }
+      ],
+      "request": {
+        "headers": {
+          "Accept-Language": "de",
+          "Authorization": "Bearer eyJ..."
+        },
+        "matchingRules": {
+          "header": {
+            "Authorization": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "Bearer .+"
+                }
+              ]
+            }
+          }
+        },
+        "method": "GET",
+        "path": "/api/v1/diary/days/2026-08-04"
+      },
+      "response": {
+        "body": {
+          "status": 401,
+          "title": "Anmeldung abgelaufen",
+          "type": "token-expired"
+        },
+        "headers": {
+          "Content-Type": "application/problem+json"
+        },
+        "matchingRules": {
+          "body": {
+            "$.title": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            }
+          }
+        },
+        "status": 401
+      }
+    },
+    {
       "description": "Tagesansicht ohne Aktivitätsquelle laden",
       "providerStates": [
         {
@@ -1173,7 +1421,21 @@
       ],
       "request": {
         "headers": {
-          "Accept-Language": "de"
+          "Accept-Language": "de",
+          "Authorization": "Bearer eyJ..."
+        },
+        "matchingRules": {
+          "header": {
+            "Authorization": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "Bearer .+"
+                }
+              ]
+            }
+          }
         },
         "method": "GET",
         "path": "/api/v1/diary/days/2026-08-05"
@@ -1220,6 +1482,7 @@
           }
         },
         "headers": {
+          "Cache-Control": "no-store",
           "Content-Type": "application/json"
         },
         "matchingRules": {

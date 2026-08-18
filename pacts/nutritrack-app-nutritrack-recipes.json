@@ -4,6 +4,66 @@
   },
   "interactions": [
     {
+      "description": "Fremdes Rezeptblatt laden",
+      "providerStates": [
+        {
+          "name": "Rezept gehört einem anderen Nutzer"
+        }
+      ],
+      "request": {
+        "headers": {
+          "Authorization": "Bearer eyJ..."
+        },
+        "matchingRules": {
+          "header": {
+            "Authorization": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "Bearer .+"
+                }
+              ]
+            }
+          },
+          "path": {
+            "combine": "AND",
+            "matchers": [
+              {
+                "match": "regex",
+                "regex": "/api/v1/recipes/[0-9a-f-]{36}"
+              }
+            ]
+          }
+        },
+        "method": "GET",
+        "path": "/api/v1/recipes/3e2d1c0b-9999-4888-8777-666655554444"
+      },
+      "response": {
+        "body": {
+          "status": 403,
+          "title": "Kein Zugriff auf diese Ressource",
+          "type": "forbidden"
+        },
+        "headers": {
+          "Content-Type": "application/problem+json"
+        },
+        "matchingRules": {
+          "body": {
+            "$.title": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            }
+          }
+        },
+        "status": 403
+      }
+    },
+    {
       "description": "Neues Rezept anlegen",
       "providerStates": [
         {
@@ -37,6 +97,7 @@
           }
         },
         "headers": {
+          "Authorization": "Bearer eyJ...",
           "Content-Type": "application/json",
           "Idempotency-Key": "2f1c9b7e-1111-4222-8333-444455556666"
         },
@@ -102,6 +163,17 @@
                 }
               ]
             }
+          },
+          "header": {
+            "Authorization": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "Bearer .+"
+                }
+              ]
+            }
           }
         },
         "method": "POST",
@@ -148,6 +220,7 @@
           }
         },
         "headers": {
+          "Cache-Control": "no-store",
           "Content-Type": "application/json",
           "ETag": "1"
         },
@@ -314,7 +387,9 @@
           }
         },
         "headers": {
-          "Content-Type": "application/json"
+          "Authorization": "Bearer eyJ...",
+          "Content-Type": "application/json",
+          "Idempotency-Key": "4d3c2b1a-0000-4111-8222-333344445555"
         },
         "matchingRules": {
           "body": {
@@ -332,6 +407,17 @@
                 {
                   "match": "regex",
                   "regex": "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
+                }
+              ]
+            }
+          },
+          "header": {
+            "Authorization": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "Bearer .+"
                 }
               ]
             }
@@ -370,6 +456,7 @@
           }
         },
         "headers": {
+          "Cache-Control": "no-store",
           "Content-Type": "application/json"
         },
         "matchingRules": {
@@ -429,6 +516,163 @@
       }
     },
     {
+      "description": "Rezept gegen überholten ETag speichern",
+      "providerStates": [
+        {
+          "name": "Rezept wurde zwischenzeitlich anderswo gespeichert"
+        }
+      ],
+      "request": {
+        "body": {
+          "id": "e2490de5-5bd3-43d5-b7c4-526e33f71304",
+          "ingredients": [
+            {
+              "grams": 600,
+              "id": "e2490de5-5bd3-43d5-b7c4-526e33f71304",
+              "productId": "e2490de5-5bd3-43d5-b7c4-526e33f71304"
+            }
+          ],
+          "name": "Hähnchen-Reis-Pfanne",
+          "portions": 4
+        },
+        "generators": {
+          "body": {
+            "$.id": {
+              "type": "Uuid"
+            },
+            "$.ingredients[*].id": {
+              "type": "Uuid"
+            },
+            "$.ingredients[*].productId": {
+              "type": "Uuid"
+            }
+          }
+        },
+        "headers": {
+          "Authorization": "Bearer eyJ...",
+          "Content-Type": "application/json",
+          "If-Match": "3"
+        },
+        "matchingRules": {
+          "body": {
+            "$.id": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
+                }
+              ]
+            },
+            "$.ingredients": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type",
+                  "min": 1
+                }
+              ]
+            },
+            "$.ingredients[*].grams": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "integer"
+                }
+              ]
+            },
+            "$.ingredients[*].id": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
+                }
+              ]
+            },
+            "$.ingredients[*].productId": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
+                }
+              ]
+            },
+            "$.name": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.portions": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "integer"
+                }
+              ]
+            }
+          },
+          "header": {
+            "Authorization": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "Bearer .+"
+                }
+              ]
+            },
+            "If-Match": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            }
+          },
+          "path": {
+            "combine": "AND",
+            "matchers": [
+              {
+                "match": "regex",
+                "regex": "/api/v1/recipes/[0-9a-f-]{36}"
+              }
+            ]
+          }
+        },
+        "method": "PUT",
+        "path": "/api/v1/recipes/2f1c9b7e-1111-4222-8333-444455556666"
+      },
+      "response": {
+        "body": {
+          "status": 409,
+          "title": "Rezept wurde zwischenzeitlich geändert",
+          "type": "concurrency-conflict"
+        },
+        "headers": {
+          "Content-Type": "application/problem+json"
+        },
+        "matchingRules": {
+          "body": {
+            "$.title": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            }
+          }
+        },
+        "status": 409
+      }
+    },
+    {
       "description": "Rezept ändern",
       "providerStates": [
         {
@@ -462,6 +706,7 @@
           }
         },
         "headers": {
+          "Authorization": "Bearer eyJ...",
           "Content-Type": "application/json",
           "If-Match": "7"
         },
@@ -529,6 +774,15 @@
             }
           },
           "header": {
+            "Authorization": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "Bearer .+"
+                }
+              ]
+            },
             "If-Match": {
               "combine": "AND",
               "matchers": [
@@ -592,6 +846,7 @@
           }
         },
         "headers": {
+          "Cache-Control": "no-store",
           "Content-Type": "application/json",
           "ETag": "8"
         },
@@ -744,7 +999,21 @@
         }
       ],
       "request": {
+        "headers": {
+          "Authorization": "Bearer eyJ..."
+        },
         "matchingRules": {
+          "header": {
+            "Authorization": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "Bearer .+"
+                }
+              ]
+            }
+          },
           "path": {
             "combine": "AND",
             "matchers": [
@@ -799,6 +1068,7 @@
           }
         },
         "headers": {
+          "Cache-Control": "no-store",
           "Content-Type": "application/json",
           "ETag": "7"
         },
@@ -951,6 +1221,22 @@
         }
       ],
       "request": {
+        "headers": {
+          "Authorization": "Bearer eyJ..."
+        },
+        "matchingRules": {
+          "header": {
+            "Authorization": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "Bearer .+"
+                }
+              ]
+            }
+          }
+        },
         "method": "GET",
         "path": "/api/v1/recipes",
         "query": {
@@ -984,6 +1270,7 @@
           }
         },
         "headers": {
+          "Cache-Control": "no-store",
           "Content-Type": "application/json"
         },
         "matchingRules": {
@@ -1065,6 +1352,62 @@
           }
         },
         "status": 200
+      }
+    },
+    {
+      "description": "Rezeptliste mit abgelaufenem Token laden",
+      "providerStates": [
+        {
+          "name": "Access-Token ist abgelaufen"
+        }
+      ],
+      "request": {
+        "headers": {
+          "Authorization": "Bearer eyJ..."
+        },
+        "matchingRules": {
+          "header": {
+            "Authorization": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "Bearer .+"
+                }
+              ]
+            }
+          }
+        },
+        "method": "GET",
+        "path": "/api/v1/recipes",
+        "query": {
+          "sort": [
+            "name_desc"
+          ]
+        }
+      },
+      "response": {
+        "body": {
+          "status": 401,
+          "title": "Anmeldung abgelaufen",
+          "type": "token-expired"
+        },
+        "headers": {
+          "Content-Type": "application/problem+json"
+        },
+        "matchingRules": {
+          "body": {
+            "$.title": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            }
+          }
+        },
+        "status": 401
       }
     }
   ],

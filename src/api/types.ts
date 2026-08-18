@@ -128,6 +128,48 @@ export type Goals = {
   includeActivityInGoal: boolean;
 };
 
+/**
+ * Was am Tagesziel geändert werden darf — jedes Feld für sich, der Screen
+ * speichert in kleinen Teilnutzlasten. Ein offener `Record<string, unknown>`
+ * stand hier vorher und ließ jedes beliebige Feld mitlaufen; abgeleitete Werte
+ * (`grams`, `kcal`) und alles, was der Server aus eigener Autorität setzt,
+ * gehören nicht in eine Anfrage.
+ */
+export type GoalsUpdate = {
+  dailyKcal?: number;
+  macros?: Partial<Record<'carbs' | 'protein' | 'fat', { percent: number }>>;
+  energyStandard?: Goals['energyStandard'];
+  rounding?: Goals['rounding'];
+  includeActivityInGoal?: boolean;
+};
+
+/**
+ * Ein neu angelegtes Produkt. `source` und `verifiedByUser` stehen hier, weil
+ * der Bestätigungs-Screen sie setzt — welchen Wert der Server davon übernimmt,
+ * ist seine Sache. Weitere Felder gibt es nicht: was nicht aufgezählt ist,
+ * kommt auch nicht mit.
+ */
+export type ProductCreate = {
+  id: string;
+  barcode: string | null;
+  name: string;
+  brand: string | null;
+  basisUnit: 'Gram';
+  source: 'Ocr' | 'Manual';
+  verifiedByUser: boolean;
+  photoId: string | null;
+  nutrientsPer100g: Record<keyof Nutrients, number | null>;
+};
+
+/** Was ein Rezept beim Speichern trägt. `etag` geht als `If-Match` hinaus, nicht in den Rumpf. */
+export type RecipeSave = {
+  id: string;
+  name: string;
+  portions: number;
+  ingredients: { id: string; productId: string; grams: number }[];
+  etag?: string;
+};
+
 export type Preferences = { theme: 'Dark' | 'Light'; language: 'de' | 'en' };
 
 export type HealthConsent = { connected: boolean; importActivity: boolean; exportNutrition: boolean };

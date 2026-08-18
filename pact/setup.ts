@@ -42,9 +42,40 @@ export const enveloped = (data: unknown) => ({
 export const jsonHeaders = { 'Content-Type': 'application/json' };
 
 /**
- * Antworten, die Token tragen. `Cache-Control: no-store` hält sie aus jedem
- * Zwischenspeicher heraus; `X-Request-Id` ist der Faden, an dem sich ein
- * Anmeldeversuch nachverfolgen lässt. Beide sind Teil der Zusage, nicht Beiwerk.
+ * Der Nachweis der Anmeldung an einer geschützten Anfrage.
+ *
+ * Er steht in **jedem** Vertrag eines geschützten Endpunkts, nicht nur dort, wo
+ * ein Screen ihn bemerkt. Ein Vertrag ohne ihn ließe sich von einem Backend
+ * erfüllen, das denselben Endpunkt unauthentifiziert ausliefert — die
+ * Verifikation liefe grün, und die App nähme die Antwort widerspruchslos an.
+ * Der Header ist damit Formvorgabe wie der Umschlag, keine Ableitung aus
+ * heutigem Bedarf; siehe `docs/regeln.md` Regel 2.
+ */
+export const authHeaders = { Authorization: M.regex('Bearer .+', 'Bearer eyJ...') };
+
+/** Auth plus die Sprache, die der Client an jeder Anfrage mitschickt. */
+export const germanAuthHeaders = { ...authHeaders, 'Accept-Language': 'de' };
+
+/** Auth an einer Anfrage mit JSON-Rumpf. */
+export const jsonAuthHeaders = { ...authHeaders, ...jsonHeaders };
+
+/**
+ * Antworten mit personenbezogenen Daten. `Cache-Control: no-store` hält sie aus
+ * jedem Zwischenspeicher heraus — ohne die Direktive legen NSURLCache und
+ * OkHttp den Rumpf unverschlüsselt im Cache-Verzeichnis ab, und dort liest ihn
+ * ein Backup oder ein Dateizugriff, ohne je einen Token zu brauchen.
+ *
+ * Nährwerte, Tagesziele, Aktivität und die eigenen Rezepte fallen darunter. Der
+ * Produktkatalog fällt **nicht** darunter: ein kuratiertes Produkt zu einem
+ * Barcode ist für alle dasselbe, und dass es zwischengespeichert wird, ist
+ * erwünscht.
+ */
+export const privateHeaders = { ...jsonHeaders, 'Cache-Control': 'no-store' };
+
+/**
+ * Antworten, die Token tragen. Zusätzlich zu `no-store` ist `X-Request-Id` der
+ * Faden, an dem sich ein Anmeldeversuch nachverfolgen lässt. Beide sind Teil
+ * der Zusage, nicht Beiwerk.
  *
  * Header und `meta.requestId` tragen **dasselbe Beispiel**, weil sie denselben
  * Aufruf bezeichnen. Zusichern kann Pact diese Gleichheit nicht — ein Matcher
@@ -52,8 +83,32 @@ export const jsonHeaders = { 'Content-Type': 'application/json' };
  * den Mock (`identity.pact.test.ts`); gegenüber dem Provider bleibt sie eine
  * Bitte, siehe `docs/offene-punkte.md`.
  */
-export const authResponseHeaders = {
-  ...jsonHeaders,
-  'Cache-Control': 'no-store',
-  'X-Request-Id': M.string(REQUEST_ID),
-};
+export const authResponseHeaders = { ...privateHeaders, 'X-Request-Id': M.string(REQUEST_ID) };
+
+/** Fehler tragen keinen Umschlag: `problem+json` bleibt, wie RFC 7807 es beschreibt. */
+export const problemHeaders = { 'Content-Type': 'application/problem+json' };
+
+/**
+ * Ein Fehler als Zusage. `type` ist ein fester Wert und kein Matcher — an ihm
+ * entscheidet der Client, was er tut, und ein anderer Wert ist ein anderer
+ * Fehler.
+ */
+export const problem = (type: string, title: string, status: number) => ({
+  status,
+  headers: problemHeaders,
+  body: { type, title: M.string(title), status },
+});
+
+/**
+ * Der abgelaufene oder verworfene Access-Token an einem geschützten Endpunkt.
+ *
+ * Daran hängt die gesamte Erneuerung in `src/api/client.ts`: sie greift genau
+ * dann, wenn der Server mit **401** antwortet. Käme stattdessen 200 mit leerem
+ * Rumpf, eine Weiterleitung oder 500, liefe die App in eine tote Sitzung, ohne
+ * es zu merken. Deshalb steht dieser Fall je Kontext im Vertrag — auch dort, wo
+ * kein Screen ihn eigens behandelt.
+ */
+export const unauthorized = () => problem('token-expired', 'Anmeldung abgelaufen', 401);
+
+/** Eine fremde Ressource. Ohne diese Zusage dürfte das Backend sie ausliefern. */
+export const forbidden = () => problem('forbidden', 'Kein Zugriff auf diese Ressource', 403);

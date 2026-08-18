@@ -4,13 +4,14 @@ import { router } from 'expo-router';
 import { Screen, OutlineButton } from '../src/components';
 import { useTheme } from '../src/theme/ThemeProvider';
 import { login } from '../src/api/session';
-import { ApiError } from '../src/api/client';
+import { ApiError, OfflineError } from '../src/api/client';
 
 export default function LoginScreen() {
   const t = useTheme();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [failed, setFailed] = useState(false);
+  const [hint, setHint] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
   const field = {
@@ -24,14 +25,23 @@ export default function LoginScreen() {
     marginTop: t.space[3],
   };
 
+  /**
+   * Jeder Ausgang außer „angemeldet" wird sichtbar. Zuvor blieb alles stumm,
+   * was kein `ApiError` war — eine unerwartete Antwortform etwa aktivierte den
+   * Knopf einfach wieder, ohne dass irgendetwas auf dem Schirm stand.
+   */
   async function submit() {
     setBusy(true);
     setFailed(false);
+    setHint(null);
     try {
       await login(email.trim(), password);
       router.replace('/(tabs)/diary');
     } catch (e) {
-      if (e instanceof ApiError) setFailed(true);
+      setFailed(true);
+      if (e instanceof OfflineError) setHint('Keine Verbindung');
+      else if (e instanceof ApiError && e.type === 'invalid-credentials') setHint(null);
+      else setHint('Anmeldung derzeit nicht möglich');
     } finally {
       setBusy(false);
     }
@@ -55,6 +65,7 @@ export default function LoginScreen() {
         <Text style={[t.font.label, { color: t.color.textMuted }]}>Passwort</Text>
         <TextInput value={password} onChangeText={setPassword} secureTextEntry textContentType="password" style={[t.font.body, field]} />
       </View>
+      {hint ? <Text style={[t.font.micro, { color: t.color.accent, marginTop: t.space[4] }]}>{hint}</Text> : null}
       <View style={{ marginTop: t.space[8] }}>
         <OutlineButton label={busy ? 'Anmelden …' : 'Anmelden'} onPress={submit} disabled={busy || !email || !password} />
       </View>

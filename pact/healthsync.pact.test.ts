@@ -1,4 +1,4 @@
-import { pact, M, enveloped, jsonHeaders } from './setup';
+import { pact, M, enveloped, authHeaders, privateHeaders, unauthorized } from './setup';
 import { api } from '../src/api/client';
 
 /**
@@ -9,16 +9,21 @@ import { api } from '../src/api/client';
  * der Verbindung und `PUT /health/activity/{date}` fehlen bewusst — sie sind
  * noch nicht gebaut (docs/offene-punkte.md, Punkt 3), und ein Vertrag ohne
  * Aufrufer wäre eine Zusage, die niemand einlöst.
+ *
+ * Die Freigaben gehören zu einem Nutzer: die Anfrage weist sich aus, und die
+ * Antwort ist `no-store`.
  */
+const provider = () => pact('nutritrack-health');
+
 describe('HealthSync', () => {
   it('liefert den Stand der Freigaben', async () => {
-    const p = pact('nutritrack-health');
+    const p = provider();
     p.given('Nutzer hat keine Gesundheitsquelle verbunden')
       .uponReceiving('Freigaben laden')
-      .withRequest({ method: 'GET', path: '/api/v1/health/consent' })
+      .withRequest({ method: 'GET', path: '/api/v1/health/consent', headers: authHeaders })
       .willRespondWith({
         status: 200,
-        headers: jsonHeaders,
+        headers: privateHeaders,
         body: enveloped({
           connected: M.boolean(false),
           importActivity: M.boolean(false),
@@ -29,6 +34,18 @@ describe('HealthSync', () => {
     await p.executeTest(async () => {
       const consent = await api<{ connected: boolean }>('/health/consent');
       expect(typeof consent.connected).toBe('boolean');
+    });
+  });
+
+  it('weist eine abgelaufene Anmeldung mit 401 ab', async () => {
+    const p = provider();
+    p.given('Access-Token ist abgelaufen')
+      .uponReceiving('Freigaben mit abgelaufenem Token laden')
+      .withRequest({ method: 'GET', path: '/api/v1/health/consent', headers: authHeaders })
+      .willRespondWith(unauthorized());
+
+    await p.executeTest(async () => {
+      await expect(api('/health/consent')).rejects.toMatchObject({ type: 'token-expired', status: 401 });
     });
   });
 });
