@@ -1,0 +1,10 @@
+# Zeilenenden im Arbeitsverzeichnis: LF, unabhaengig von core.autocrlf.
+#
+# Ohne diese Zeile checkt Git auf Windows mit core.autocrlf=true CRLF aus,
+# waehrend Prettier (endOfLine: "lf") LF verlangt - `./make.ps1 format-check`
+# scheitert dann auf einem frischen Checkout an Dateien, die niemand angefasst
+# hat. text=auto laesst Git Binaerdateien weiterhin selbst erkennen.
+* text=auto eol=lf
+
+# Die Pact-Fixture ist ein Bild und wird nie angefasst.
+*.jpg binary
