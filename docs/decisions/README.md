@@ -26,11 +26,12 @@ Warum diese und nicht die naheliegende Alternative.
 Was daraus zu tun ist, und was dadurch ungültig wird.
 ```
 
-Die vier Abschnitte sind Pflicht und stehen in dieser Reihenfolge. Ein **fünfter Abschnitt ist
-erlaubt**, wenn die Entscheidung von einer Spezifikation außerhalb dieses Repos abweicht: dann
-trägt er die Überschrift `## Abweichung zur Backend-Spezifikation` und steht zwischen `Begründung`
-und `Folgen`. Regel 8 in [`../regeln.md`](../regeln.md) verlangt, dass eine solche Abweichung
-benannt wird; dieser Abschnitt ist der Ort dafür. Andere Abschnitte gibt es nicht.
+Die vier Abschnitte sind Pflicht, stehen in dieser Reihenfolge, und **andere gibt es nicht**.
+
+Insbesondere gibt es keinen Abschnitt für eine Abweichung von einer fremden Spezifikation. Früher
+war einer vorgesehen; er ist entfallen, weil es nichts gibt, wovon abzuweichen wäre — der Vertrag
+unter [`../../pact/`](../../pact/) legt fest, was gilt (Regel 8 in [`../regeln.md`](../regeln.md)).
+Ältere Dateien tragen den Abschnitt noch; sie bleiben unverändert liegen.
 
 Eine Entscheidung wird nicht überschrieben. Ändert sie sich, entsteht eine neue Datei, die die
 alte namentlich ablöst — vollständig oder in genannten Punkten. Die ablösende Datei sagt im

@@ -7,7 +7,7 @@ import { api } from '../src/api/client';
  * Gelesen wird heute nur die Freigabe-Auskunft: sie beschriftet die Zeile
  * (Verbunden/Nicht verbunden) und stellt die beiden Schalter. Das Herstellen
  * der Verbindung und `PUT /health/activity/{date}` fehlen bewusst — sie sind
- * noch nicht gebaut (docs/offene-punkte.md, Punkt 3), und ein Vertrag ohne
+ * noch nicht gebaut (Issue #21), und ein Vertrag ohne
  * Aufrufer wäre eine Zusage, die niemand einlöst.
  *
  * Die Freigaben gehören zu einem Nutzer: die Anfrage weist sich aus, und die
