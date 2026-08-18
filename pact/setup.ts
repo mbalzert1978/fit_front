@@ -38,17 +38,22 @@ export const enveloped = (data: unknown) => ({
   },
 });
 
-/** Jede Antwort mit Rumpf. */
+/** JSON-Rumpf, in beide Richtungen: an der Anfrage wie an der Antwort. */
 export const jsonHeaders = { 'Content-Type': 'application/json' };
 
 /**
  * Antworten, die Token tragen. `Cache-Control: no-store` hält sie aus jedem
- * Zwischenspeicher heraus; `X-Request-Id` ist derselbe Wert wie `meta.requestId`
- * und der einzige Faden, an dem sich eine gescheiterte Anmeldung nachverfolgen
- * lässt. Beide sind Teil der Zusage, nicht Beiwerk.
+ * Zwischenspeicher heraus; `X-Request-Id` ist der Faden, an dem sich ein
+ * Anmeldeversuch nachverfolgen lässt. Beide sind Teil der Zusage, nicht Beiwerk.
+ *
+ * Header und `meta.requestId` tragen **dasselbe Beispiel**, weil sie denselben
+ * Aufruf bezeichnen. Zusichern kann Pact diese Gleichheit nicht — ein Matcher
+ * kennt nur sein eigenes Feld. Geprüft wird sie deshalb im Consumer-Test gegen
+ * den Mock (`identity.pact.test.ts`); gegenüber dem Provider bleibt sie eine
+ * Bitte, siehe `docs/offene-punkte.md`.
  */
 export const authResponseHeaders = {
-  'Content-Type': 'application/json',
+  ...jsonHeaders,
   'Cache-Control': 'no-store',
   'X-Request-Id': M.string(REQUEST_ID),
 };

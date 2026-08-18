@@ -4,11 +4,12 @@ import type { AuthTokens, Envelope, Meta } from './types';
 
 /**
  * Was eine Antwort trägt, nachdem der Umschlag ab ist: die Nutzlast aus `data`,
- * die Begleitinformation aus `meta` und die Header, die fachlich zählen. `meta`
- * ist `null`, wo es keinen Rumpf gibt (204); `etag` dort, wo der Server keinen
- * schickt.
+ * die Begleitinformation aus `meta` und die Antwort-Header vollständig. `meta`
+ * ist `null`, wo es keinen Rumpf gibt (204). Der `ETag` steht in `headers` wie
+ * jeder andere Header auch — es gibt kein zweites Feld daneben, sonst gäbe es
+ * zwei Wahrheiten für denselben Wert.
  */
-export type ApiResponse<T> = { data: T; meta: Meta | null; etag: string | null };
+export type ApiResponse<T> = { data: T; meta: Meta | null; headers: Headers };
 
 const BASE = process.env.EXPO_PUBLIC_API_URL;
 if (!BASE) throw new Error('EXPO_PUBLIC_API_URL fehlt (.env)');
@@ -80,13 +81,31 @@ async function raw(path: string, o: Options, access: string | null): Promise<Res
   }
 }
 
+/**
+ * Die einzige Stelle, an der ein Umschlag aufgeht. Beide Wege nach draußen —
+ * `apiWithMeta` und die Erneuerung — kommen hier durch; deshalb steht `data`,
+ * `meta` und `headers` genau einmal im Repo zusammengesetzt. Fehler bleiben
+ * unberührt (`problem+json` trägt keinen Umschlag), eine Antwort ohne Rumpf
+ * (204) hat weder `meta` noch Nutzlast.
+ */
+async function unwrap<T>(res: Response): Promise<ApiResponse<T>> {
+  const headers = res.headers;
+  if (res.status === 204) return { data: undefined as T, meta: null, headers };
+  if (!res.ok) {
+    const problem = (await res.json().catch(() => null)) as ProblemDetails | null;
+    throw new ApiError(problem ?? { type: 'about:blank', title: 'Unbekannter Fehler', status: res.status });
+  }
+  const envelope = (await res.json()) as Envelope<T>;
+  return { data: envelope.data, meta: envelope.meta, headers };
+}
+
 /** Erneuert das Token-Paar und liefert den frischen Access-Token, oder `null`. */
 async function renew(): Promise<string | null> {
   const refreshToken = await token('refreshToken');
   if (!refreshToken) return null;
   const r = await raw('/identity/refresh', { method: 'POST', body: { refreshToken } }, null);
   if (!r.ok) return null;
-  const fresh = ((await r.json()) as Envelope<AuthTokens>).data;
+  const fresh = (await unwrap<AuthTokens>(r)).data;
   await storeTokens(fresh);
   return fresh.accessToken;
 }
@@ -109,25 +128,15 @@ async function send(path: string, o: Options): Promise<Response> {
 }
 
 /**
- * Antwort samt Umschlag. Das Auspacken von `data`/`meta` passiert hier und
- * nirgends sonst; `etag` kommt aus dem gleichnamigen Header, nicht aus dem
- * Rumpf. Fehler bleiben davon unberührt — `problem+json` trägt keinen Umschlag.
- * Eine Antwort ohne Rumpf (204) hat weder `meta` noch Nutzlast.
+ * Antwort samt Umschlag: Nutzlast, `meta` und die Antwort-Header. Der `ETag`
+ * kommt aus `headers`, nicht aus dem Rumpf; `meta.requestId` lässt sich hier
+ * gegen `X-Request-Id` halten, weil beides denselben Aufruf beschreibt.
  */
 export async function apiWithMeta<T>(path: string, o: Options = {}): Promise<ApiResponse<T>> {
-  const res = await send(path, o);
-  const etag = res.headers.get('ETag');
-
-  if (res.status === 204) return { data: undefined as T, meta: null, etag };
-  if (!res.ok) {
-    const problem = (await res.json().catch(() => null)) as ProblemDetails | null;
-    throw new ApiError(problem ?? { type: 'about:blank', title: 'Unbekannter Fehler', status: res.status });
-  }
-  const envelope = (await res.json()) as Envelope<T>;
-  return { data: envelope.data, meta: envelope.meta, etag };
+  return unwrap<T>(await send(path, o));
 }
 
-/** Der übliche Weg: nur die Nutzlast. Wer `meta` oder den ETag braucht, nimmt `apiWithMeta`. */
+/** Der übliche Weg: nur die Nutzlast. Wer `meta` oder einen Header braucht, nimmt `apiWithMeta`. */
 export async function api<T>(path: string, o: Options = {}): Promise<T> {
   return (await apiWithMeta<T>(path, o)).data;
 }

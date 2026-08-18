@@ -62,7 +62,19 @@ Pact-Test: kein Screen ruft ihn auf, weil die Gestik fehlt (Punkt 2). Ein Vertra
 wäre eine Zusage, die kein ViewModel einfordert. Kommt Drag & Drop, kommt der Vertrag im
 selben Commit.
 
-## 8 — Kleinigkeiten
+## 8 — `X-Request-Id` und `meta.requestId` sind nur im Consumer-Test aneinander gebunden
+
+Beide bezeichnen denselben Aufruf und müssen denselben Wert tragen — sonst führt der Faden, an dem
+sich ein Anmeldeversuch nachverfolgen lässt, ins Leere. Zusichern kann Pact das nicht: ein Matcher
+kennt nur sein eigenes Feld, eine Gleichheit über Header- und Rumpfgrenze hinweg lässt sich in
+keiner Matcher-Form ausdrücken.
+
+Was geht, ist getan: `apiWithMeta` gibt die Header heraus, und `pact/identity.pact.test.ts` prüft
+die Gleichheit gegen den Mock. Gegenüber dem Provider bleibt sie eine Bitte im Klartext. Feste
+Werte statt Matcher wären die Alternative — sie scheitern daran, dass eine echte ULID je Aufruf
+neu ist. Aufzulösen ist das erst bei der Verifikation im Provider-Repo, nicht von hier aus.
+
+## 9 — Kleinigkeiten
 
 - `app.json`: Bundle-Id `de.example.nutritrack` und Slug sind Platzhalter.
 - `useRecipeToDiary` schickt keinen `Idempotency-Key` — bei Offline-Fähigkeit (Punkt 1) nachziehen.

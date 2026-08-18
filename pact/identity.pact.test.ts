@@ -1,5 +1,5 @@
 import { pact, M, enveloped, jsonHeaders, authResponseHeaders } from './setup';
-import { api } from '../src/api/client';
+import { api, apiWithMeta } from '../src/api/client';
 import type { AuthTokens } from '../src/api/types';
 
 /**
@@ -8,9 +8,10 @@ import type { AuthTokens } from '../src/api/types';
  * oder Feld rot; deshalb genau ein Erfolgs- und ein Fehlerfall.
  *
  * Die Token-Antwort ist nach OAuth 2 benannt: `tokenType`, `expiresIn` und
- * `refreshExpiresIn` in Sekunden, die Identität als `user.id`. Die Laufzeiten
- * liest heute kein Screen, aber ohne sie kann die Hülle nie erneuern, bevor ein
- * Aufruf scheitert — sie gehören deshalb in die Zusage.
+ * `refreshExpiresIn` in Sekunden, die Identität als `user.id`. Dass die
+ * Laufzeiten heute kein Screen liest, nimmt sie nicht aus der Zusage — die Form
+ * der Auth-Antwort ist Vorgabe, nicht Ableitung aus dem heutigen Bedarf; siehe
+ * `docs/regeln.md` Regel 2.
  */
 const provider = () => pact('nutritrack-identity');
 
@@ -31,7 +32,7 @@ describe('Identity', () => {
       .withRequest({
         method: 'POST',
         path: '/api/v1/identity/login',
-        headers: { 'Content-Type': 'application/json' },
+        headers: jsonHeaders,
         body: { email: 'a@b.de', password: 'geheim123' },
       })
       .willRespondWith({
@@ -41,16 +42,23 @@ describe('Identity', () => {
       });
 
     await p.executeTest(async () => {
-      const s = await api<AuthTokens>('/identity/login', {
+      const r = await apiWithMeta<AuthTokens>('/identity/login', {
         method: 'POST',
         body: { email: 'a@b.de', password: 'geheim123' },
       });
+      const s = r.data;
       // session.ts legt beide Token ab; ohne sie ist keine weitere Anfrage möglich.
       expect(s.accessToken).toBeTruthy();
       expect(s.refreshToken).toBeTruthy();
       // Der Tokentyp steht in der Antwort, statt im Client fest verdrahtet zu sein.
       expect(s.tokenType).toBe('Bearer');
       expect(s.user.id).toBeTruthy();
+      // Die Request-Id darf sich zwischen Header und Rumpf nicht verschieben:
+      // beide bezeichnen denselben Aufruf, sonst führt der Faden ins Leere.
+      expect(r.headers.get('X-Request-Id')).toBeTruthy();
+      expect(r.headers.get('X-Request-Id')).toBe(r.meta?.requestId);
+      // Token gehören in keinen Zwischenspeicher.
+      expect(r.headers.get('Cache-Control')).toBe('no-store');
     });
   });
 
@@ -61,7 +69,7 @@ describe('Identity', () => {
       .withRequest({
         method: 'POST',
         path: '/api/v1/identity/login',
-        headers: { 'Content-Type': 'application/json' },
+        headers: jsonHeaders,
         body: { email: 'a@b.de', password: 'falsch' },
       })
       .willRespondWith({
@@ -97,12 +105,14 @@ describe('Identity', () => {
 
     await p.executeTest(async () => {
       // Diesen Aufruf macht die fetch-Hülle selbst, sobald eine Antwort 401 ist.
-      const fresh = await api<AuthTokens>('/identity/refresh', {
+      const r = await apiWithMeta<AuthTokens>('/identity/refresh', {
         method: 'POST',
         body: { refreshToken: 'rt_alt' },
       });
-      expect(fresh.accessToken).toBeTruthy();
-      expect(fresh.refreshToken).toBeTruthy();
+      expect(r.data.accessToken).toBeTruthy();
+      expect(r.data.refreshToken).toBeTruthy();
+      // Auch hier: derselbe Faden im Header wie im Rumpf.
+      expect(r.headers.get('X-Request-Id')).toBe(r.meta?.requestId);
     });
   });
 });

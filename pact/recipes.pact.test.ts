@@ -67,7 +67,7 @@ describe('Recipes', () => {
 
     await p.executeTest(async () => {
       const r = await apiWithMeta<{ ingredients: unknown[] }>(`/recipes/${recipeId}`);
-      expect(r.etag).toBeTruthy();
+      expect(r.headers.get('ETag')).toBeTruthy();
       expect(Array.isArray(r.data.ingredients)).toBe(true);
     });
   });
@@ -100,7 +100,7 @@ describe('Recipes', () => {
       });
 
     await p.executeTest(async () => {
-      const saved = await api<{ id: string }>('/recipes', {
+      const r = await apiWithMeta<{ id: string }>('/recipes', {
         method: 'POST',
         idempotencyKey: recipeId,
         body: {
@@ -111,7 +111,12 @@ describe('Recipes', () => {
         },
       });
       // Auf diese Id schaltet der Screen nach dem Speichern um.
-      expect(saved.id).toBeTruthy();
+      expect(r.data.id).toBeTruthy();
+      // Der ETag der neuen Fassung ist zugesichert; `useSaveRecipe` heftet ihn ans
+      // Rezept. Hier wird er wenigstens gelesen und protokolliert — eine Zusage,
+      // die kein Aufrufer je anfasst, merkt niemand, wenn sie bricht.
+      console.log('ETag nach POST /recipes:', r.headers.get('ETag'));
+      expect(r.headers.get('ETag')).toBeTruthy();
     });
   });
 
@@ -144,7 +149,7 @@ describe('Recipes', () => {
       });
 
     await p.executeTest(async () => {
-      const saved = await api<{ id: string }>(`/recipes/${recipeId}`, {
+      const r = await apiWithMeta<{ id: string }>(`/recipes/${recipeId}`, {
         method: 'PUT',
         ifMatch: '7',
         body: {
@@ -154,7 +159,10 @@ describe('Recipes', () => {
           ingredients: [{ id: '11111111-2222-3333-4444-555555555555', productId: '99999999-8888-7777-6666-555555555555', grams: 600 }],
         },
       });
-      expect(saved.id).toBeTruthy();
+      expect(r.data.id).toBeTruthy();
+      // Der ETag der gespeicherten Fassung; der alte ging als If-Match hinein.
+      console.log('ETag nach PUT /recipes/{id}:', r.headers.get('ETag'));
+      expect(r.headers.get('ETag')).toBeTruthy();
     });
   });
 

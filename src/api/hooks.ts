@@ -37,7 +37,7 @@ export const useRecipes = () => useQuery({ queryKey: qk.recipes(), queryFn: () =
  * Der ETag steht im gleichnamigen Header, nicht im Rumpf. Er wird ans Rezept
  * geheftet, weil genau von dort das Speichern ihn als `If-Match` wieder aufnimmt.
  */
-const withEtag = async (r: ApiResponse<Recipe>): Promise<Recipe> => ({ ...r.data, etag: r.etag ?? undefined });
+const withEtag = (r: ApiResponse<Recipe>): Recipe => ({ ...r.data, etag: r.headers.get('ETag') ?? undefined });
 
 export const useRecipe = (id: string) =>
   useQuery({
