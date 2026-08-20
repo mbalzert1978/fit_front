@@ -2,6 +2,7 @@ import * as SecureStore from 'expo-secure-store';
 import type { DiaryDate } from './diaryDate';
 import type { AuthTokens, Envelope, Meta } from './types';
 import { clientProblems } from './problems';
+import { language, preferLanguage } from '../language';
 
 /**
  * Was eine Antwort trägt, nachdem der Umschlag ab ist: die Nutzlast aus `data`,
@@ -189,21 +190,26 @@ export async function signOut() {
     }
   }
   await clearSession();
+  // Die gewählte Sprache gehörte diesem Konto. Bliebe sie stehen, läse der
+  // nächste Nutzer auf demselben Gerät in einer Sprache, die er nie gewählt hat.
+  preferLanguage(null);
   signedOutHandler?.();
 }
 
 /* Anfrage und Antwort */
 
 /**
- * Sprache der App, solange keine Vorliebe gelesen ist. Sie steht hier, weil sie
- * an zwei Stellen gebraucht wird: als `Accept-Language` an jeder Anfrage und als
- * `locale` beim Anlegen eines Kontos. Zwei fest verdrahtete `'de'` würden früher
- * oder später auseinanderlaufen.
+ * `Accept-Language` steht an **jeder** Anfrage, nicht nur an denen, deren
+ * Fehler heute jemand anzeigt. Der Server entscheidet allein an dieser Zeile,
+ * in welcher Sprache seine Sätze kommen — `title`, `detail` und jeder Satz in
+ * `errors`. Fehlt sie, fällt er auf seine Vorgabe zurück, und ein englischer
+ * Nutzer läse deutsche Fehlermeldungen, ohne dass es irgendwo auffiele.
+ *
+ * Der Wert kommt aus der Naht `src/language.ts` und nicht aus einem Literal
+ * hier: dieselbe Sprache reist beim Anlegen eines Kontos als `locale` mit.
  */
-export const defaultLanguage: 'de' | 'en' = 'de';
-
 async function raw(path: string, o: Options, access: string | null): Promise<Response> {
-  const headers: Record<string, string> = { Accept: 'application/json', 'Accept-Language': o.language ?? defaultLanguage };
+  const headers: Record<string, string> = { Accept: 'application/json', 'Accept-Language': o.language ?? language.tag() };
   if (access) headers.Authorization = `Bearer ${access}`;
   if (o.idempotencyKey) headers['Idempotency-Key'] = o.idempotencyKey;
   if (o.ifMatch) headers['If-Match'] = o.ifMatch;

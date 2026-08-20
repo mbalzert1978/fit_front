@@ -1,7 +1,8 @@
-import { pact, M, enveloped, jsonHeaders, germanJsonHeaders, authResponseHeaders, problem, problems } from './setup';
+import { pact, M, enveloped, jsonHeadersIn, authResponseHeaders, problem, problems } from './setup';
 import { api, apiWithMeta, signOut, ApiError } from '../src/api/client';
 import { register } from '../src/api/session';
 import { setTimeProvider, resetTimeProvider } from '../src/time';
+import { setLanguageProvider, resetLanguageProvider } from '../src/language';
 import { __seedSession, __readSession } from './stubs/expoSecureStore';
 import type { AuthTokens } from '../src/api/types';
 
@@ -15,6 +16,10 @@ import type { AuthTokens } from '../src/api/types';
  * E-Mail als eigenen Zustand (409) und alles, was gegen eine Regel verstößt,
  * feldweise begründet (`validation-failed`). Welche Regeln das sind, steht
  * nicht hier — sie gehören dem Server, und die Maske zeigt, was er sagt.
+ *
+ * Und die Sprache steht als eigenes Paar da: derselbe Verstoß, einmal auf
+ * Deutsch und einmal auf Englisch gefragt. Eine einzelne Interaktion könnte das
+ * nicht zeigen — ihr Wortlaut ist ein Matcher, und der nimmt jede Sprache an.
  *
  * Die Token-Antwort ist nach OAuth 2 benannt: `tokenType`, `expiresIn` und
  * `refreshExpiresIn` in Sekunden, die Identität als `user.id`. Dass die
@@ -56,7 +61,7 @@ describe('Identity', () => {
       .withRequest({
         method: 'POST',
         path: '/api/v1/identity/login',
-        headers: jsonHeaders,
+        headers: jsonHeadersIn('de'),
         body: { email: 'a@b.de', password: 'geheim123' },
       })
       .willRespondWith({
@@ -93,12 +98,14 @@ describe('Identity', () => {
       .withRequest({
         method: 'POST',
         path: '/api/v1/identity/register',
-        headers: germanJsonHeaders,
+        headers: jsonHeadersIn('de'),
         // Der Rumpf steht hier so, wie `register()` in `src/api/session.ts` ihn
         // schickt — der Test ruft die Hülle selbst auf und nicht `api()` direkt.
         // `locale` und `timeZoneId` sind Merkmale, die am Konto bleiben; deshalb
-        // reisen sie im Rumpf und nicht in `Accept-Language`, das nur diese eine
-        // Antwort verhandelt. Die Zone kommt aus der Naht `src/time.ts`.
+        // reisen sie im Rumpf und nicht nur als Kopfzeile, die diese eine
+        // Antwort verhandelt. Beide kommen aus einer Naht: die Sprache aus
+        // `src/language.ts` — dieselbe, die oben als `Accept-Language` steht —,
+        // die Zone aus `src/time.ts`.
         body: {
           email: 'a@b.de',
           password: 'geheim123!',
@@ -134,7 +141,7 @@ describe('Identity', () => {
       .withRequest({
         method: 'POST',
         path: '/api/v1/identity/register',
-        headers: germanJsonHeaders,
+        headers: jsonHeadersIn('de'),
         // Hier steht der Wert selbst und kein Matcher: `GMT+01:00` **ist** die
         // Zusage. Android liefert diese Form, wenn das System keine benannte
         // Zone auflöst; der Nutzer kann dafür nichts, und ein Konto muss auch
@@ -174,7 +181,7 @@ describe('Identity', () => {
       .withRequest({
         method: 'POST',
         path: '/api/v1/identity/register',
-        headers: germanJsonHeaders,
+        headers: jsonHeadersIn('de'),
         body: { email: 'a@b.de', password: 'geheim123!', displayName: 'Markus', locale: 'de', timeZoneId: anyTimeZoneId },
       })
       // Zwei Zusagen in einer: der `type`, an dem der Screen diesen Fall von
@@ -204,7 +211,7 @@ describe('Identity', () => {
       .withRequest({
         method: 'POST',
         path: '/api/v1/identity/register',
-        headers: germanJsonHeaders,
+        headers: jsonHeadersIn('de'),
         body: {
           email: 'kein-at-zeichen',
           password: 'kurz',
@@ -247,6 +254,60 @@ describe('Identity', () => {
     });
   });
 
+  it('antwortet in der Sprache, in der gefragt wurde', async () => {
+    const p = provider();
+    p.given('Keine Registrierung mit a@b.de vorhanden')
+      .uponReceiving('Registrierung mit ungültiger E-Mail, auf Englisch gefragt')
+      .withRequest({
+        method: 'POST',
+        path: '/api/v1/identity/register',
+        // Derselbe Fall wie eben, ein Unterschied: die Sprache. Genau deshalb
+        // steht er hier ein zweites Mal — an einem Paar wird sichtbar, was an
+        // einer einzelnen Interaktion nicht zu sehen wäre, nämlich dass die
+        // Sätze der Anfrage folgen und nicht dem Geschmack des Servers.
+        headers: jsonHeadersIn('en'),
+        body: {
+          email: 'kein-at-zeichen',
+          password: 'kurz',
+          displayName: 'Markus',
+          // `locale` geht mit: es ist dieselbe Naht, die auch `Accept-Language`
+          // füllt. Ein Konto, dessen Sprache eine andere wäre als die, in der
+          // der Nutzer gerade liest, entsteht so gar nicht erst.
+          locale: 'en',
+          timeZoneId: anyTimeZoneId,
+        },
+      })
+      // `type` ist derselbe wie im deutschen Fall — die Kennung ist eine Sache
+      // des Protokolls und hat keine Sprache. Was sich ändert, sind `title`,
+      // `detail` und jeder Satz in `errors`; der Client zeigt sie unverändert,
+      // weil er sie nicht beurteilen kann.
+      .willRespondWith(
+        problem(problems.validationFailed, 'The input is invalid', 400, {
+          language: 'en',
+          detail: 'Please check the fields marked with errors',
+          errors: {
+            email: M.eachLike('The email address requires exactly one @ sign (found: 0)'),
+            password: M.eachLike('The password must be at least 10 characters long (current: 4)'),
+          },
+        }),
+      );
+
+    await p.executeTest(async () => {
+      // Über die Naht und nicht von Hand in den Rumpf: so nimmt die Sprache
+      // denselben Weg wie auf dem Gerät eines englischsprachigen Nutzers.
+      setLanguageProvider({ tag: () => 'en' });
+      try {
+        const e = await register({ email: 'kein-at-zeichen', password: 'kurz', displayName: 'Markus' }).catch((err: unknown) => err);
+        expect(e).toBeInstanceOf(ApiError);
+        const fehler = e as ApiError;
+        expect(fehler.type).toBe(problems.validationFailed);
+        expect(fehler.errors?.email?.[0]).toEqual(expect.any(String));
+      } finally {
+        resetLanguageProvider();
+      }
+    });
+  });
+
   it('lehnt falsche Daten mit 401 ab', async () => {
     const p = provider();
     p.given('Nutzer a@b.de existiert mit Passwort geheim123')
@@ -254,7 +315,7 @@ describe('Identity', () => {
       .withRequest({
         method: 'POST',
         path: '/api/v1/identity/login',
-        headers: jsonHeaders,
+        headers: jsonHeadersIn('de'),
         body: { email: 'a@b.de', password: 'falsch' },
       })
       // Fehler tragen keinen Umschlag: problem+json bleibt, wie es ist.
@@ -274,7 +335,7 @@ describe('Identity', () => {
       .withRequest({
         method: 'POST',
         path: '/api/v1/identity/refresh',
-        headers: jsonHeaders,
+        headers: jsonHeadersIn('de'),
         body: { refreshToken: M.string('rt_...') },
       })
       .willRespondWith({
@@ -304,7 +365,7 @@ describe('Identity', () => {
       .withRequest({
         method: 'POST',
         path: '/api/v1/identity/logout',
-        headers: jsonHeaders,
+        headers: jsonHeadersIn('de'),
         body: { refreshToken: M.string('rt_...') },
       })
       .willRespondWith({ status: 204 });

@@ -1,4 +1,5 @@
 import type { DiaryDate } from './diaryDate';
+import type { Language } from '../language';
 
 /**
  * Begleitinformation, die jede Antwort mit Rumpf trägt. Kein Screen liest sie —
@@ -174,6 +175,12 @@ export type RecipeSave = {
   etag?: string;
 };
 
-export type Preferences = { theme: 'Dark' | 'Light'; language: 'de' | 'en' };
+/**
+ * `language` steht hier nicht als zweite Liste: sie ist dieselbe Menge, die
+ * `src/language.ts` an `Accept-Language` und beim Anlegen eines Kontos an
+ * `locale` schickt. Zwei Aufzählungen dafür liefen auseinander, sobald eine
+ * dritte Sprache dazukommt.
+ */
+export type Preferences = { theme: 'Dark' | 'Light'; language: Language };
 
 export type HealthConsent = { connected: boolean; importActivity: boolean; exportNutrition: boolean };

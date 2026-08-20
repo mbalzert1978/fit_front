@@ -3,6 +3,7 @@ import { api, apiWithMeta, ApiError, endpoints, pathSegment, type ApiResponse } 
 import { qk } from './queryKeys';
 import { newId } from './ids';
 import { clientProblems } from './problems';
+import { preferLanguage } from '../language';
 import type { DiaryDate } from './diaryDate';
 import type {
   DiaryDay,
@@ -64,7 +65,21 @@ export const useRecipe = (id: string) =>
 
 export const useGoals = () => useQuery({ queryKey: qk.goals(), queryFn: () => api<Goals>('/goals') });
 
-export const usePreferences = () => useQuery({ queryKey: qk.preferences(), queryFn: () => api<Preferences>('/preferences') });
+/**
+ * Die Einstellungen — und mit ihnen die Sprache, in der der Nutzer lesen will.
+ * Sie geht an die Naht weiter, sobald sie da ist: von dort füllt sie
+ * `Accept-Language` an jeder folgenden Anfrage, und die Sätze des Servers
+ * kommen so, wie der Nutzer sie gewählt hat, nicht wie sein Telefon steht.
+ */
+export const usePreferences = () =>
+  useQuery({
+    queryKey: qk.preferences(),
+    queryFn: async () => {
+      const p = await api<Preferences>('/preferences');
+      preferLanguage(p.language);
+      return p;
+    },
+  });
 
 export const useHealthConsent = () => useQuery({ queryKey: ['health', 'consent'], queryFn: () => api<HealthConsent>('/health/consent') });
 
@@ -123,7 +138,14 @@ export function useSavePreferences() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (body: Partial<Preferences>) => api<Preferences>('/preferences', { method: 'PATCH', body }),
-    onSuccess: (p) => qc.setQueryData(qk.preferences(), p),
+    // Die Antwort trägt die Sprache, die jetzt gilt — nicht die, die geschickt
+    // wurde. Ab hier fragt der Client in ihr, und zwar sofort: sonst käme der
+    // nächste Fehler noch in der alten Sprache, unmittelbar nach einer
+    // Umstellung, die der Nutzer eben vorgenommen hat.
+    onSuccess: (p) => {
+      preferLanguage(p.language);
+      qc.setQueryData(qk.preferences(), p);
+    },
   });
 }
 

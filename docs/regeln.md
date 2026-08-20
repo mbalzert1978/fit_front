@@ -22,7 +22,8 @@ Consumer-driven: die App schreibt den Vertrag, das Backend verifiziert ihn.
    vertragskonform. Als Form gelten der `data`/`meta`-Umschlag, die Auth-Antwort nach OAuth 2
    (`tokenType`, `expiresIn`, `refreshExpiresIn`, `user.id`), der `Authorization`-Header an jeder
    geschützten Anfrage, `Cache-Control: no-store` an jeder Antwort mit personenbezogenen Daten,
-   `Idempotency-Key` an jedem nicht wiederholbaren Schreibaufruf sowie Statuscode und Fehlerform.
+   `Idempotency-Key` an jedem nicht wiederholbaren Schreibaufruf, `Accept-Language` an **jeder**
+   Anfrage und `Content-Language` an jeder Fehlerantwort sowie Statuscode und Fehlerform.
    Die Fehlerform ist die von **RFC 9457** und steht vollständig in jeder Fehlerzusage: `type`,
    `title`, `status`, `detail`, `instance`. `errors` kommt dazu, wo ein Screen die feldweise
    Begründung zeigt.
@@ -59,6 +60,17 @@ Consumer-driven: die App schreibt den Vertrag, das Backend verifiziert ihn.
    [`decisions/2026-08-18-1600-auth-und-fehlerfaelle-sind-vertragsvorgabe.md`](decisions/2026-08-18-1600-auth-und-fehlerfaelle-sind-vertragsvorgabe.md);
    ein Vertrag ohne `data`/`meta` ist ein Fehler, kein Sonderfall, und ein Vertrag ohne
    `Authorization` an einem geschützten Endpunkt genauso.
+10. **Die Sprache steht an jeder Anfrage und ist ein fester Wert.** Der Server entscheidet allein
+    an `Accept-Language`, in welcher Sprache `title`, `detail` und jeder Satz in `errors` kommen;
+    die App zeigt sie unverändert und übersetzt nichts. Deshalb nennt jede Interaktion die Sprache,
+    in der sie gefragt hat — als Wert, nicht als Matcher —, und jede Fehlerantwort trägt
+    `Content-Language`: die Wortlaute selbst sind Matcher, und ein Matcher nimmt jede Sprache an.
+    Ohne diesen Header wäre die Aushandlung nicht zugesagt, sondern gehofft. Die Bausteine dafür
+    heißen [`../pact/setup.ts`](../pact/setup.ts) `jsonHeadersIn`, `authHeadersIn`,
+    `jsonAuthHeadersIn`; eine Form **ohne** Sprache gibt es nicht, weil der Client immer eine nennt.
+    Wo eine zweite Sprache etwas zusichert, was eine einzelne Interaktion nicht zeigen kann, steht
+    derselbe Fall zweimal — siehe die Registrierung in
+    [`../pact/identity.pact.test.ts`](../pact/identity.pact.test.ts).
 
 ## HTTP-Schicht
 
@@ -81,6 +93,11 @@ hinausgeht. Die Begründung steht in
   Aufruf, wird trotzdem lokal abgemeldet.
 - **Antworten werden geprüft, nicht behauptet.** Ein `as`-Cast auf eine Nutzlast von außen ist keine
   Prüfung; fehlt der Umschlag, ist die Antwort falsch und nicht leer.
+- **Die Sprache kommt aus einer Naht, nicht aus einem Literal.**
+  [`../src/language.ts`](../src/language.ts) ist die einzige Stelle, die sie bestimmt: gewählte
+  Vorliebe vor Gerätesprache, sonst Deutsch. Von dort füllt sie `Accept-Language` an jeder Anfrage
+  **und** `locale` beim Anlegen eines Kontos — zwei Quellen dafür liefen auseinander, und das Konto
+  trüge dann eine andere Sprache, als der Nutzer liest.
 - **Fremde Werte gehören kodiert in den Pfad** (`pathSegment`). Ids kommen aus Deep-Links, Barcodes
   aus der Kamera.
 

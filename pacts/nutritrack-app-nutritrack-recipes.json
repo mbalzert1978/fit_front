@@ -12,6 +12,7 @@
       ],
       "request": {
         "headers": {
+          "Accept-Language": "de",
           "Authorization": "Bearer eyJ..."
         },
         "matchingRules": {
@@ -48,6 +49,7 @@
           "type": "https://api.example/errors/forbidden"
         },
         "headers": {
+          "Content-Language": "de-DE",
           "Content-Type": "application/problem+json"
         },
         "matchingRules": {
@@ -116,6 +118,7 @@
           }
         },
         "headers": {
+          "Accept-Language": "de",
           "Authorization": "Bearer eyJ...",
           "Content-Type": "application/json",
           "Idempotency-Key": "2f1c9b7e-1111-4222-8333-444455556666"
@@ -406,6 +409,7 @@
           }
         },
         "headers": {
+          "Accept-Language": "de",
           "Authorization": "Bearer eyJ...",
           "Content-Type": "application/json",
           "Idempotency-Key": "4d3c2b1a-0000-4111-8222-333344445555"
@@ -568,6 +572,7 @@
           }
         },
         "headers": {
+          "Accept-Language": "de",
           "Authorization": "Bearer eyJ...",
           "Content-Type": "application/json",
           "If-Match": "3"
@@ -676,6 +681,7 @@
           "type": "https://api.example/errors/concurrency-conflict"
         },
         "headers": {
+          "Content-Language": "de-DE",
           "Content-Type": "application/problem+json"
         },
         "matchingRules": {
@@ -744,6 +750,7 @@
           }
         },
         "headers": {
+          "Accept-Language": "de",
           "Authorization": "Bearer eyJ...",
           "Content-Type": "application/json",
           "If-Match": "7"
@@ -1038,6 +1045,7 @@
       ],
       "request": {
         "headers": {
+          "Accept-Language": "de",
           "Authorization": "Bearer eyJ..."
         },
         "matchingRules": {
@@ -1260,6 +1268,7 @@
       ],
       "request": {
         "headers": {
+          "Accept-Language": "de",
           "Authorization": "Bearer eyJ..."
         },
         "matchingRules": {
@@ -1401,6 +1410,7 @@
       ],
       "request": {
         "headers": {
+          "Accept-Language": "de",
           "Authorization": "Bearer eyJ..."
         },
         "matchingRules": {
@@ -1433,6 +1443,7 @@
           "type": "https://api.example/errors/token-expired"
         },
         "headers": {
+          "Content-Language": "de-DE",
           "Content-Type": "application/problem+json"
         },
         "matchingRules": {

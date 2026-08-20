@@ -1,4 +1,4 @@
-import { pact, M, enveloped, authHeaders, jsonAuthHeaders, privateHeaders, unauthorized, problems } from './setup';
+import { pact, M, enveloped, authHeadersIn, jsonAuthHeadersIn, privateHeaders, unauthorized, problems } from './setup';
 import { api } from '../src/api/client';
 
 /**
@@ -32,7 +32,7 @@ describe('Goals', () => {
     const p = goals();
     p.given('Nutzer hat ein Tagesziel von 2150 kcal')
       .uponReceiving('Ziele laden')
-      .withRequest({ method: 'GET', path: '/api/v1/goals', headers: authHeaders })
+      .withRequest({ method: 'GET', path: '/api/v1/goals', headers: authHeadersIn('de') })
       .willRespondWith({ status: 200, headers: privateHeaders, body: enveloped(goalsBody) });
 
     await p.executeTest(async () => {
@@ -48,7 +48,7 @@ describe('Goals', () => {
       .withRequest({
         method: 'PUT',
         path: '/api/v1/goals',
-        headers: jsonAuthHeaders,
+        headers: jsonAuthHeadersIn('de'),
         body: {
           macros: {
             carbs: { percent: M.integer(40) },
@@ -73,7 +73,7 @@ describe('Goals', () => {
     const p = goals();
     p.given('Access-Token ist abgelaufen')
       .uponReceiving('Ziele mit abgelaufenem Token laden')
-      .withRequest({ method: 'GET', path: '/api/v1/goals', headers: authHeaders })
+      .withRequest({ method: 'GET', path: '/api/v1/goals', headers: authHeadersIn('de') })
       .willRespondWith(unauthorized());
 
     await p.executeTest(async () => {
@@ -87,7 +87,7 @@ describe('Preferences', () => {
     const p = goals();
     p.given('Nutzer hat Einstellungen')
       .uponReceiving('Einstellungen laden')
-      .withRequest({ method: 'GET', path: '/api/v1/preferences', headers: authHeaders })
+      .withRequest({ method: 'GET', path: '/api/v1/preferences', headers: authHeadersIn('de') })
       .willRespondWith({
         status: 200,
         headers: privateHeaders,
@@ -107,7 +107,7 @@ describe('Preferences', () => {
       .withRequest({
         method: 'PATCH',
         path: '/api/v1/preferences',
-        headers: jsonAuthHeaders,
+        headers: jsonAuthHeadersIn('de'),
         body: { language: M.regex('de|en', 'en') },
       })
       .willRespondWith({

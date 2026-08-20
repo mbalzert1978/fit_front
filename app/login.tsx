@@ -22,6 +22,12 @@ export default function LoginScreen() {
    *
    * Beide Felder werden rot, nicht eines: bei falschen Anmeldedaten sagt der
    * Server nicht, welches der beiden gemeint ist, und er soll es auch nicht.
+   *
+   * Der Satz darunter ist seiner: `detail` erklärt genau diesen Vorfall, und er
+   * kommt in der Sprache, in der gefragt wurde (`Accept-Language`, aus
+   * `src/language.ts`). Ein eigener Satz stünde sonst deutsch neben einer
+   * englischen Oberfläche — und wüsste dazu weniger. Eigene Sätze bleiben, wo
+   * keiner kommt: beim Netzfehler und als letzter Rückfall.
    */
   async function submit() {
     setBusy(true);
@@ -33,7 +39,8 @@ export default function LoginScreen() {
     } catch (e) {
       setFailed(true);
       if (e instanceof OfflineError) setHint('Keine Verbindung');
-      else if (e instanceof ApiError && e.type === problems.invalidCredentials) setHint(null);
+      else if (e instanceof ApiError)
+        setHint(e.detail ?? (e.type === problems.invalidCredentials ? null : 'Anmeldung derzeit nicht möglich'));
       else setHint('Anmeldung derzeit nicht möglich');
     } finally {
       setBusy(false);

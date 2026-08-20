@@ -5,9 +5,8 @@ import {
   M,
   enveloped,
   jsonHeaders,
-  authHeaders,
-  germanAuthHeaders,
-  jsonAuthHeaders,
+  authHeadersIn,
+  jsonAuthHeadersIn,
   privateHeaders,
   problem,
   unauthorized,
@@ -45,7 +44,7 @@ describe('Catalog — Produkte', () => {
     const p = provider();
     p.given('Produkt mit Barcode 4008400401027 existiert')
       .uponReceiving('Produkt-Lookup per Barcode')
-      .withRequest({ method: 'GET', path: '/api/v1/catalog/products/by-barcode/4008400401027', headers: germanAuthHeaders })
+      .withRequest({ method: 'GET', path: '/api/v1/catalog/products/by-barcode/4008400401027', headers: authHeadersIn('de') })
       .willRespondWith({
         status: 200,
         headers: jsonHeaders,
@@ -76,7 +75,7 @@ describe('Catalog — Produkte', () => {
     const p = provider();
     p.given('kein Produkt mit Barcode 0000000000000')
       .uponReceiving('Produkt-Lookup per unbekanntem Barcode')
-      .withRequest({ method: 'GET', path: '/api/v1/catalog/products/by-barcode/0000000000000', headers: germanAuthHeaders })
+      .withRequest({ method: 'GET', path: '/api/v1/catalog/products/by-barcode/0000000000000', headers: authHeadersIn('de') })
       .willRespondWith(problem(problems.productNotFound, 'Produkt nicht gefunden', 404));
 
     await p.executeTest(async () => {
@@ -92,7 +91,7 @@ describe('Catalog — Produkte', () => {
       .withRequest({
         method: 'GET',
         path: '/api/v1/catalog/products/by-barcode/4008400401027',
-        headers: germanAuthHeaders,
+        headers: authHeadersIn('de'),
       })
       .willRespondWith(unauthorized());
 
@@ -114,7 +113,7 @@ describe('Catalog — Produkte', () => {
       .withRequest({
         method: 'GET',
         path: M.regex('/api/v1/catalog/products/[0-9a-f-]{36}', `/api/v1/catalog/products/${productId}`),
-        headers: germanAuthHeaders,
+        headers: authHeadersIn('de'),
       })
       .willRespondWith({
         status: 200,
@@ -147,7 +146,7 @@ describe('Catalog — Produkte', () => {
       .withRequest({
         method: 'POST',
         path: '/api/v1/catalog/products',
-        headers: { ...jsonAuthHeaders, 'Idempotency-Key': productId },
+        headers: { ...jsonAuthHeadersIn('de'), 'Idempotency-Key': productId },
         body: {
           id: M.uuid(),
           barcode: M.string('4008400401027'),
@@ -215,7 +214,7 @@ describe('Catalog — Suche', () => {
     // Scan-Screen, ob er aufs Produktblatt oder ins Rezept springt.
     p.given('Nutzer hat Produkte und Rezepte zum Suchwort skyr')
       .uponReceiving('Volltextsuche über Produkte und Rezepte')
-      .withRequest({ method: 'GET', path: '/api/v1/search', query: { query: 'skyr', take: '20' }, headers: authHeaders })
+      .withRequest({ method: 'GET', path: '/api/v1/search', query: { query: 'skyr', take: '20' }, headers: authHeadersIn('de') })
       .willRespondWith({
         status: 200,
         headers: privateHeaders,
@@ -244,7 +243,7 @@ describe('Catalog — Foto-Auftrag', () => {
     p.given('Nutzer ist angemeldet')
       .uponReceiving('Nährwerttabelle hochladen')
       .withRequestMultipartFileUpload(
-        { method: 'POST', path: '/api/v1/catalog/photos', headers: authHeaders },
+        { method: 'POST', path: '/api/v1/catalog/photos', headers: authHeadersIn('de') },
         'image/jpeg',
         tableImage,
         'file',
@@ -271,7 +270,7 @@ describe('Catalog — Foto-Auftrag', () => {
       .withRequest({
         method: 'GET',
         path: M.regex('/api/v1/catalog/photos/[0-9a-f-]{36}', `/api/v1/catalog/photos/${photoId}`),
-        headers: germanAuthHeaders,
+        headers: authHeadersIn('de'),
       })
       .willRespondWith({
         status: 200,
@@ -293,7 +292,7 @@ describe('Catalog — Foto-Auftrag', () => {
       .withRequest({
         method: 'GET',
         path: M.regex('/api/v1/catalog/photos/[0-9a-f-]{36}', `/api/v1/catalog/photos/${photoId}`),
-        headers: germanAuthHeaders,
+        headers: authHeadersIn('de'),
       })
       .willRespondWith({
         status: 200,
@@ -331,7 +330,7 @@ describe('Catalog — Foto-Auftrag', () => {
       .withRequest({
         method: 'GET',
         path: M.regex('/api/v1/catalog/photos/[0-9a-f-]{36}', `/api/v1/catalog/photos/${photoId}`),
-        headers: germanAuthHeaders,
+        headers: authHeadersIn('de'),
       })
       .willRespondWith({
         status: 200,

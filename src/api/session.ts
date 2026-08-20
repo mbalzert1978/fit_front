@@ -1,5 +1,6 @@
-import { api, storeTokens, defaultLanguage } from './client';
+import { api, storeTokens } from './client';
 import { time } from '../time';
+import { language } from '../language';
 import type { AuthTokens } from './types';
 
 export { hasSession, signOut } from './client';
@@ -42,9 +43,14 @@ export type Registration = { email: string; password: string; displayName: strin
  *
  * `locale` und `timeZoneId` reisen als Felder mit und nicht als Kopfzeile:
  * `Accept-Language` verhandelt diese eine Antwort, hier entsteht dagegen ein
- * Merkmal, das am Konto bleibt. Die Zone kommt aus der Naht in `src/time.ts`;
- * ist sie nicht zu ermitteln, wirft sie. Dann entsteht gar keine Anfrage — ein
- * Konto mit einer stillschweigend gesetzten Zone wäre schlechter als keines.
+ * Merkmal, das am Konto bleibt — daran hängen später Erinnerungen und E-Mails,
+ * die niemand aus dieser App heraus anfordert.
+ *
+ * Beide kommen aus einer Naht und aus keinem Literal: die Sprache aus
+ * `src/language.ts`, dieselbe, die als `Accept-Language` an dieser Anfrage
+ * steht; die Zone aus `src/time.ts`. Ist die Zone nicht zu ermitteln, wirft
+ * sie — dann entsteht gar keine Anfrage, denn ein Konto mit einer
+ * stillschweigend gesetzten Zone wäre schlechter als keines.
  */
 export async function register(r: Registration): Promise<AuthTokens> {
   const tokens = await api<AuthTokens>('/identity/register', {
@@ -53,7 +59,7 @@ export async function register(r: Registration): Promise<AuthTokens> {
       email: r.email,
       password: r.password,
       displayName: r.displayName,
-      locale: defaultLanguage,
+      locale: language.tag(),
       timeZoneId: time.timeZoneId(),
     },
   });

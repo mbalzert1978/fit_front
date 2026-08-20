@@ -39,8 +39,9 @@ function errorsOf(e: unknown): Record<string, string[]> {
 
 /**
  * Die Zeile unter den Feldern. Der Server redet zuerst: `detail` ist sein Satz
- * zu genau diesem Vorfall. Eigene Sätze hat die Maske nur, wo keiner kommt —
- * beim Netzfehler, und als letzter Rückfall.
+ * zu genau diesem Vorfall, und er kommt in der Sprache, in der gefragt wurde —
+ * die Maske reicht ihn unverändert durch und übersetzt nichts. Eigene Sätze hat
+ * sie nur, wo keiner kommt: beim Netzfehler, und als letzter Rückfall.
  */
 function generalHintFor(e: unknown, ohneFeld: string[]): string | null {
   if (ohneFeld.length > 0) return ohneFeld.join(' ');

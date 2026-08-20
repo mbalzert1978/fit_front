@@ -55,12 +55,25 @@ App, und wer sein Passwort verliert, kommt an keiner Stelle wieder hinein. Der
 Weg dorthin braucht einen Kanal außerhalb der App (E-Mail), den es bisher nicht
 gibt — deshalb ist er aufgeschoben und nicht nebenbei gebaut.
 
-## 6 — Sprache: nur Schalter, keine Übersetzung
+## 6 — Sprache: die Sätze des Servers folgen dem Nutzer, unsere eigenen noch nicht
 
-Der Segmented-Schalter schreibt `language` nach `/preferences`; alle Beschriftungen
-sind deutsch fest verdrahtet. Wenn Englisch wirklich ausgeliefert wird, braucht es
-eine i18n-Schicht — dann alle Literale in eine Ressourcendatei, sonst zieht sich
-die Umstellung durch jeden Screen.
+Halb erledigt. Was der **Server** sagt, kommt seit
+[`decisions/2026-08-20-1055-die-sprache-des-nutzers-steht-im-vertrag.md`](decisions/2026-08-20-1055-die-sprache-des-nutzers-steht-im-vertrag.md)
+in der Sprache des Nutzers: der Schalter schreibt `language` nach `/preferences`, die Wahl geht an
+die Naht [`../src/language.ts`](../src/language.ts), und von dort füllt sie `Accept-Language` an
+jeder Anfrage.
+
+Was **wir** sagen, nicht. Alle Beschriftungen, Knöpfe und Rückfallsätze sind deutsch fest
+verdrahtet; ein englischer Nutzer liest also englische Fehlermeldungen in einer deutschen Maske.
+Für die Umstellung braucht es eine i18n-Schicht — alle Literale in eine Ressourcendatei, sonst
+zieht sich das durch jeden Screen. Die Naht ist dafür schon der richtige Ort: sie weiß bereits,
+welche Sprache gilt, und `supportedLanguages` ist die Liste, die dann auch die Ressourcendateien
+beschreibt.
+
+Zwei Kleinigkeiten hängen daran: die Vorliebe wird erst gelesen, wenn ein Screen `/preferences`
+abfragt — bis dahin gilt die Gerätesprache (dasselbe Muster wie beim Themenmodus, Punkt 13). Und
+die Registrierung schickt `locale` aus der Gerätesprache, weil es zu diesem Zeitpunkt noch kein
+Konto mit einer Vorliebe gibt.
 
 ## 7 — Kein Vertrag für das Verschieben eines Eintrags
 

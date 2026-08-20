@@ -41,6 +41,7 @@
           }
         },
         "headers": {
+          "Accept-Language": "de",
           "Authorization": "Bearer eyJ...",
           "Content-Type": "application/json",
           "Idempotency-Key": "3f2a1b0c-4d5e-4f60-8a91-b2c3d4e5f607"
@@ -751,6 +752,7 @@
       "request": {
         "body": "LS1SSlFBUUZRTDhTek5PUjJtDQpDb250ZW50LURpc3Bvc2l0aW9uOiBmb3JtLWRhdGE7IG5hbWU9ImZpbGUiOyBmaWxlbmFtZT0ibmFlaHJ3ZXJ0dGFiZWxsZS5qcGciDQpDb250ZW50LVR5cGU6IGltYWdlL2pwZWcNCg0K/9j/4AAQSkZJRgABAQEAYABgAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/wAALCAABAAEBAREA/8QAFAABAAAAAAAAAAAAAAAAAAAACf/EABQQAQAAAAAAAAAAAAAAAAAAAAD/2gAIAQEAAD8AKp//2Q0KLS1SSlFBUUZRTDhTek5PUjJtLS0NCg==",
         "headers": {
+          "Accept-Language": "de",
           "Authorization": "Bearer eyJ...",
           "Content-Type": "multipart/form-data; boundary=RJQAQFQL8SzNOR2m"
         },
@@ -890,6 +892,7 @@
           "type": "https://api.example/errors/token-expired"
         },
         "headers": {
+          "Content-Language": "de-DE",
           "Content-Type": "application/problem+json"
         },
         "matchingRules": {
@@ -1127,6 +1130,7 @@
           "type": "https://api.example/errors/product-not-found"
         },
         "headers": {
+          "Content-Language": "de-DE",
           "Content-Type": "application/problem+json"
         },
         "matchingRules": {
@@ -1334,6 +1338,7 @@
       ],
       "request": {
         "headers": {
+          "Accept-Language": "de",
           "Authorization": "Bearer eyJ..."
         },
         "matchingRules": {

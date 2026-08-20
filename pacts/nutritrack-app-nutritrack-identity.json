@@ -15,6 +15,7 @@
           "refreshToken": "rt_..."
         },
         "headers": {
+          "Accept-Language": "de",
           "Content-Type": "application/json"
         },
         "matchingRules": {
@@ -49,6 +50,7 @@
           "password": "falsch"
         },
         "headers": {
+          "Accept-Language": "de",
           "Content-Type": "application/json"
         },
         "method": "POST",
@@ -63,6 +65,7 @@
           "type": "https://api.example/errors/invalid-credentials"
         },
         "headers": {
+          "Content-Language": "de-DE",
           "Content-Type": "application/problem+json"
         },
         "matchingRules": {
@@ -110,6 +113,7 @@
           "password": "geheim123"
         },
         "headers": {
+          "Accept-Language": "de",
           "Content-Type": "application/json"
         },
         "method": "POST",
@@ -560,6 +564,112 @@
           "type": "https://api.example/errors/validation-failed"
         },
         "headers": {
+          "Content-Language": "de-DE",
+          "Content-Type": "application/problem+json"
+        },
+        "matchingRules": {
+          "body": {
+            "$.detail": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.errors.email": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type",
+                  "min": 1
+                }
+              ]
+            },
+            "$.errors.password": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type",
+                  "min": 1
+                }
+              ]
+            },
+            "$.instance": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "^/api/v1/.+"
+                }
+              ]
+            },
+            "$.title": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            }
+          }
+        },
+        "status": 400
+      }
+    },
+    {
+      "description": "Registrierung mit ungültiger E-Mail, auf Englisch gefragt",
+      "providerStates": [
+        {
+          "name": "Keine Registrierung mit a@b.de vorhanden"
+        }
+      ],
+      "request": {
+        "body": {
+          "displayName": "Markus",
+          "email": "kein-at-zeichen",
+          "locale": "en",
+          "password": "kurz",
+          "timeZoneId": "Europe/Berlin"
+        },
+        "headers": {
+          "Accept-Language": "en",
+          "Content-Type": "application/json"
+        },
+        "matchingRules": {
+          "body": {
+            "$.timeZoneId": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "^[A-Za-z0-9_+:/-]+$"
+                }
+              ]
+            }
+          }
+        },
+        "method": "POST",
+        "path": "/api/v1/identity/register"
+      },
+      "response": {
+        "body": {
+          "detail": "Please check the fields marked with errors",
+          "errors": {
+            "email": [
+              "The email address requires exactly one @ sign (found: 0)"
+            ],
+            "password": [
+              "The password must be at least 10 characters long (current: 4)"
+            ]
+          },
+          "instance": "/api/v1/example",
+          "status": 400,
+          "title": "The input is invalid",
+          "type": "https://api.example/errors/validation-failed"
+        },
+        "headers": {
+          "Content-Language": "en-US",
           "Content-Type": "application/problem+json"
         },
         "matchingRules": {
@@ -656,6 +766,7 @@
           "type": "https://api.example/errors/email-already-registered"
         },
         "headers": {
+          "Content-Language": "de-DE",
           "Content-Type": "application/problem+json"
         },
         "matchingRules": {
@@ -702,6 +813,7 @@
           "refreshToken": "rt_..."
         },
         "headers": {
+          "Accept-Language": "de",
           "Content-Type": "application/json"
         },
         "matchingRules": {
