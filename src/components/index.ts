@@ -2,6 +2,7 @@ export { Screen } from './Screen';
 export { SectionHeading } from './SectionHeading';
 export { ListRow } from './ListRow';
 export { ValueField } from './ValueField';
+export { FormField } from './FormField';
 export { OutlineButton } from './OutlineButton';
 export { SquareIconButton } from './SquareIconButton';
 export { Segmented } from './Segmented';

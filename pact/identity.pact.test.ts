@@ -1,5 +1,5 @@
-import { pact, M, enveloped, jsonHeaders, authResponseHeaders, problem } from './setup';
-import { api, apiWithMeta, signOut } from '../src/api/client';
+import { pact, M, enveloped, jsonHeaders, germanJsonHeaders, authResponseHeaders, problem } from './setup';
+import { api, apiWithMeta, signOut, ApiError } from '../src/api/client';
 import { register } from '../src/api/session';
 import { setTimeProvider, resetTimeProvider } from '../src/time';
 import { __seedSession, __readSession } from './stubs/expoSecureStore';
@@ -9,9 +9,12 @@ import type { AuthTokens } from '../src/api/types';
  * Bedarf: `app/login.tsx` und `app/register.tsx` (beide über
  * `src/api/session.ts`) sowie die 401-Behandlung in `src/api/client.ts`. Die
  * Anmeldemaske unterscheidet genau zwei Ausgänge — angemeldet oder Feld rot;
- * deshalb dort genau ein Erfolgs- und ein Fehlerfall. Die Registrierung sagt zu
- * zwei Fehlschlägen etwas Verschiedenes (E-Mail vergeben, Passwort zu kurz) und
- * bekommt deshalb beide einzeln zugesichert.
+ * deshalb dort genau ein Erfolgs- und ein Fehlerfall.
+ *
+ * Die Registrierung hat drei Felder und braucht deshalb mehr: die vergebene
+ * E-Mail als eigenen Zustand (409) und alles, was gegen eine Regel verstößt,
+ * feldweise begründet (`validation-failed`). Welche Regeln das sind, steht
+ * nicht hier — sie gehören dem Server, und die Maske zeigt, was er sagt.
  *
  * Die Token-Antwort ist nach OAuth 2 benannt: `tokenType`, `expiresIn` und
  * `refreshExpiresIn` in Sekunden, die Identität als `user.id`. Dass die
@@ -90,7 +93,7 @@ describe('Identity', () => {
       .withRequest({
         method: 'POST',
         path: '/api/v1/identity/register',
-        headers: jsonHeaders,
+        headers: germanJsonHeaders,
         // Der Rumpf steht hier so, wie `register()` in `src/api/session.ts` ihn
         // schickt — der Test ruft die Hülle selbst auf und nicht `api()` direkt.
         // `locale` und `timeZoneId` sind Merkmale, die am Konto bleiben; deshalb
@@ -131,7 +134,7 @@ describe('Identity', () => {
       .withRequest({
         method: 'POST',
         path: '/api/v1/identity/register',
-        headers: jsonHeaders,
+        headers: germanJsonHeaders,
         // Hier steht der Wert selbst und kein Matcher: `GMT+01:00` **ist** die
         // Zusage. Android liefert diese Form, wenn das System keine benannte
         // Zone auflöst; der Nutzer kann dafür nichts, und ein Konto muss auch
@@ -171,40 +174,70 @@ describe('Identity', () => {
       .withRequest({
         method: 'POST',
         path: '/api/v1/identity/register',
-        headers: jsonHeaders,
+        headers: germanJsonHeaders,
         body: { email: 'a@b.de', password: 'geheim123!', displayName: 'Markus', locale: 'de', timeZoneId: anyTimeZoneId },
       })
-      // Der Screen sagt dazu etwas anderes als bei jedem sonstigen Fehlschlag;
-      // deshalb muss dieser Fall an seinem `type` erkennbar sein.
-      .willRespondWith(problem('email-already-registered', 'E-Mail bereits vergeben', 409));
+      // Zwei Zusagen in einer: der `type`, an dem der Screen diesen Fall von
+      // jedem sonstigen Fehlschlag unterscheidet, **und** der Satz am Feld.
+      // Auch hier redet der Server, nicht die Maske — sie hat nur einen
+      // Rückfall für den Fall, dass nichts mitkommt.
+      .willRespondWith(
+        problem('email-already-registered', 'E-Mail bereits vergeben', 409, {
+          email: M.eachLike('Für diese E-Mail gibt es schon ein Konto'),
+        }),
+      );
 
     await p.executeTest(async () => {
-      await expect(register({ email: 'a@b.de', password: 'geheim123!', displayName: 'Markus' })).rejects.toMatchObject({
-        type: 'email-already-registered',
-      });
+      const e = await register({ email: 'a@b.de', password: 'geheim123!', displayName: 'Markus' }).catch((err: unknown) => err);
+      expect(e).toBeInstanceOf(ApiError);
+      const fehler = e as ApiError;
+      expect(fehler.type).toBe('email-already-registered');
+      expect(fehler.errors?.email?.[0]).toEqual(expect.any(String));
     });
   });
 
-  it('lehnt ein zu kurzes Passwort mit 400 ab', async () => {
+  it('sagt feldweise, was an den Angaben nicht stimmt', async () => {
     const p = provider();
     p.given('Keine Registrierung mit a@b.de vorhanden')
-      .uponReceiving('Registrierung mit zu kurzem Passwort')
+      .uponReceiving('Registrierung mit ungültiger E-Mail und zu kurzem Passwort')
       .withRequest({
         method: 'POST',
         path: '/api/v1/identity/register',
-        headers: jsonHeaders,
-        body: { email: 'a@b.de', password: 'kurz', displayName: 'Markus', locale: 'de', timeZoneId: anyTimeZoneId },
+        headers: germanJsonHeaders,
+        body: {
+          email: 'kein-at-zeichen',
+          password: 'kurz',
+          displayName: 'Markus',
+          locale: 'de',
+          timeZoneId: anyTimeZoneId,
+        },
       })
-      .willRespondWith(problem('password-too-weak', 'Passwort zu kurz', 400));
+      // Bestellt ist die **Begründung je Feld**, nicht ein Sammelsatz: die Maske
+      // hat drei Eingaben und muss die richtige anstreichen. Beide Verstöße
+      // kommen in einer Antwort — nacheinander wäre es für den Nutzer ein
+      // zweiter Fehlschlag für denselben Versuch.
+      //
+      // Der Wortlaut ist Matcher und nicht Wert: was genau falsch ist, weiß der
+      // Server, und seine Regeln kennt die Maske nicht. Sie zeigt den Satz, den
+      // sie bekommt — deshalb trägt die Anfrage `Accept-Language`.
+      .willRespondWith(
+        problem('validation-failed', 'Die Angaben sind nicht gültig', 400, {
+          email: M.eachLike('Keine gültige E-Mail-Adresse'),
+          password: M.eachLike('Mindestens 10 Zeichen'),
+        }),
+      );
 
     await p.executeTest(async () => {
-      // Die Maske lässt ein zu kurzes Passwort gar nicht erst abschicken
-      // (`minPasswordLength` in `src/api/session.ts`). Zugesichert wird der Fall
-      // trotzdem: der Client darf nicht der einzige Prüfer sein, sonst käme ein
-      // Konto mit schwachem Passwort an ihm vorbei zustande.
-      await expect(register({ email: 'a@b.de', password: 'kurz', displayName: 'Markus' })).rejects.toMatchObject({
-        type: 'password-too-weak',
-      });
+      // Die Maske hält ihre eine eigene Regel ein (`minPasswordLength`), aber
+      // sie ist nicht der einzige Prüfer: hier geht bewusst vorbei, was sie
+      // nicht abfangen kann.
+      const e = await register({ email: 'kein-at-zeichen', password: 'kurz', displayName: 'Markus' }).catch((err: unknown) => err);
+      expect(e).toBeInstanceOf(ApiError);
+      const fehler = e as ApiError;
+      expect(fehler.type).toBe('validation-failed');
+      // Genau das liest `app/register.tsx`: Feldname → mindestens ein Satz.
+      expect(fehler.errors?.email?.[0]).toEqual(expect.any(String));
+      expect(fehler.errors?.password?.[0]).toEqual(expect.any(String));
     });
   });
 

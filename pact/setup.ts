@@ -88,15 +88,23 @@ export const authResponseHeaders = { ...privateHeaders, 'X-Request-Id': M.string
 /** Fehler tragen keinen Umschlag: `problem+json` bleibt, wie RFC 7807 es beschreibt. */
 export const problemHeaders = { 'Content-Type': 'application/problem+json' };
 
+/** JSON-Rumpf an einer Anfrage, deren Antwort Text trägt, den ein Screen zeigt. */
+export const germanJsonHeaders = { ...jsonHeaders, 'Accept-Language': 'de' };
+
 /**
  * Ein Fehler als Zusage. `type` ist ein fester Wert und kein Matcher — an ihm
  * entscheidet der Client, was er tut, und ein anderer Wert ist ein anderer
  * Fehler.
+ *
+ * `errors` ist die feldweise Begründung: Feldname aus dem Anfrage-Rumpf auf
+ * Sätze. Die Schlüssel sind feste Werte, weil der Screen an ihnen entscheidet,
+ * welches Feld er anstreicht; die Sätze selbst sind Matcher — ihr Wortlaut
+ * gehört der Gegenseite, nicht diesem Vertrag.
  */
-export const problem = (type: string, title: string, status: number) => ({
+export const problem = (type: string, title: string, status: number, errors?: Record<string, unknown>) => ({
   status,
   headers: problemHeaders,
-  body: { type, title: M.string(title), status },
+  body: errors ? { type, title: M.string(title), status, errors } : { type, title: M.string(title), status },
 });
 
 /**

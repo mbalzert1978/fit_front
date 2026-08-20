@@ -18,13 +18,14 @@ export async function login(email: string, password: string): Promise<AuthTokens
 }
 
 /**
- * Mindestlänge des Passworts. Sie steht hier und nicht im Screen, weil die
- * Maske und der Vertrag dieselbe Zahl nennen müssen: die Maske hält sie ein,
- * der Vertrag sichert zu, dass ein kürzeres Passwort abgewiesen wird.
+ * Die eine Regel, die die Maske selbst kennt: Sie hält den offensichtlichen
+ * Fall vom Netz fern, ohne zu behaupten, sie kenne alle Regeln. Was sonst noch
+ * gilt — Zeichenklassen, gesperrte Passwörter, die Form der E-Mail —, weiß der
+ * Server und sagt es feldweise in `problem+json` (`validation-failed`).
  */
 export const minPasswordLength = 10;
 
-/** Grenzen des Anzeigenamens. Die Maske hält sie ein, der Server prüft sie erneut. */
+/** Obergrenze des Anzeigenamens. Die Maske hält sie ein, der Server prüft erneut. */
 export const maxDisplayNameLength = 60;
 
 /**

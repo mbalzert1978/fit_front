@@ -224,6 +224,7 @@
           "timeZoneId": "GMT+01:00"
         },
         "headers": {
+          "Accept-Language": "de",
           "Content-Type": "application/json"
         },
         "method": "POST",
@@ -357,6 +358,7 @@
           "timeZoneId": "Europe/Berlin"
         },
         "headers": {
+          "Accept-Language": "de",
           "Content-Type": "application/json"
         },
         "matchingRules": {
@@ -488,6 +490,91 @@
       }
     },
     {
+      "description": "Registrierung mit ungültiger E-Mail und zu kurzem Passwort",
+      "providerStates": [
+        {
+          "name": "Keine Registrierung mit a@b.de vorhanden"
+        }
+      ],
+      "request": {
+        "body": {
+          "displayName": "Markus",
+          "email": "kein-at-zeichen",
+          "locale": "de",
+          "password": "kurz",
+          "timeZoneId": "Europe/Berlin"
+        },
+        "headers": {
+          "Accept-Language": "de",
+          "Content-Type": "application/json"
+        },
+        "matchingRules": {
+          "body": {
+            "$.timeZoneId": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "^[A-Za-z0-9_+:/-]+$"
+                }
+              ]
+            }
+          }
+        },
+        "method": "POST",
+        "path": "/api/v1/identity/register"
+      },
+      "response": {
+        "body": {
+          "errors": {
+            "email": [
+              "Keine gültige E-Mail-Adresse"
+            ],
+            "password": [
+              "Mindestens 10 Zeichen"
+            ]
+          },
+          "status": 400,
+          "title": "Die Angaben sind nicht gültig",
+          "type": "validation-failed"
+        },
+        "headers": {
+          "Content-Type": "application/problem+json"
+        },
+        "matchingRules": {
+          "body": {
+            "$.errors.email": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type",
+                  "min": 1
+                }
+              ]
+            },
+            "$.errors.password": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type",
+                  "min": 1
+                }
+              ]
+            },
+            "$.title": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            }
+          }
+        },
+        "status": 400
+      }
+    },
+    {
       "description": "Registrierung mit vergebener E-Mail",
       "providerStates": [
         {
@@ -503,6 +590,7 @@
           "timeZoneId": "Europe/Berlin"
         },
         "headers": {
+          "Accept-Language": "de",
           "Content-Type": "application/json"
         },
         "matchingRules": {
@@ -523,6 +611,11 @@
       },
       "response": {
         "body": {
+          "errors": {
+            "email": [
+              "Für diese E-Mail gibt es schon ein Konto"
+            ]
+          },
           "status": 409,
           "title": "E-Mail bereits vergeben",
           "type": "email-already-registered"
@@ -532,6 +625,15 @@
         },
         "matchingRules": {
           "body": {
+            "$.errors.email": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type",
+                  "min": 1
+                }
+              ]
+            },
             "$.title": {
               "combine": "AND",
               "matchers": [
@@ -543,64 +645,6 @@
           }
         },
         "status": 409
-      }
-    },
-    {
-      "description": "Registrierung mit zu kurzem Passwort",
-      "providerStates": [
-        {
-          "name": "Keine Registrierung mit a@b.de vorhanden"
-        }
-      ],
-      "request": {
-        "body": {
-          "displayName": "Markus",
-          "email": "a@b.de",
-          "locale": "de",
-          "password": "kurz",
-          "timeZoneId": "Europe/Berlin"
-        },
-        "headers": {
-          "Content-Type": "application/json"
-        },
-        "matchingRules": {
-          "body": {
-            "$.timeZoneId": {
-              "combine": "AND",
-              "matchers": [
-                {
-                  "match": "regex",
-                  "regex": "^[A-Za-z0-9_+:/-]+$"
-                }
-              ]
-            }
-          }
-        },
-        "method": "POST",
-        "path": "/api/v1/identity/register"
-      },
-      "response": {
-        "body": {
-          "status": 400,
-          "title": "Passwort zu kurz",
-          "type": "password-too-weak"
-        },
-        "headers": {
-          "Content-Type": "application/problem+json"
-        },
-        "matchingRules": {
-          "body": {
-            "$.title": {
-              "combine": "AND",
-              "matchers": [
-                {
-                  "match": "type"
-                }
-              ]
-            }
-          }
-        },
-        "status": 400
       }
     },
     {
