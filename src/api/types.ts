@@ -65,9 +65,13 @@ export type MealSlotDay = { id: string; name: string; kcal: number; entries: Dia
 
 export type ActivityEntry = { externalId: string; name: string; detail: string; kcal: number };
 
+/**
+ * Ohne `isFuture`: ob ein Tag in der Zukunft liegt, ist der Vergleich zweier
+ * Kalendertage und kommt ohne Antwort vom Server aus — siehe
+ * `docs/decisions/2026-08-20-0925-kalendertag-ist-reine-client-sache.md`.
+ */
 export type DiaryDay = {
   date: DiaryDate;
-  isFuture: boolean;
   totals: { kcal: number; carbsG: number; proteinG: number; fatG: number };
   goal: { dailyKcal: number; carbsG: number; proteinG: number; fatG: number };
   remainingKcal: number;

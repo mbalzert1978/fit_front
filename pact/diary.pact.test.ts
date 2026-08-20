@@ -8,8 +8,11 @@ import { parseDiaryDate } from '../src/api/diaryDate';
  *
  * Zugesichert ist nur, was diese Screens lesen. `sourceType`/`sourceId` am
  * Eintrag stehen zwar im Typ, werden aber von keinem Screen angefasst — sie
- * fehlen hier bewusst. `PATCH .../slot` fehlt ebenso: die Verschiebe-Mutation
- * existiert, die Gestik dazu nicht (docs/offene-punkte.md, Punkt 2).
+ * fehlen hier bewusst. `isFuture` fehlt ebenfalls: ob ein Tag in der Zukunft
+ * liegt, vergleicht der Screen selbst — ein Feld, das beide Seiten rechnen,
+ * wäre eine zweite Wahrheit. `PATCH .../slot` fehlt auch: die
+ * Verschiebe-Mutation existiert, die Gestik dazu nicht
+ * (docs/offene-punkte.md, Punkt 2).
  *
  * Alles hier ist die Ernährung eines einzelnen Nutzers. Jede Anfrage weist sich
  * deshalb aus, und jede Antwort mit Rumpf trägt `no-store` — ein Tagebuchtag im
@@ -33,7 +36,6 @@ describe('Diary — Tagesansicht', () => {
         headers: privateHeaders,
         body: enveloped({
           date: '2026-08-04',
-          isFuture: M.boolean(false),
           totals: { kcal: M.integer(1583), carbsG: M.integer(142), proteinG: M.integer(118), fatG: M.integer(51) },
           goal: { dailyKcal: M.integer(2150), carbsG: M.integer(215), proteinG: M.integer(161), fatG: M.integer(72) },
           remainingKcal: M.integer(567),
@@ -63,10 +65,9 @@ describe('Diary — Tagesansicht', () => {
       });
 
     await p.executeTest(async () => {
-      const day = await api<{ date: string; remainingKcal: number; isFuture: boolean }>(endpoints.diaryDay(date));
+      const day = await api<{ date: string; remainingKcal: number }>(endpoints.diaryDay(date));
       expect(day.date).toBe('2026-08-04');
       expect(typeof day.remainingKcal).toBe('number');
-      expect(typeof day.isFuture).toBe('boolean');
     });
   });
 
@@ -80,7 +81,6 @@ describe('Diary — Tagesansicht', () => {
         headers: privateHeaders,
         body: enveloped({
           date: '2026-08-05',
-          isFuture: M.boolean(false),
           totals: { kcal: M.integer(0), carbsG: M.integer(0), proteinG: M.integer(0), fatG: M.integer(0) },
           goal: { dailyKcal: M.integer(2150), carbsG: M.integer(215), proteinG: M.integer(161), fatG: M.integer(72) },
           remainingKcal: M.integer(2150),

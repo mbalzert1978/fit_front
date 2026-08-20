@@ -1063,7 +1063,6 @@
               "fatG": 72,
               "proteinG": 161
             },
-            "isFuture": false,
             "remainingKcal": 567,
             "slots": [
               {
@@ -1196,14 +1195,6 @@
               "matchers": [
                 {
                   "match": "integer"
-                }
-              ]
-            },
-            "$.data.isFuture": {
-              "combine": "AND",
-              "matchers": [
-                {
-                  "match": "type"
                 }
               ]
             },
@@ -1451,7 +1442,6 @@
               "fatG": 72,
               "proteinG": 161
             },
-            "isFuture": false,
             "remainingKcal": 2150,
             "slots": [
               {
@@ -1516,14 +1506,6 @@
               "matchers": [
                 {
                   "match": "integer"
-                }
-              ]
-            },
-            "$.data.isFuture": {
-              "combine": "AND",
-              "matchers": [
-                {
-                  "match": "type"
                 }
               ]
             },
