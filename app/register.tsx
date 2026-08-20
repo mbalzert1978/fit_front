@@ -97,7 +97,12 @@ export default function RegisterScreen() {
           onPress={submit}
           disabled={busy || !nameOk || !email || password.length < minPasswordLength}
         />
-        <OutlineButton label="Ich habe schon ein Konto" variant="muted" onPress={() => router.replace('/login')} />
+        {/* Zurück und nicht ersetzen: sonst stünde die Anmeldemaske zweimal im Stapel. */}
+        <OutlineButton
+          label="Ich habe schon ein Konto"
+          variant="muted"
+          onPress={() => (router.canGoBack() ? router.back() : router.replace('/login'))}
+        />
       </View>
     </Screen>
   );

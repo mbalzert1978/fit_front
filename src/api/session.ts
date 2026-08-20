@@ -42,7 +42,8 @@ export type Registration = { email: string; password: string; displayName: strin
  * `locale` und `timeZoneId` reisen als Felder mit und nicht als Kopfzeile:
  * `Accept-Language` verhandelt diese eine Antwort, hier entsteht dagegen ein
  * Merkmal, das am Konto bleibt. Die Zone kommt aus der Naht in `src/time.ts`;
- * ist sie nicht zu ermitteln, geht `null` hinaus statt einer erfundenen Zone.
+ * ist sie nicht zu ermitteln, wirft sie. Dann entsteht gar keine Anfrage — ein
+ * Konto mit einer stillschweigend gesetzten Zone wäre schlechter als keines.
  */
 export async function register(r: Registration): Promise<AuthTokens> {
   const tokens = await api<AuthTokens>('/identity/register', {
