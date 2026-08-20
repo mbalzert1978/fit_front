@@ -42,11 +42,18 @@ steht im Vertrag, auch wenn es das Backend noch nicht gibt.
 Das Eingabefeld selbst ist gebaut (`TextInput` mit Debounce, 300 ms). Offen ist nur
 noch die Gegenseite.
 
-## 5 — Registrierung, Passwort ändern, Konto löschen
+## 5 — Passwort ändern, Passwort vergessen, Konto löschen
 
-Die Backend-Spezifikation hat die Endpunkte (`/identity/register`, `/me/password`,
-`DELETE /me`), für die Oberfläche ist kein Screen dafür beschrieben. Offene
-Produktentscheidung, kein technisches Thema.
+Die **Registrierung ist gebaut** (`app/register.tsx`, Vertrag in
+`pact/identity.pact.test.ts`); was dabei entschieden wurde, steht in
+[`decisions/2026-08-20-0843-registrierung-legt-konto-und-sitzung-in-einem-aufruf-an.md`](decisions/2026-08-20-0843-registrierung-legt-konto-und-sitzung-in-einem-aufruf-an.md).
+
+Offen bleiben drei Wege am selben Konto. Passwort ändern und Konto löschen sind
+offene Produktentscheidungen, kein technisches Thema. **Passwort vergessen** ist
+der drängendere Punkt: seit es eine Registrierung gibt, entstehen Konten in der
+App, und wer sein Passwort verliert, kommt an keiner Stelle wieder hinein. Der
+Weg dorthin braucht einen Kanal außerhalb der App (E-Mail), den es bisher nicht
+gibt — deshalb ist er aufgeschoben und nicht nebenbei gebaut.
 
 ## 6 — Sprache: nur Schalter, keine Übersetzung
 

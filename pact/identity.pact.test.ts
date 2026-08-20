@@ -1,12 +1,16 @@
 import { pact, M, enveloped, jsonHeaders, authResponseHeaders, problem } from './setup';
 import { api, apiWithMeta, signOut } from '../src/api/client';
+import { register } from '../src/api/session';
 import { __seedSession, __readSession } from './stubs/expoSecureStore';
 import type { AuthTokens } from '../src/api/types';
 
 /**
- * Bedarf: `app/login.tsx` (über `src/api/session.ts`) und die 401-Behandlung in
- * `src/api/client.ts`. Der Screen unterscheidet genau zwei Ausgänge — angemeldet
- * oder Feld rot; deshalb genau ein Erfolgs- und ein Fehlerfall.
+ * Bedarf: `app/login.tsx` und `app/register.tsx` (beide über
+ * `src/api/session.ts`) sowie die 401-Behandlung in `src/api/client.ts`. Die
+ * Anmeldemaske unterscheidet genau zwei Ausgänge — angemeldet oder Feld rot;
+ * deshalb dort genau ein Erfolgs- und ein Fehlerfall. Die Registrierung sagt zu
+ * zwei Fehlschlägen etwas Verschiedenes (E-Mail vergeben, Passwort zu kurz) und
+ * bekommt deshalb beide einzeln zugesichert.
  *
  * Die Token-Antwort ist nach OAuth 2 benannt: `tokenType`, `expiresIn` und
  * `refreshExpiresIn` in Sekunden, die Identität als `user.id`. Dass die
@@ -60,6 +64,91 @@ describe('Identity', () => {
       expect(r.headers.get('X-Request-Id')).toBe(r.meta?.requestId);
       // Token gehören in keinen Zwischenspeicher.
       expect(r.headers.get('Cache-Control')).toBe('no-store');
+    });
+  });
+
+  it('legt ein Konto an und gibt dieselbe Sitzung zurück wie die Anmeldung', async () => {
+    const p = provider();
+    p.given('Keine Registrierung mit a@b.de vorhanden')
+      .uponReceiving('Registrierung mit freier E-Mail')
+      .withRequest({
+        method: 'POST',
+        path: '/api/v1/identity/register',
+        headers: jsonHeaders,
+        // Der Rumpf steht hier so, wie `register()` in `src/api/session.ts` ihn
+        // schickt — der Test ruft die Hülle selbst auf und nicht `api()` direkt.
+        // `locale` und `timeZoneId` sind Merkmale, die am Konto bleiben; deshalb
+        // reisen sie im Rumpf und nicht in `Accept-Language`, das nur diese eine
+        // Antwort verhandelt. Die Zone kommt aus der Naht `src/time.ts`.
+        body: {
+          email: 'a@b.de',
+          password: 'geheim123!',
+          displayName: 'Markus',
+          locale: 'de',
+          timeZoneId: 'Europe/Berlin',
+        },
+      })
+      .willRespondWith({
+        status: 201,
+        headers: authResponseHeaders,
+        // Dieselbe Nutzlast wie die Anmeldung: `app/register.tsx` führt danach
+        // direkt ins Tagebuch, und dafür braucht es die Sitzung sofort. Zwei
+        // Formen für dieselbe Sache gäbe es sonst ohne Not.
+        body: enveloped(tokenPair),
+      });
+
+    await p.executeTest(async () => {
+      const s = await register({ email: 'a@b.de', password: 'geheim123!', displayName: 'Markus' });
+      expect(s.accessToken).toBeTruthy();
+      expect(s.refreshToken).toBeTruthy();
+      expect(s.tokenType).toBe('Bearer');
+      expect(s.user.id).toBeTruthy();
+      // Und die Sitzung liegt danach im Gerät — wer ein Konto anlegt, ist drin.
+      expect(__readSession()).toBeTruthy();
+    });
+  });
+
+  it('lehnt eine schon vergebene E-Mail mit 409 ab', async () => {
+    const p = provider();
+    p.given('Nutzer a@b.de existiert mit Passwort geheim123')
+      .uponReceiving('Registrierung mit vergebener E-Mail')
+      .withRequest({
+        method: 'POST',
+        path: '/api/v1/identity/register',
+        headers: jsonHeaders,
+        body: { email: 'a@b.de', password: 'geheim123!', displayName: 'Markus', locale: 'de', timeZoneId: 'Europe/Berlin' },
+      })
+      // Der Screen sagt dazu etwas anderes als bei jedem sonstigen Fehlschlag;
+      // deshalb muss dieser Fall an seinem `type` erkennbar sein.
+      .willRespondWith(problem('email-already-registered', 'E-Mail bereits vergeben', 409));
+
+    await p.executeTest(async () => {
+      await expect(register({ email: 'a@b.de', password: 'geheim123!', displayName: 'Markus' })).rejects.toMatchObject({
+        type: 'email-already-registered',
+      });
+    });
+  });
+
+  it('lehnt ein zu kurzes Passwort mit 400 ab', async () => {
+    const p = provider();
+    p.given('Keine Registrierung mit a@b.de vorhanden')
+      .uponReceiving('Registrierung mit zu kurzem Passwort')
+      .withRequest({
+        method: 'POST',
+        path: '/api/v1/identity/register',
+        headers: jsonHeaders,
+        body: { email: 'a@b.de', password: 'kurz', displayName: 'Markus', locale: 'de', timeZoneId: 'Europe/Berlin' },
+      })
+      .willRespondWith(problem('password-too-weak', 'Passwort zu kurz', 400));
+
+    await p.executeTest(async () => {
+      // Die Maske lässt ein zu kurzes Passwort gar nicht erst abschicken
+      // (`minPasswordLength` in `src/api/session.ts`). Zugesichert wird der Fall
+      // trotzdem: der Client darf nicht der einzige Prüfer sein, sonst käme ein
+      // Konto mit schwachem Passwort an ihm vorbei zustande.
+      await expect(register({ email: 'a@b.de', password: 'kurz', displayName: 'Markus' })).rejects.toMatchObject({
+        type: 'password-too-weak',
+      });
     });
   });
 

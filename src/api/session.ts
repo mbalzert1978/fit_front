@@ -1,4 +1,5 @@
-import { api, storeTokens } from './client';
+import { api, storeTokens, defaultLanguage } from './client';
+import { time } from '../time';
 import type { AuthTokens } from './types';
 
 export { hasSession, signOut } from './client';
@@ -12,6 +13,48 @@ export { hasSession, signOut } from './client';
  */
 export async function login(email: string, password: string): Promise<AuthTokens> {
   const tokens = await api<AuthTokens>('/identity/login', { method: 'POST', body: { email, password } });
+  await storeTokens(tokens);
+  return tokens;
+}
+
+/**
+ * Mindestlänge des Passworts. Sie steht hier und nicht im Screen, weil die
+ * Maske und der Vertrag dieselbe Zahl nennen müssen: die Maske hält sie ein,
+ * der Vertrag sichert zu, dass ein kürzeres Passwort abgewiesen wird.
+ */
+export const minPasswordLength = 10;
+
+/** Grenzen des Anzeigenamens. Die Maske hält sie ein, der Server prüft sie erneut. */
+export const maxDisplayNameLength = 60;
+
+/**
+ * Was beim Anlegen eines Kontos vom Nutzer kommt. Sprache und Zeitzone stehen
+ * nicht hier: die fragt niemand ab, die weiß das Gerät.
+ */
+export type Registration = { email: string; password: string; displayName: string };
+
+/**
+ * Registrierung. Sie liefert dieselbe Antwort wie die Anmeldung und legt
+ * dieselbe Sitzung an — wer ein Konto anlegt, ist damit angemeldet. Ein
+ * zweiter Aufruf zum Anmelden danach würde einen Zustand schaffen, in dem ein
+ * Konto existiert, aber niemand darin ist; genau der soll nicht entstehen.
+ *
+ * `locale` und `timeZoneId` reisen als Felder mit und nicht als Kopfzeile:
+ * `Accept-Language` verhandelt diese eine Antwort, hier entsteht dagegen ein
+ * Merkmal, das am Konto bleibt. Die Zone kommt aus der Naht in `src/time.ts`;
+ * ist sie nicht zu ermitteln, geht `null` hinaus statt einer erfundenen Zone.
+ */
+export async function register(r: Registration): Promise<AuthTokens> {
+  const tokens = await api<AuthTokens>('/identity/register', {
+    method: 'POST',
+    body: {
+      email: r.email,
+      password: r.password,
+      displayName: r.displayName,
+      locale: defaultLanguage,
+      timeZoneId: time.timeZoneId(),
+    },
+  });
   await storeTokens(tokens);
   return tokens;
 }

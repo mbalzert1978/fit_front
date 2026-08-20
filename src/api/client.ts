@@ -179,8 +179,16 @@ export async function signOut() {
 
 /* Anfrage und Antwort */
 
+/**
+ * Sprache der App, solange keine Vorliebe gelesen ist. Sie steht hier, weil sie
+ * an zwei Stellen gebraucht wird: als `Accept-Language` an jeder Anfrage und als
+ * `locale` beim Anlegen eines Kontos. Zwei fest verdrahtete `'de'` würden früher
+ * oder später auseinanderlaufen.
+ */
+export const defaultLanguage: 'de' | 'en' = 'de';
+
 async function raw(path: string, o: Options, access: string | null): Promise<Response> {
-  const headers: Record<string, string> = { Accept: 'application/json', 'Accept-Language': o.language ?? 'de' };
+  const headers: Record<string, string> = { Accept: 'application/json', 'Accept-Language': o.language ?? defaultLanguage };
   if (access) headers.Authorization = `Bearer ${access}`;
   if (o.idempotencyKey) headers['Idempotency-Key'] = o.idempotencyKey;
   if (o.ifMatch) headers['If-Match'] = o.ifMatch;

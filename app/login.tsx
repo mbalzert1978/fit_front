@@ -66,8 +66,10 @@ export default function LoginScreen() {
         <TextInput value={password} onChangeText={setPassword} secureTextEntry textContentType="password" style={[t.font.body, field]} />
       </View>
       {hint ? <Text style={[t.font.micro, { color: t.color.accent, marginTop: t.space[4] }]}>{hint}</Text> : null}
-      <View style={{ marginTop: t.space[8] }}>
+      <View style={{ gap: t.space[4], marginTop: t.space[8] }}>
         <OutlineButton label={busy ? 'Anmelden …' : 'Anmelden'} onPress={submit} disabled={busy || !email || !password} />
+        {/* Ohne diesen Weg käme niemand in die App, der noch kein Konto hat. */}
+        <OutlineButton label="Konto anlegen" variant="muted" onPress={() => router.push('/register')} />
       </View>
     </Screen>
   );

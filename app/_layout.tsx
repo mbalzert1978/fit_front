@@ -48,6 +48,7 @@ export default function RootLayout() {
           >
             <Stack.Screen name="(tabs)" />
             <Stack.Screen name="login" />
+            <Stack.Screen name="register" />
             {/* Detailscreens liegen über der Tab-Leiste, als Modal ohne Zurück-Pfeil. */}
             <Stack.Screen name="product/[id]" options={{ presentation: 'modal' }} />
             <Stack.Screen name="entry/[id]" options={{ presentation: 'modal' }} />
