@@ -46,7 +46,7 @@
           "instance": "/api/v1/example",
           "status": 403,
           "title": "Kein Zugriff auf diese Ressource",
-          "type": "https://api.example/errors/forbidden"
+          "type": "tag:nutritrack.app,2026:problems/forbidden"
         },
         "headers": {
           "Content-Language": "de-DE",
@@ -678,7 +678,7 @@
           "instance": "/api/v1/example",
           "status": 409,
           "title": "Rezept wurde zwischenzeitlich geändert",
-          "type": "https://api.example/errors/concurrency-conflict"
+          "type": "tag:nutritrack.app,2026:problems/concurrency-conflict"
         },
         "headers": {
           "Content-Language": "de-DE",
@@ -1440,7 +1440,7 @@
           "instance": "/api/v1/example",
           "status": 401,
           "title": "Anmeldung abgelaufen",
-          "type": "https://api.example/errors/token-expired"
+          "type": "tag:nutritrack.app,2026:problems/token-expired"
         },
         "headers": {
           "Content-Language": "de-DE",

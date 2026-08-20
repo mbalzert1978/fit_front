@@ -1,11 +1,12 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { Text, View } from 'react-native';
 import { router } from 'expo-router';
 import { Screen, OutlineButton, FormField } from '../src/components';
 import { useTheme } from '../src/theme/ThemeProvider';
-import { register, minPasswordLength, maxDisplayNameLength } from '../src/api/session';
+import { register, minPasswordLength, maxDisplayNameLength, type Registration } from '../src/api/session';
 import { ApiError, OfflineError } from '../src/api/client';
 import { problems } from '../src/api/problems';
+import { newId } from '../src/api/ids';
 
 /** Die Felder, die diese Maske zeigt. Wozu sie keines hat, kann sie nicht anstreichen. */
 const sichtbareFelder = ['displayName', 'email', 'password'] as const;
@@ -50,6 +51,28 @@ function generalHintFor(e: unknown, ohneFeld: string[]): string | null {
   return 'Registrierung derzeit nicht möglich';
 }
 
+/**
+ * Der Idempotency-Key eines Registrierungsversuchs.
+ *
+ * Er hängt an den **Daten**, nicht am Tastendruck: zweimal dasselbe getippt ist
+ * derselbe Versuch, und der Server spielt die erste Antwort noch einmal ab,
+ * statt eine zweite Registrierung zu prüfen. Genau dafür ist er da — die
+ * Antwort geht auf dem Rückweg verloren, der Nutzer tippt erneut, und ohne
+ * Schlüssel läse er, seine E-Mail sei bereits vergeben. Von ihm selbst.
+ *
+ * Ändert sich ein Feld, ist es ein anderer Versuch und braucht einen anderen
+ * Schlüssel: derselbe an einem anderen Rumpf ist ein Fehler und keine
+ * Wiederholung (`idempotency-key-reused`).
+ */
+function useIdempotencyKey() {
+  const versuch = useRef<{ daten: string; key: string } | null>(null);
+  return (r: Registration) => {
+    const daten = JSON.stringify(r);
+    if (versuch.current?.daten !== daten) versuch.current = { daten, key: newId() };
+    return versuch.current.key;
+  };
+}
+
 export default function RegisterScreen() {
   const t = useTheme();
   const [name, setName] = useState('');
@@ -61,6 +84,7 @@ export default function RegisterScreen() {
   const [conflict, setConflict] = useState(false);
   const [hint, setHint] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const keyFor = useIdempotencyKey();
 
   /**
    * Ein Aufruf, ein Ausgang: die Registrierung legt das Konto an und liefert
@@ -72,8 +96,9 @@ export default function RegisterScreen() {
     setFields({});
     setConflict(false);
     setHint(null);
+    const daten = { email: email.trim(), password, displayName: name.trim() };
     try {
-      await register({ email: email.trim(), password, displayName: name.trim() });
+      await register(daten, keyFor(daten));
       router.replace('/(tabs)/diary');
     } catch (e) {
       const { fields: benannt, ohneFeld } = splitHints(errorsOf(e));

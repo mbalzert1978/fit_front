@@ -6,6 +6,7 @@ import { clientProblems } from './problems';
 import { preferLanguage } from '../language';
 import type { DiaryDate } from './diaryDate';
 import type {
+  AccountUser,
   DiaryDay,
   Goals,
   GoalsUpdate,
@@ -62,6 +63,14 @@ export const useRecipe = (id: string) =>
     queryFn: () => apiWithMeta<Recipe>(`/recipes/${pathSegment(id)}`).then(withEtag),
     enabled: id !== 'neu',
   });
+
+/**
+ * Wer angemeldet ist. Nach einem Kaltstart weiß die App sonst nichts über ihren
+ * Nutzer — sie hat eine Sitzung im Gerät, aber keinen Namen dazu. `/identity/me`
+ * ist der einzige Weg zum Konto, den diese API kennt; eine Id im Pfad gäbe es
+ * nicht, weil kein Screen ein fremdes Konto liest.
+ */
+export const useMe = () => useQuery({ queryKey: qk.me(), queryFn: () => api<AccountUser>('/identity/me') });
 
 export const useGoals = () => useQuery({ queryKey: qk.goals(), queryFn: () => api<Goals>('/goals') });
 

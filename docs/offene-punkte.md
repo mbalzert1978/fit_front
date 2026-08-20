@@ -100,9 +100,12 @@ neu ist. Aufzulösen ist das erst bei der Verifikation im Provider-Repo, nicht v
 ausgelöst wird es nur von der Hülle selbst, wenn eine Erneuerung scheitert. Ein Nutzer, der sich von
 Hand abmelden will, hat keinen Weg dazu.
 
-Zu bauen wäre eine Zeile in `app/(tabs)/settings.tsx`, die `signOut()` ruft. Dass sie fehlt, ist
-keine technische Lücke mehr, sondern eine Produktentscheidung: die App hat bewusst keinen
-Konto-Bereich (siehe Punkt 5), und eine einzelne Abmelde-Zeile ohne ihn stünde etwas verloren da.
+Zu bauen wäre eine Zeile in `app/(tabs)/settings.tsx`, die `signOut()` ruft — und **den Ort dafür
+gibt es jetzt**: der Abschnitt „Konto" zeigt seit
+[`decisions/2026-08-20-1236-konto-und-sitzung-sind-zwei-benannte-teile.md`](decisions/2026-08-20-1236-konto-und-sitzung-sind-zwei-benannte-teile.md)
+Name und E-Mail des angemeldeten Nutzers. Das Argument, eine einzelne Abmelde-Zeile stünde ohne
+Konto-Bereich verloren da, gilt damit nicht mehr; übrig bleibt die Produktfrage aus Punkt 5, was
+sonst noch in diesen Bereich gehört (Passwort ändern, Konto löschen).
 
 ## 10 — Keine Obergrenze für `take` im Vertrag
 
@@ -128,6 +131,14 @@ vor; mit ihr kommt er, und dann gehört er in den Vertrag.
 `timeZoneId` geht bei der Registrierung hinaus und danach nie wieder: Es gibt keinen Weg, sie zu
 ändern, und die App vergleicht beim Start nicht, ob das Gerät inzwischen eine andere nennt. Wer
 umzieht, trägt die alte Zone am Konto weiter.
+
+Dazu kommt seit
+[`decisions/2026-08-20-1230-die-zone-wird-normalisiert-und-kommt-zurueck.md`](decisions/2026-08-20-1230-die-zone-wird-normalisiert-und-kommt-zurueck.md)
+ein zweiter Fall: der Server kann die gefragte Zone auf einen festen Versatz normalisiert haben
+(`GMT+01:00` wird `+01:00`), und ein fester Versatz folgt keiner Sommerzeit. Die Antwort **sagt**
+das — `user.timeZoneId` trägt die wirksame Kennung —, aber niemand liest es. Wer das aufgreift,
+hat beide Fälle auf einmal: veraltete Zone und Ersatzform sind derselbe Vergleich zwischen dem,
+was am Konto steht, und dem, was das Gerät heute sagt.
 
 Ein Problem ist das heute nicht. Der Kalendertag hängt nicht daran
 ([`decisions/2026-08-20-0925-kalendertag-ist-reine-client-sache.md`](decisions/2026-08-20-0925-kalendertag-ist-reine-client-sache.md)),

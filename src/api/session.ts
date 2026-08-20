@@ -1,21 +1,21 @@
-import { api, storeTokens } from './client';
+import { api, storeSession } from './client';
 import { time } from '../time';
 import { language } from '../language';
-import type { AuthTokens } from './types';
+import type { SignIn } from './types';
 
 export { hasSession, signOut } from './client';
 
 /**
- * Anmeldung. Die Antwort trägt beide Token samt ihrer Laufzeit in Sekunden
- * (`expiresIn`, `refreshExpiresIn`) und die Identität als `user.id`; abgelegt
- * werden sie über denselben Weg, den die Erneuerung in `client.ts` nimmt.
- * Kommt die Antwort unvollständig, wirft `storeTokens` — dann bleibt gar keine
- * Sitzung zurück statt einer halben.
+ * Anmeldung. Die Antwort trägt zwei benannte Teile: das Konto unter `user` und
+ * die Sitzung unter `session` — beide Token samt ihrer Laufzeit in Sekunden.
+ * Abgelegt wird nur die Sitzung, über denselben Weg, den die Erneuerung in
+ * `client.ts` nimmt. Kommt sie unvollständig, wirft `storeSession` — dann
+ * bleibt gar keine Sitzung zurück statt einer halben.
  */
-export async function login(email: string, password: string): Promise<AuthTokens> {
-  const tokens = await api<AuthTokens>('/identity/login', { method: 'POST', body: { email, password } });
-  await storeTokens(tokens);
-  return tokens;
+export async function login(email: string, password: string): Promise<SignIn> {
+  const angemeldet = await api<SignIn>('/identity/login', { method: 'POST', body: { email, password } });
+  await storeSession(angemeldet.session);
+  return angemeldet;
 }
 
 /**
@@ -41,6 +41,12 @@ export type Registration = { email: string; password: string; displayName: strin
  * zweiter Aufruf zum Anmelden danach würde einen Zustand schaffen, in dem ein
  * Konto existiert, aber niemand darin ist; genau der soll nicht entstehen.
  *
+ * Der `idempotencyKey` kommt von außen und wird hier nicht erzeugt: er muss
+ * über wiederholte Versuche mit **denselben** Daten derselbe bleiben, und das
+ * weiß nur die Maske. Ohne ihn liest ein Nutzer, dessen Antwort auf dem Rückweg
+ * verlorenging, beim zweiten Tippen „E-Mail bereits registriert" — vergeben von
+ * ihm selbst, eine Sekunde zuvor. Er hätte ein Konto und käme nicht hinein.
+ *
  * `locale` und `timeZoneId` reisen als Felder mit und nicht als Kopfzeile:
  * `Accept-Language` verhandelt diese eine Antwort, hier entsteht dagegen ein
  * Merkmal, das am Konto bleibt — daran hängen später Erinnerungen und E-Mails,
@@ -52,9 +58,10 @@ export type Registration = { email: string; password: string; displayName: strin
  * sie — dann entsteht gar keine Anfrage, denn ein Konto mit einer
  * stillschweigend gesetzten Zone wäre schlechter als keines.
  */
-export async function register(r: Registration): Promise<AuthTokens> {
-  const tokens = await api<AuthTokens>('/identity/register', {
+export async function register(r: Registration, idempotencyKey: string): Promise<SignIn> {
+  const angemeldet = await api<SignIn>('/identity/register', {
     method: 'POST',
+    idempotencyKey,
     body: {
       email: r.email,
       password: r.password,
@@ -63,6 +70,6 @@ export async function register(r: Registration): Promise<AuthTokens> {
       timeZoneId: time.timeZoneId(),
     },
   });
-  await storeTokens(tokens);
-  return tokens;
+  await storeSession(angemeldet.session);
+  return angemeldet;
 }

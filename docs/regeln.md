@@ -22,8 +22,9 @@ Consumer-driven: die App schreibt den Vertrag, das Backend verifiziert ihn.
    vertragskonform. Als Form gelten der `data`/`meta`-Umschlag, die Auth-Antwort nach OAuth 2
    (`tokenType`, `expiresIn`, `refreshExpiresIn`, `user.id`), der `Authorization`-Header an jeder
    geschützten Anfrage, `Cache-Control: no-store` an jeder Antwort mit personenbezogenen Daten,
-   `Idempotency-Key` an jedem nicht wiederholbaren Schreibaufruf, `Accept-Language` an **jeder**
-   Anfrage und `Content-Language` an jeder Fehlerantwort sowie Statuscode und Fehlerform.
+   `Idempotency-Key` an jedem nicht wiederholbaren Schreibaufruf — die Registrierung
+   eingeschlossen —, `Location` an jeder `201`, `Accept-Language` an **jeder** Anfrage und
+   `Content-Language` an jeder Fehlerantwort sowie Statuscode und Fehlerform.
    Die Fehlerform ist die von **RFC 9457** und steht vollständig in jeder Fehlerzusage: `type`,
    `title`, `status`, `detail`, `instance`. `errors` kommt dazu, wo ein Screen die feldweise
    Begründung zeigt.
@@ -32,10 +33,16 @@ Consumer-driven: die App schreibt den Vertrag, das Backend verifiziert ihn.
 3. **Matcher statt Beispielwerte** (`M.integer`, `M.uuid`, `M.eachLike`) — außer wo der Wert selbst
    Teil der Zusage ist: Barcode, `sourceType`, `basisUnit`, `unit`, `tokenType` und `type` in
    `problem+json`. Letzteres ist nach RFC 9457 eine **URI und damit eine Kennung, kein Ort**: sie
-   wird nicht abgerufen und ganz verglichen, nicht in Teilen. Die Kennungen stehen an einer Stelle
+   wird nicht abgerufen und ganz verglichen, nicht in Teilen. Die Form ist `tag:` nach RFC 4151
+   und bewusst nicht `https:` — eine Kennung, die keinen Ort behauptet, kann auch auf keinen
+   fehlenden zeigen. Die Kennungen stehen an einer Stelle
    ([`../src/api/problems.ts`](../src/api/problems.ts)); der Vertrag liest sie von dort, damit
    Zusage und Vergleich nicht auseinanderlaufen.
-4. **Fehlerfälle sind Verträge.** `product-not-found` (404), `invalid-credentials` (401),
+4. **Fehlerfälle sind Verträge, und der Statuscode sagt, wessen Fehler es war.** Ein Verstoß
+   gegen eine Fachregel ist **422** mit feldweiser Begründung — der Nutzer hat etwas falsch
+   eingegeben und bekommt es angestrichen. Ein kaputter Rumpf ist **400** (`malformed-request`) —
+   dann haben *wir* etwas Falsches geschickt, und ihm ist nichts vorzuwerfen.
+   `product-not-found` (404), `invalid-credentials` (401),
    `slot-not-empty` (409) und `concurrency-conflict` (409) steuern Abläufe im UI. `token-expired`
    (401) und `forbidden` (403) steuern keinen Screen und stehen trotzdem in **jedem** Kontext: an
    der 401 hängt die gesamte Erneuerung in [`../src/api/client.ts`](../src/api/client.ts), und ohne
@@ -59,7 +66,9 @@ Consumer-driven: die App schreibt den Vertrag, das Backend verifiziert ihn.
    und
    [`decisions/2026-08-18-1600-auth-und-fehlerfaelle-sind-vertragsvorgabe.md`](decisions/2026-08-18-1600-auth-und-fehlerfaelle-sind-vertragsvorgabe.md);
    ein Vertrag ohne `data`/`meta` ist ein Fehler, kein Sonderfall, und ein Vertrag ohne
-   `Authorization` an einem geschützten Endpunkt genauso.
+   `Authorization` an einem geschützten Endpunkt genauso. Wo eine Antwort eine Sitzung trägt,
+   heißt sie `session` und trägt dieselben fünf Felder; wo sie ein Konto trägt, heißt es `user`.
+   Eine `201` nennt die erzeugte Ressource per `Location`.
 10. **Die Sprache steht an jeder Anfrage und ist ein fester Wert.** Der Server entscheidet allein
     an `Accept-Language`, in welcher Sprache `title`, `detail` und jeder Satz in `errors` kommen;
     die App zeigt sie unverändert und übersetzt nichts. Deshalb nennt jede Interaktion die Sprache,

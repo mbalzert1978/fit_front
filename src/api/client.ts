@@ -1,6 +1,6 @@
 import * as SecureStore from 'expo-secure-store';
 import type { DiaryDate } from './diaryDate';
-import type { AuthTokens, Envelope, Meta } from './types';
+import type { Session, Envelope, Meta } from './types';
 import { clientProblems } from './problems';
 import { language, preferLanguage } from '../language';
 
@@ -135,7 +135,7 @@ const secondsFromNow = (s: unknown) => (typeof s === 'number' && s > 0 ? Date.no
  * vollständiges Paar darf keine halbe Sitzung hinterlassen, die `hasSession()`
  * anschließend für gültig hält.
  */
-export async function storeTokens(t: AuthTokens) {
+export async function storeSession(t: Session) {
   if (!t?.accessToken || !t?.refreshToken) {
     await clearSession();
     throw new ApiError({ type: clientProblems.malformedTokenResponse, title: 'Antwort ohne vollständiges Token-Paar', status: 502 });
@@ -257,9 +257,11 @@ async function renewOnce(): Promise<string | null> {
   if (!s?.refreshToken) return null;
   const r = await raw('/identity/refresh', { method: 'POST', body: { refreshToken: s.refreshToken } }, null);
   if (!r.ok) return null;
-  const fresh = (await unwrap<AuthTokens>(r)).data;
-  await storeTokens(fresh);
-  return fresh.accessToken;
+  // Nur `session`, kein `user`: die Erneuerung läuft bei jedem Start und nach
+  // jedem abgelaufenen Access-Token. Sie soll den User-Store nicht anfassen.
+  const fresh = (await unwrap<{ session: Session }>(r)).data;
+  await storeSession(fresh.session);
+  return fresh.session.accessToken;
 }
 
 let renewal: Promise<string | null> | null = null;

@@ -62,7 +62,7 @@
           "instance": "/api/v1/example",
           "status": 401,
           "title": "Anmeldung fehlgeschlagen",
-          "type": "https://api.example/errors/invalid-credentials"
+          "type": "tag:nutritrack.app,2026:problems/invalid-credentials"
         },
         "headers": {
           "Content-Language": "de-DE",
@@ -122,13 +122,19 @@
       "response": {
         "body": {
           "data": {
-            "accessToken": "eyJhbGciOi...",
-            "expiresIn": 900,
-            "refreshExpiresIn": 5184000,
-            "refreshToken": "rt_...",
-            "tokenType": "Bearer",
+            "session": {
+              "accessToken": "eyJhbGciOi...",
+              "expiresIn": 900,
+              "refreshExpiresIn": 5184000,
+              "refreshToken": "rt_...",
+              "tokenType": "Bearer"
+            },
             "user": {
-              "id": "e2490de5-5bd3-43d5-b7c4-526e33f71304"
+              "displayName": "Markus",
+              "email": "a@b.de",
+              "id": "e2490de5-5bd3-43d5-b7c4-526e33f71304",
+              "locale": "de",
+              "timeZoneId": "Europe/Berlin"
             }
           },
           "meta": {
@@ -151,7 +157,7 @@
         },
         "matchingRules": {
           "body": {
-            "$.data.accessToken": {
+            "$.data.session.accessToken": {
               "combine": "AND",
               "matchers": [
                 {
@@ -159,7 +165,7 @@
                 }
               ]
             },
-            "$.data.expiresIn": {
+            "$.data.session.expiresIn": {
               "combine": "AND",
               "matchers": [
                 {
@@ -167,7 +173,7 @@
                 }
               ]
             },
-            "$.data.refreshExpiresIn": {
+            "$.data.session.refreshExpiresIn": {
               "combine": "AND",
               "matchers": [
                 {
@@ -175,7 +181,23 @@
                 }
               ]
             },
-            "$.data.refreshToken": {
+            "$.data.session.refreshToken": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.data.user.displayName": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.data.user.email": {
               "combine": "AND",
               "matchers": [
                 {
@@ -189,6 +211,23 @@
                 {
                   "match": "regex",
                   "regex": "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
+                }
+              ]
+            },
+            "$.data.user.locale": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "de|en"
+                }
+              ]
+            },
+            "$.data.user.timeZoneId": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
                 }
               ]
             },
@@ -232,6 +271,205 @@
       }
     },
     {
+      "description": "Eigenes Konto laden",
+      "providerStates": [
+        {
+          "name": "Nutzer a@b.de ist angemeldet"
+        }
+      ],
+      "request": {
+        "headers": {
+          "Accept-Language": "de",
+          "Authorization": "Bearer eyJ..."
+        },
+        "matchingRules": {
+          "header": {
+            "Authorization": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "Bearer .+"
+                }
+              ]
+            }
+          }
+        },
+        "method": "GET",
+        "path": "/api/v1/identity/me"
+      },
+      "response": {
+        "body": {
+          "data": {
+            "displayName": "Markus",
+            "email": "a@b.de",
+            "id": "e2490de5-5bd3-43d5-b7c4-526e33f71304",
+            "locale": "de",
+            "timeZoneId": "Europe/Berlin"
+          },
+          "meta": {
+            "apiVersion": "1",
+            "requestId": "01JQ8Z3K7V9XW2P4M6N8R0T5YB",
+            "timestamp": "2026-08-18T09:14:22Z"
+          }
+        },
+        "generators": {
+          "body": {
+            "$.data.id": {
+              "type": "Uuid"
+            }
+          }
+        },
+        "headers": {
+          "Cache-Control": "no-store",
+          "Content-Type": "application/json"
+        },
+        "matchingRules": {
+          "body": {
+            "$.data.displayName": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.data.email": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.data.id": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
+                }
+              ]
+            },
+            "$.data.locale": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "de|en"
+                }
+              ]
+            },
+            "$.data.timeZoneId": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.meta.apiVersion": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.meta.requestId": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.meta.timestamp": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            }
+          }
+        },
+        "status": 200
+      }
+    },
+    {
+      "description": "Eigenes Konto mit abgelaufenem Token laden",
+      "providerStates": [
+        {
+          "name": "Access-Token ist abgelaufen"
+        }
+      ],
+      "request": {
+        "headers": {
+          "Accept-Language": "de",
+          "Authorization": "Bearer eyJ..."
+        },
+        "matchingRules": {
+          "header": {
+            "Authorization": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "Bearer .+"
+                }
+              ]
+            }
+          }
+        },
+        "method": "GET",
+        "path": "/api/v1/identity/me"
+      },
+      "response": {
+        "body": {
+          "detail": "Anmeldung abgelaufen",
+          "instance": "/api/v1/example",
+          "status": 401,
+          "title": "Anmeldung abgelaufen",
+          "type": "tag:nutritrack.app,2026:problems/token-expired"
+        },
+        "headers": {
+          "Content-Language": "de-DE",
+          "Content-Type": "application/problem+json"
+        },
+        "matchingRules": {
+          "body": {
+            "$.detail": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.instance": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "^/api/v1/.+"
+                }
+              ]
+            },
+            "$.title": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            }
+          }
+        },
+        "status": 401
+      }
+    },
+    {
       "description": "Registrierung mit einer Versatz-Zone",
       "providerStates": [
         {
@@ -246,9 +484,30 @@
           "password": "geheim123!",
           "timeZoneId": "GMT+01:00"
         },
+        "generators": {
+          "header": {
+            "Idempotency-Key": {
+              "type": "Uuid"
+            }
+          }
+        },
         "headers": {
           "Accept-Language": "de",
-          "Content-Type": "application/json"
+          "Content-Type": "application/json",
+          "Idempotency-Key": "e2490de5-5bd3-43d5-b7c4-526e33f71304"
+        },
+        "matchingRules": {
+          "header": {
+            "Idempotency-Key": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
+                }
+              ]
+            }
+          }
         },
         "method": "POST",
         "path": "/api/v1/identity/register"
@@ -256,13 +515,19 @@
       "response": {
         "body": {
           "data": {
-            "accessToken": "eyJhbGciOi...",
-            "expiresIn": 900,
-            "refreshExpiresIn": 5184000,
-            "refreshToken": "rt_...",
-            "tokenType": "Bearer",
+            "session": {
+              "accessToken": "eyJhbGciOi...",
+              "expiresIn": 900,
+              "refreshExpiresIn": 5184000,
+              "refreshToken": "rt_...",
+              "tokenType": "Bearer"
+            },
             "user": {
-              "id": "e2490de5-5bd3-43d5-b7c4-526e33f71304"
+              "displayName": "Markus",
+              "email": "a@b.de",
+              "id": "e2490de5-5bd3-43d5-b7c4-526e33f71304",
+              "locale": "de",
+              "timeZoneId": "+01:00"
             }
           },
           "meta": {
@@ -281,11 +546,12 @@
         "headers": {
           "Cache-Control": "no-store",
           "Content-Type": "application/json",
+          "Location": "/api/v1/identity/me",
           "X-Request-Id": "01JQ8Z3K7V9XW2P4M6N8R0T5YB"
         },
         "matchingRules": {
           "body": {
-            "$.data.accessToken": {
+            "$.data.session.accessToken": {
               "combine": "AND",
               "matchers": [
                 {
@@ -293,7 +559,7 @@
                 }
               ]
             },
-            "$.data.expiresIn": {
+            "$.data.session.expiresIn": {
               "combine": "AND",
               "matchers": [
                 {
@@ -301,7 +567,7 @@
                 }
               ]
             },
-            "$.data.refreshExpiresIn": {
+            "$.data.session.refreshExpiresIn": {
               "combine": "AND",
               "matchers": [
                 {
@@ -309,7 +575,23 @@
                 }
               ]
             },
-            "$.data.refreshToken": {
+            "$.data.session.refreshToken": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.data.user.displayName": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.data.user.email": {
               "combine": "AND",
               "matchers": [
                 {
@@ -323,6 +605,15 @@
                 {
                   "match": "regex",
                   "regex": "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
+                }
+              ]
+            },
+            "$.data.user.locale": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "de|en"
                 }
               ]
             },
@@ -380,9 +671,17 @@
           "password": "geheim123!",
           "timeZoneId": "Europe/Berlin"
         },
+        "generators": {
+          "header": {
+            "Idempotency-Key": {
+              "type": "Uuid"
+            }
+          }
+        },
         "headers": {
           "Accept-Language": "de",
-          "Content-Type": "application/json"
+          "Content-Type": "application/json",
+          "Idempotency-Key": "e2490de5-5bd3-43d5-b7c4-526e33f71304"
         },
         "matchingRules": {
           "body": {
@@ -395,6 +694,17 @@
                 }
               ]
             }
+          },
+          "header": {
+            "Idempotency-Key": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
+                }
+              ]
+            }
           }
         },
         "method": "POST",
@@ -403,13 +713,19 @@
       "response": {
         "body": {
           "data": {
-            "accessToken": "eyJhbGciOi...",
-            "expiresIn": 900,
-            "refreshExpiresIn": 5184000,
-            "refreshToken": "rt_...",
-            "tokenType": "Bearer",
+            "session": {
+              "accessToken": "eyJhbGciOi...",
+              "expiresIn": 900,
+              "refreshExpiresIn": 5184000,
+              "refreshToken": "rt_...",
+              "tokenType": "Bearer"
+            },
             "user": {
-              "id": "e2490de5-5bd3-43d5-b7c4-526e33f71304"
+              "displayName": "Markus",
+              "email": "a@b.de",
+              "id": "e2490de5-5bd3-43d5-b7c4-526e33f71304",
+              "locale": "de",
+              "timeZoneId": "Europe/Berlin"
             }
           },
           "meta": {
@@ -428,11 +744,12 @@
         "headers": {
           "Cache-Control": "no-store",
           "Content-Type": "application/json",
+          "Location": "/api/v1/identity/me",
           "X-Request-Id": "01JQ8Z3K7V9XW2P4M6N8R0T5YB"
         },
         "matchingRules": {
           "body": {
-            "$.data.accessToken": {
+            "$.data.session.accessToken": {
               "combine": "AND",
               "matchers": [
                 {
@@ -440,7 +757,7 @@
                 }
               ]
             },
-            "$.data.expiresIn": {
+            "$.data.session.expiresIn": {
               "combine": "AND",
               "matchers": [
                 {
@@ -448,7 +765,7 @@
                 }
               ]
             },
-            "$.data.refreshExpiresIn": {
+            "$.data.session.refreshExpiresIn": {
               "combine": "AND",
               "matchers": [
                 {
@@ -456,7 +773,23 @@
                 }
               ]
             },
-            "$.data.refreshToken": {
+            "$.data.session.refreshToken": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.data.user.displayName": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.data.user.email": {
               "combine": "AND",
               "matchers": [
                 {
@@ -470,6 +803,23 @@
                 {
                   "match": "regex",
                   "regex": "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
+                }
+              ]
+            },
+            "$.data.user.locale": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "de|en"
+                }
+              ]
+            },
+            "$.data.user.timeZoneId": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
                 }
               ]
             },
@@ -527,9 +877,17 @@
           "password": "kurz",
           "timeZoneId": "Europe/Berlin"
         },
+        "generators": {
+          "header": {
+            "Idempotency-Key": {
+              "type": "Uuid"
+            }
+          }
+        },
         "headers": {
           "Accept-Language": "de",
-          "Content-Type": "application/json"
+          "Content-Type": "application/json",
+          "Idempotency-Key": "e2490de5-5bd3-43d5-b7c4-526e33f71304"
         },
         "matchingRules": {
           "body": {
@@ -539,6 +897,17 @@
                 {
                   "match": "regex",
                   "regex": "^[A-Za-z0-9_+:/-]+$"
+                }
+              ]
+            }
+          },
+          "header": {
+            "Idempotency-Key": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
                 }
               ]
             }
@@ -559,9 +928,9 @@
             ]
           },
           "instance": "/api/v1/example",
-          "status": 400,
+          "status": 422,
           "title": "Die Eingabe ist ungültig",
-          "type": "https://api.example/errors/validation-failed"
+          "type": "tag:nutritrack.app,2026:problems/validation-failed"
         },
         "headers": {
           "Content-Language": "de-DE",
@@ -614,7 +983,7 @@
             }
           }
         },
-        "status": 400
+        "status": 422
       }
     },
     {
@@ -632,9 +1001,17 @@
           "password": "kurz",
           "timeZoneId": "Europe/Berlin"
         },
+        "generators": {
+          "header": {
+            "Idempotency-Key": {
+              "type": "Uuid"
+            }
+          }
+        },
         "headers": {
           "Accept-Language": "en",
-          "Content-Type": "application/json"
+          "Content-Type": "application/json",
+          "Idempotency-Key": "e2490de5-5bd3-43d5-b7c4-526e33f71304"
         },
         "matchingRules": {
           "body": {
@@ -644,6 +1021,17 @@
                 {
                   "match": "regex",
                   "regex": "^[A-Za-z0-9_+:/-]+$"
+                }
+              ]
+            }
+          },
+          "header": {
+            "Idempotency-Key": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
                 }
               ]
             }
@@ -664,9 +1052,9 @@
             ]
           },
           "instance": "/api/v1/example",
-          "status": 400,
+          "status": 422,
           "title": "The input is invalid",
-          "type": "https://api.example/errors/validation-failed"
+          "type": "tag:nutritrack.app,2026:problems/validation-failed"
         },
         "headers": {
           "Content-Language": "en-US",
@@ -719,7 +1107,7 @@
             }
           }
         },
-        "status": 400
+        "status": 422
       }
     },
     {
@@ -737,9 +1125,17 @@
           "password": "geheim123!",
           "timeZoneId": "Europe/Berlin"
         },
+        "generators": {
+          "header": {
+            "Idempotency-Key": {
+              "type": "Uuid"
+            }
+          }
+        },
         "headers": {
           "Accept-Language": "de",
-          "Content-Type": "application/json"
+          "Content-Type": "application/json",
+          "Idempotency-Key": "e2490de5-5bd3-43d5-b7c4-526e33f71304"
         },
         "matchingRules": {
           "body": {
@@ -749,6 +1145,17 @@
                 {
                   "match": "regex",
                   "regex": "^[A-Za-z0-9_+:/-]+$"
+                }
+              ]
+            }
+          },
+          "header": {
+            "Idempotency-Key": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
                 }
               ]
             }
@@ -763,7 +1170,7 @@
           "instance": "/api/v1/example",
           "status": 409,
           "title": "Diese E-Mail-Adresse ist bereits registriert",
-          "type": "https://api.example/errors/email-already-registered"
+          "type": "tag:nutritrack.app,2026:problems/email-already-registered"
         },
         "headers": {
           "Content-Language": "de-DE",
@@ -834,26 +1241,18 @@
       "response": {
         "body": {
           "data": {
-            "accessToken": "eyJhbGciOi...",
-            "expiresIn": 900,
-            "refreshExpiresIn": 5184000,
-            "refreshToken": "rt_neu",
-            "tokenType": "Bearer",
-            "user": {
-              "id": "e2490de5-5bd3-43d5-b7c4-526e33f71304"
+            "session": {
+              "accessToken": "eyJhbGciOi...",
+              "expiresIn": 900,
+              "refreshExpiresIn": 5184000,
+              "refreshToken": "rt_neu",
+              "tokenType": "Bearer"
             }
           },
           "meta": {
             "apiVersion": "1",
             "requestId": "01JQ8Z3K7V9XW2P4M6N8R0T5YB",
             "timestamp": "2026-08-18T09:14:22Z"
-          }
-        },
-        "generators": {
-          "body": {
-            "$.data.user.id": {
-              "type": "Uuid"
-            }
           }
         },
         "headers": {
@@ -863,7 +1262,7 @@
         },
         "matchingRules": {
           "body": {
-            "$.data.accessToken": {
+            "$.data.session.accessToken": {
               "combine": "AND",
               "matchers": [
                 {
@@ -871,7 +1270,7 @@
                 }
               ]
             },
-            "$.data.expiresIn": {
+            "$.data.session.expiresIn": {
               "combine": "AND",
               "matchers": [
                 {
@@ -879,7 +1278,7 @@
                 }
               ]
             },
-            "$.data.refreshExpiresIn": {
+            "$.data.session.refreshExpiresIn": {
               "combine": "AND",
               "matchers": [
                 {
@@ -887,20 +1286,11 @@
                 }
               ]
             },
-            "$.data.refreshToken": {
+            "$.data.session.refreshToken": {
               "combine": "AND",
               "matchers": [
                 {
                   "match": "type"
-                }
-              ]
-            },
-            "$.data.user.id": {
-              "combine": "AND",
-              "matchers": [
-                {
-                  "match": "regex",
-                  "regex": "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
                 }
               ]
             },
