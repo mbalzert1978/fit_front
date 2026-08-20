@@ -110,7 +110,22 @@ gleichem Key und **abweichendem** Rumpf geschieht. Zugesichert ist heute nur der
 mit identischem Rumpf. Solange die Outbox (Punkt 1) nicht steht, kommt der Fall in der App nicht
 vor; mit ihr kommt er, und dann gehört er in den Vertrag.
 
-## 12 — Kleinigkeiten
+## 12 — Die Zeitzone am Konto wird einmal gestellt und kann veralten
+
+`timeZoneId` geht bei der Registrierung hinaus und danach nie wieder: Es gibt keinen Weg, sie zu
+ändern, und die App vergleicht beim Start nicht, ob das Gerät inzwischen eine andere nennt. Wer
+umzieht, trägt die alte Zone am Konto weiter.
+
+Ein Problem ist das heute nicht. Der Kalendertag hängt nicht daran
+([`decisions/2026-08-20-0925-kalendertag-ist-reine-client-sache.md`](decisions/2026-08-20-0925-kalendertag-ist-reine-client-sache.md)),
+und kein Screen liest oder setzt den Wert. Es wird eines, sobald das Erste kommt, das zu einer
+Uhrzeit gehört — eine Erinnerung, ein wöchentlicher Bericht. Dann käme es zur falschen Stunde.
+
+Zu bauen wäre dann das Kleinste, das reicht: beim Start die Gerätezone gegen die zuletzt gesendete
+halten und bei Abweichung einmal nachreichen. Der Endpunkt dafür ist nicht bestellt — solange kein
+Screen ihn braucht, wäre er eine Zusage ohne Bedarf (Regel 2).
+
+## 13 — Kleinigkeiten
 
 - `app.json`: Bundle-Id `de.example.nutritrack` und Slug sind Platzhalter.
 - Der Themenmodus wird beim Start nicht aus `/preferences` vorbelegt; bis der Wert da ist, gilt dunkel. Ein Vorablesen aus SQLite verhindert das kurze Umschalten.
