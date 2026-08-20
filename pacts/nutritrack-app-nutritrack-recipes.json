@@ -41,15 +41,34 @@
       },
       "response": {
         "body": {
+          "detail": "Kein Zugriff auf diese Ressource",
+          "instance": "/api/v1/example",
           "status": 403,
           "title": "Kein Zugriff auf diese Ressource",
-          "type": "forbidden"
+          "type": "https://api.example/errors/forbidden"
         },
         "headers": {
           "Content-Type": "application/problem+json"
         },
         "matchingRules": {
           "body": {
+            "$.detail": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.instance": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "^/api/v1/.+"
+                }
+              ]
+            },
             "$.title": {
               "combine": "AND",
               "matchers": [
@@ -650,15 +669,34 @@
       },
       "response": {
         "body": {
+          "detail": "Rezept wurde zwischenzeitlich geändert",
+          "instance": "/api/v1/example",
           "status": 409,
           "title": "Rezept wurde zwischenzeitlich geändert",
-          "type": "concurrency-conflict"
+          "type": "https://api.example/errors/concurrency-conflict"
         },
         "headers": {
           "Content-Type": "application/problem+json"
         },
         "matchingRules": {
           "body": {
+            "$.detail": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.instance": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "^/api/v1/.+"
+                }
+              ]
+            },
             "$.title": {
               "combine": "AND",
               "matchers": [
@@ -1388,15 +1426,34 @@
       },
       "response": {
         "body": {
+          "detail": "Anmeldung abgelaufen",
+          "instance": "/api/v1/example",
           "status": 401,
           "title": "Anmeldung abgelaufen",
-          "type": "token-expired"
+          "type": "https://api.example/errors/token-expired"
         },
         "headers": {
           "Content-Type": "application/problem+json"
         },
         "matchingRules": {
           "body": {
+            "$.detail": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.instance": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "^/api/v1/.+"
+                }
+              ]
+            },
             "$.title": {
               "combine": "AND",
               "matchers": [

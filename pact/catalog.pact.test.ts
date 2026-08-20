@@ -11,6 +11,7 @@ import {
   privateHeaders,
   problem,
   unauthorized,
+  problems,
 } from './setup';
 import { api, endpoints } from '../src/api/client';
 
@@ -76,11 +77,11 @@ describe('Catalog — Produkte', () => {
     p.given('kein Produkt mit Barcode 0000000000000')
       .uponReceiving('Produkt-Lookup per unbekanntem Barcode')
       .withRequest({ method: 'GET', path: '/api/v1/catalog/products/by-barcode/0000000000000', headers: germanAuthHeaders })
-      .willRespondWith(problem('product-not-found', 'Produkt nicht gefunden', 404));
+      .willRespondWith(problem(problems.productNotFound, 'Produkt nicht gefunden', 404));
 
     await p.executeTest(async () => {
       // Dieser Fall ist kein Fehler im UI: er führt in den Foto-Flow.
-      await expect(api(endpoints.productByBarcode('0000000000000'))).rejects.toMatchObject({ type: 'product-not-found' });
+      await expect(api(endpoints.productByBarcode('0000000000000'))).rejects.toMatchObject({ type: problems.productNotFound });
     });
   });
 
@@ -100,7 +101,7 @@ describe('Catalog — Produkte', () => {
       // Foto-Flow, der andere beendet die Sitzung. Ohne Zusage stünde nicht
       // fest, dass sie unterscheidbar bleiben.
       await expect(api(endpoints.productByBarcode('4008400401027'))).rejects.toMatchObject({
-        type: 'token-expired',
+        type: problems.tokenExpired,
         status: 401,
       });
     });

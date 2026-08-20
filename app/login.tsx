@@ -5,6 +5,7 @@ import { Screen, OutlineButton, FormField } from '../src/components';
 import { useTheme } from '../src/theme/ThemeProvider';
 import { login } from '../src/api/session';
 import { ApiError, OfflineError } from '../src/api/client';
+import { problems } from '../src/api/problems';
 
 export default function LoginScreen() {
   const t = useTheme();
@@ -32,7 +33,7 @@ export default function LoginScreen() {
     } catch (e) {
       setFailed(true);
       if (e instanceof OfflineError) setHint('Keine Verbindung');
-      else if (e instanceof ApiError && e.type === 'invalid-credentials') setHint(null);
+      else if (e instanceof ApiError && e.type === problems.invalidCredentials) setHint(null);
       else setHint('Anmeldung derzeit nicht möglich');
     } finally {
       setBusy(false);

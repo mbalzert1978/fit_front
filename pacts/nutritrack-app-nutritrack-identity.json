@@ -56,15 +56,34 @@
       },
       "response": {
         "body": {
+          "detail": "Anmeldung fehlgeschlagen",
+          "instance": "/api/v1/example",
           "status": 401,
           "title": "Anmeldung fehlgeschlagen",
-          "type": "invalid-credentials"
+          "type": "https://api.example/errors/invalid-credentials"
         },
         "headers": {
           "Content-Type": "application/problem+json"
         },
         "matchingRules": {
           "body": {
+            "$.detail": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.instance": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "^/api/v1/.+"
+                }
+              ]
+            },
             "$.title": {
               "combine": "AND",
               "matchers": [
@@ -535,9 +554,10 @@
               "Das Passwort muss mindestens 10 Zeichen lang sein (aktuell: 4)"
             ]
           },
+          "instance": "/api/v1/example",
           "status": 400,
           "title": "Die Eingabe ist ungültig",
-          "type": "validation-failed"
+          "type": "https://api.example/errors/validation-failed"
         },
         "headers": {
           "Content-Type": "application/problem+json"
@@ -567,6 +587,15 @@
                 {
                   "match": "type",
                   "min": 1
+                }
+              ]
+            },
+            "$.instance": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "^/api/v1/.+"
                 }
               ]
             },
@@ -621,9 +650,10 @@
       "response": {
         "body": {
           "detail": "Die E-Mail-Adresse a@b.de ist bereits mit einem anderen Konto verknüpft",
+          "instance": "/api/v1/example",
           "status": 409,
-          "title": "E-Mail bereits vergeben",
-          "type": "email-already-registered"
+          "title": "Diese E-Mail-Adresse ist bereits registriert",
+          "type": "https://api.example/errors/email-already-registered"
         },
         "headers": {
           "Content-Type": "application/problem+json"
@@ -635,6 +665,15 @@
               "matchers": [
                 {
                   "match": "type"
+                }
+              ]
+            },
+            "$.instance": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "^/api/v1/.+"
                 }
               ]
             },

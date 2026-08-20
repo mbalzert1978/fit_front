@@ -5,6 +5,7 @@ import { Screen, OutlineButton, FormField } from '../src/components';
 import { useTheme } from '../src/theme/ThemeProvider';
 import { register, minPasswordLength, maxDisplayNameLength } from '../src/api/session';
 import { ApiError, OfflineError } from '../src/api/client';
+import { problems } from '../src/api/problems';
 
 /** Die Felder, die diese Maske zeigt. Wozu sie keines hat, kann sie nicht anstreichen. */
 const sichtbareFelder = ['displayName', 'email', 'password'] as const;
@@ -76,7 +77,7 @@ export default function RegisterScreen() {
     } catch (e) {
       const { fields: benannt, ohneFeld } = splitHints(errorsOf(e));
       setFields(benannt);
-      setConflict(e instanceof ApiError && e.type === 'email-already-registered');
+      setConflict(e instanceof ApiError && e.type === problems.emailAlreadyRegistered);
       setHint(generalHintFor(e, ohneFeld));
     } finally {
       setBusy(false);

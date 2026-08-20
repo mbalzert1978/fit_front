@@ -749,10 +749,10 @@
         }
       ],
       "request": {
-        "body": "LS1BT2hSbFJZNUZ3VEp6Wk1ZDQpDb250ZW50LURpc3Bvc2l0aW9uOiBmb3JtLWRhdGE7IG5hbWU9ImZpbGUiOyBmaWxlbmFtZT0ibmFlaHJ3ZXJ0dGFiZWxsZS5qcGciDQpDb250ZW50LVR5cGU6IGltYWdlL2pwZWcNCg0K/9j/4AAQSkZJRgABAQEAYABgAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/wAALCAABAAEBAREA/8QAFAABAAAAAAAAAAAAAAAAAAAACf/EABQQAQAAAAAAAAAAAAAAAAAAAAD/2gAIAQEAAD8AKp//2Q0KLS1BT2hSbFJZNUZ3VEp6Wk1ZLS0NCg==",
+        "body": "LS1SSlFBUUZRTDhTek5PUjJtDQpDb250ZW50LURpc3Bvc2l0aW9uOiBmb3JtLWRhdGE7IG5hbWU9ImZpbGUiOyBmaWxlbmFtZT0ibmFlaHJ3ZXJ0dGFiZWxsZS5qcGciDQpDb250ZW50LVR5cGU6IGltYWdlL2pwZWcNCg0K/9j/4AAQSkZJRgABAQEAYABgAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/wAALCAABAAEBAREA/8QAFAABAAAAAAAAAAAAAAAAAAAACf/EABQQAQAAAAAAAAAAAAAAAAAAAAD/2gAIAQEAAD8AKp//2Q0KLS1SSlFBUUZRTDhTek5PUjJtLS0NCg==",
         "headers": {
           "Authorization": "Bearer eyJ...",
-          "Content-Type": "multipart/form-data; boundary=AOhRlRY5FwTJzZMY"
+          "Content-Type": "multipart/form-data; boundary=RJQAQFQL8SzNOR2m"
         },
         "matchingRules": {
           "body": {
@@ -883,15 +883,34 @@
       },
       "response": {
         "body": {
+          "detail": "Anmeldung abgelaufen",
+          "instance": "/api/v1/example",
           "status": 401,
           "title": "Anmeldung abgelaufen",
-          "type": "token-expired"
+          "type": "https://api.example/errors/token-expired"
         },
         "headers": {
           "Content-Type": "application/problem+json"
         },
         "matchingRules": {
           "body": {
+            "$.detail": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.instance": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "^/api/v1/.+"
+                }
+              ]
+            },
             "$.title": {
               "combine": "AND",
               "matchers": [
@@ -1101,15 +1120,34 @@
       },
       "response": {
         "body": {
+          "detail": "Produkt nicht gefunden",
+          "instance": "/api/v1/example",
           "status": 404,
           "title": "Produkt nicht gefunden",
-          "type": "product-not-found"
+          "type": "https://api.example/errors/product-not-found"
         },
         "headers": {
           "Content-Type": "application/problem+json"
         },
         "matchingRules": {
           "body": {
+            "$.detail": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.instance": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "^/api/v1/.+"
+                }
+              ]
+            },
             "$.title": {
               "combine": "AND",
               "matchers": [

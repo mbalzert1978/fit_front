@@ -1,4 +1,4 @@
-import { pact, M, enveloped, jsonHeaders, germanJsonHeaders, authResponseHeaders, problem } from './setup';
+import { pact, M, enveloped, jsonHeaders, germanJsonHeaders, authResponseHeaders, problem, problems } from './setup';
 import { api, apiWithMeta, signOut, ApiError } from '../src/api/client';
 import { register } from '../src/api/session';
 import { setTimeProvider, resetTimeProvider } from '../src/time';
@@ -183,8 +183,8 @@ describe('Identity', () => {
       // gegen keine Feldregel, und RFC 7807 hat für den Satz zum Vorfall schon
       // ein Feld. Auch hier redet der Server; die Maske hat nur einen Rückfall.
       .willRespondWith(
-        problem('email-already-registered', 'E-Mail bereits vergeben', 409, {
-          detail: M.string('Die E-Mail-Adresse a@b.de ist bereits mit einem anderen Konto verknüpft'),
+        problem(problems.emailAlreadyRegistered, 'Diese E-Mail-Adresse ist bereits registriert', 409, {
+          detail: 'Die E-Mail-Adresse a@b.de ist bereits mit einem anderen Konto verknüpft',
         }),
       );
 
@@ -192,7 +192,7 @@ describe('Identity', () => {
       const e = await register({ email: 'a@b.de', password: 'geheim123!', displayName: 'Markus' }).catch((err: unknown) => err);
       expect(e).toBeInstanceOf(ApiError);
       const fehler = e as ApiError;
-      expect(fehler.type).toBe('email-already-registered');
+      expect(fehler.type).toBe(problems.emailAlreadyRegistered);
       expect(fehler.detail).toEqual(expect.any(String));
     });
   });
@@ -222,8 +222,8 @@ describe('Identity', () => {
       // Server, und seine Regeln kennt die Maske nicht. Sie zeigt den Satz, den
       // sie bekommt — deshalb trägt die Anfrage `Accept-Language`.
       .willRespondWith(
-        problem('validation-failed', 'Die Eingabe ist ungültig', 400, {
-          detail: M.string('Bitte überprüfen Sie die mit Fehlern markierten Felder'),
+        problem(problems.validationFailed, 'Die Eingabe ist ungültig', 400, {
+          detail: 'Bitte überprüfen Sie die mit Fehlern markierten Felder',
           errors: {
             // Die Beispiele stehen so genau da, wie die Sätze wirklich kommen:
             // sie zeigen, welchen Platz die Maske einplanen muss.
@@ -240,7 +240,7 @@ describe('Identity', () => {
       const e = await register({ email: 'kein-at-zeichen', password: 'kurz', displayName: 'Markus' }).catch((err: unknown) => err);
       expect(e).toBeInstanceOf(ApiError);
       const fehler = e as ApiError;
-      expect(fehler.type).toBe('validation-failed');
+      expect(fehler.type).toBe(problems.validationFailed);
       // Genau das liest `app/register.tsx`: Feldname → mindestens ein Satz.
       expect(fehler.errors?.email?.[0]).toEqual(expect.any(String));
       expect(fehler.errors?.password?.[0]).toEqual(expect.any(String));
@@ -258,11 +258,11 @@ describe('Identity', () => {
         body: { email: 'a@b.de', password: 'falsch' },
       })
       // Fehler tragen keinen Umschlag: problem+json bleibt, wie es ist.
-      .willRespondWith(problem('invalid-credentials', 'Anmeldung fehlgeschlagen', 401));
+      .willRespondWith(problem(problems.invalidCredentials, 'Anmeldung fehlgeschlagen', 401));
 
     await p.executeTest(async () => {
       await expect(api('/identity/login', { method: 'POST', body: { email: 'a@b.de', password: 'falsch' } })).rejects.toMatchObject({
-        type: 'invalid-credentials',
+        type: problems.invalidCredentials,
       });
     });
   });

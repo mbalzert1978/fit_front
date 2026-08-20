@@ -1,4 +1,15 @@
-import { pact, M, enveloped, authHeaders, germanAuthHeaders, jsonAuthHeaders, privateHeaders, problem, unauthorized } from './setup';
+import {
+  pact,
+  M,
+  enveloped,
+  authHeaders,
+  germanAuthHeaders,
+  jsonAuthHeaders,
+  privateHeaders,
+  problem,
+  unauthorized,
+  problems,
+} from './setup';
 import { api, endpoints } from '../src/api/client';
 import { parseDiaryDate } from '../src/api/diaryDate';
 
@@ -105,7 +116,7 @@ describe('Diary — Tagesansicht', () => {
 
     await p.executeTest(async () => {
       // Genau an dieser Antwort hängt die Erneuerung in `src/api/client.ts`.
-      await expect(api(endpoints.diaryDay(date))).rejects.toMatchObject({ type: 'token-expired', status: 401 });
+      await expect(api(endpoints.diaryDay(date))).rejects.toMatchObject({ type: problems.tokenExpired, status: 401 });
     });
   });
 
@@ -114,12 +125,12 @@ describe('Diary — Tagesansicht', () => {
     p.given('Tagebuchtag gehört einem anderen Nutzer')
       .uponReceiving('Fremden Tagebuchtag laden')
       .withRequest({ method: 'GET', path: '/api/v1/diary/days/2026-08-06', headers: germanAuthHeaders })
-      .willRespondWith(problem('forbidden', 'Kein Zugriff auf diese Ressource', 403));
+      .willRespondWith(problem(problems.forbidden, 'Kein Zugriff auf diese Ressource', 403));
 
     await p.executeTest(async () => {
       // Ohne diese Zusage dürfte das Backend fremde Tage mit 200 beantworten.
       await expect(api(endpoints.diaryDay(parseDiaryDate('2026-08-06')))).rejects.toMatchObject({
-        type: 'forbidden',
+        type: problems.forbidden,
         status: 403,
       });
     });
@@ -316,12 +327,12 @@ describe('Diary — Mahlzeiten-Slots', () => {
         path: M.regex(`/api/v1/diary/slots/${uuidPath}`, `/api/v1/diary/slots/${slotId}`),
         headers: authHeaders,
       })
-      .willRespondWith(problem('slot-not-empty', 'Slot enthält noch Einträge', 409));
+      .willRespondWith(problem(problems.slotNotEmpty, 'Slot enthält noch Einträge', 409));
 
     await p.executeTest(async () => {
       // Der Screen zeigt genau auf diesen `type` hin die Zeile „enthält noch Einträge".
       await expect(api(`/diary/slots/${slotId}`, { method: 'DELETE' })).rejects.toMatchObject({
-        type: 'slot-not-empty',
+        type: problems.slotNotEmpty,
       });
     });
   });

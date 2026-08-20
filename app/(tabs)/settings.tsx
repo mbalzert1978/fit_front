@@ -14,6 +14,7 @@ import {
 } from '../../src/api/hooks';
 import { newId } from '../../src/api/ids';
 import { ApiError } from '../../src/api/client';
+import { problems } from '../../src/api/problems';
 
 type MacroKey = 'carbs' | 'protein' | 'fat';
 const macroLabel: Record<MacroKey, string> = { carbs: 'Kohlenhydrate', protein: 'Eiweiß', fat: 'Fett' };
@@ -58,7 +59,7 @@ function SlotList() {
               setSlotError(null);
               slotOps.remove.mutate(s.id, {
                 onError: (e) =>
-                  setSlotError(e instanceof ApiError && e.type === 'slot-not-empty' ? 'Dieser Slot enthält noch Einträge' : null),
+                  setSlotError(e instanceof ApiError && e.type === problems.slotNotEmpty ? 'Dieser Slot enthält noch Einträge' : null),
               });
             }}
           />

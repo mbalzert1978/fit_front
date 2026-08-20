@@ -1,4 +1,4 @@
-import { pact, M, enveloped, authHeaders, jsonAuthHeaders, privateHeaders, problem, forbidden, unauthorized } from './setup';
+import { pact, M, enveloped, authHeaders, jsonAuthHeaders, privateHeaders, problem, forbidden, unauthorized, problems } from './setup';
 import { api, apiWithMeta } from '../src/api/client';
 
 /**
@@ -111,7 +111,7 @@ describe('Recipes', () => {
     await p.executeTest(async () => {
       // Eine gültige Anmeldung ist keine Berechtigung: die Id kommt aus einem
       // Deep-Link und ist frei wählbar.
-      await expect(api(`/recipes/${foreignRecipeId}`)).rejects.toMatchObject({ type: 'forbidden', status: 403 });
+      await expect(api(`/recipes/${foreignRecipeId}`)).rejects.toMatchObject({ type: problems.forbidden, status: 403 });
     });
   });
 
@@ -123,7 +123,7 @@ describe('Recipes', () => {
       .willRespondWith(unauthorized());
 
     await p.executeTest(async () => {
-      await expect(api('/recipes?sort=name_desc')).rejects.toMatchObject({ type: 'token-expired', status: 401 });
+      await expect(api('/recipes?sort=name_desc')).rejects.toMatchObject({ type: problems.tokenExpired, status: 401 });
     });
   });
 
@@ -188,13 +188,13 @@ describe('Recipes', () => {
         headers: { ...jsonAuthHeaders, 'If-Match': M.string('3') },
         body: recipeBody,
       })
-      .willRespondWith(problem('concurrency-conflict', 'Rezept wurde zwischenzeitlich geändert', 409));
+      .willRespondWith(problem(problems.concurrencyConflict, 'Rezept wurde zwischenzeitlich geändert', 409));
 
     await p.executeTest(async () => {
       // Ohne diese Zusage bliebe offen, was ein überholtes If-Match bewirkt —
       // und ein Backend, das es ignoriert, hielte den Vertrag trotzdem ein.
       await expect(apiWithMeta(`/recipes/${recipeId}`, { method: 'PUT', ifMatch: '3', body: draft })).rejects.toMatchObject({
-        type: 'concurrency-conflict',
+        type: problems.concurrencyConflict,
         status: 409,
       });
     });

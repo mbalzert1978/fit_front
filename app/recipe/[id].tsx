@@ -7,6 +7,7 @@ import { useTheme } from '../../src/theme/ThemeProvider';
 import { useRecipe, useSaveRecipe, useRecipeToDiary, useSlots, useProduct } from '../../src/api/hooks';
 import { newId } from '../../src/api/ids';
 import { ApiError } from '../../src/api/client';
+import { problems } from '../../src/api/problems';
 import { qk } from '../../src/api/queryKeys';
 import { parseDiaryDate, today } from '../../src/api/diaryDate';
 import type { Recipe, RecipeIngredient } from '../../src/api/types';
@@ -77,7 +78,7 @@ function SaveRecipe({
       onReload();
       router.replace({ pathname: '/recipe/[id]', params: { id: saved.id } });
     } catch (e) {
-      const conflict = e instanceof ApiError && e.type === 'concurrency-conflict';
+      const conflict = e instanceof ApiError && e.type === problems.concurrencyConflict;
       setHint(conflict ? 'Zwischenzeitlich anderswo geändert — Stand wird neu geladen' : 'Speichern nicht möglich');
       if (conflict) {
         onReload();

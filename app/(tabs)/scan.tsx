@@ -5,6 +5,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { Screen, CameraFrame, SectionHeading, ListRow, SquareIconButton, OutlineButton } from '../../src/components';
 import { useTheme } from '../../src/theme/ThemeProvider';
 import { api, ApiError, endpoints } from '../../src/api/client';
+import { problems } from '../../src/api/problems';
 import { useRecent, useSearch } from '../../src/api/hooks';
 import { today, parseDiaryDate, type DiaryDate } from '../../src/api/diaryDate';
 import { ctxParams, type CaptureContext } from '../../src/nav';
@@ -91,7 +92,7 @@ export default function ScanScreen() {
       const product = await api<Product>(endpoints.productByBarcode(ean));
       router.push({ pathname: '/product/[id]', params: { id: product.id, ...ctxParams(ctx) } });
     } catch (e) {
-      if (e instanceof ApiError && e.type === 'product-not-found') {
+      if (e instanceof ApiError && e.type === problems.productNotFound) {
         router.push({ pathname: '/capture/not-found', params: { ...ctxParams({ ...ctx, barcode: ean }) } });
       }
     } finally {

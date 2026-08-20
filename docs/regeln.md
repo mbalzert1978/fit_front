@@ -23,9 +23,17 @@ Consumer-driven: die App schreibt den Vertrag, das Backend verifiziert ihn.
    (`tokenType`, `expiresIn`, `refreshExpiresIn`, `user.id`), der `Authorization`-Header an jeder
    geschützten Anfrage, `Cache-Control: no-store` an jeder Antwort mit personenbezogenen Daten,
    `Idempotency-Key` an jedem nicht wiederholbaren Schreibaufruf sowie Statuscode und Fehlerform.
+   Die Fehlerform ist die von **RFC 9457** und steht vollständig in jeder Fehlerzusage: `type`,
+   `title`, `status`, `detail`, `instance`. `errors` kommt dazu, wo ein Screen die feldweise
+   Begründung zeigt.
    Die Aufzählung ist abschließend und wächst nur durch eine Entscheidung unter
    [`decisions/`](decisions/).
-3. **Matcher statt Beispielwerte** (`M.integer`, `M.uuid`, `M.eachLike`) — außer wo der Wert selbst Teil der Zusage ist: Barcode, `sourceType`, `basisUnit`, `unit`, `tokenType`, `type` in `problem+json`.
+3. **Matcher statt Beispielwerte** (`M.integer`, `M.uuid`, `M.eachLike`) — außer wo der Wert selbst
+   Teil der Zusage ist: Barcode, `sourceType`, `basisUnit`, `unit`, `tokenType` und `type` in
+   `problem+json`. Letzteres ist nach RFC 9457 eine **URI und damit eine Kennung, kein Ort**: sie
+   wird nicht abgerufen und ganz verglichen, nicht in Teilen. Die Kennungen stehen an einer Stelle
+   ([`../src/api/problems.ts`](../src/api/problems.ts)); der Vertrag liest sie von dort, damit
+   Zusage und Vergleich nicht auseinanderlaufen.
 4. **Fehlerfälle sind Verträge.** `product-not-found` (404), `invalid-credentials` (401),
    `slot-not-empty` (409) und `concurrency-conflict` (409) steuern Abläufe im UI. `token-expired`
    (401) und `forbidden` (403) steuern keinen Screen und stehen trotzdem in **jedem** Kontext: an

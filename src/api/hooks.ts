@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api, apiWithMeta, ApiError, endpoints, pathSegment, type ApiResponse } from './client';
 import { qk } from './queryKeys';
 import { newId } from './ids';
+import { clientProblems } from './problems';
 import type { DiaryDate } from './diaryDate';
 import type {
   DiaryDay,
@@ -159,7 +160,7 @@ export function useSaveRecipe(id: string) {
       // eine fremde, zwischenzeitlich gespeicherte Fassung lautlos — lieber hier
       // scheitern und neu laden lassen als dort Arbeit verlieren.
       if (!body.etag) {
-        throw new ApiError({ type: 'precondition-required', title: 'Rezept neu laden und erneut speichern', status: 428 });
+        throw new ApiError({ type: clientProblems.preconditionRequired, title: 'Rezept neu laden und erneut speichern', status: 428 });
       }
       return apiWithMeta<Recipe>(`/recipes/${pathSegment(id)}`, { method: 'PUT', body, ifMatch: body.etag }).then(withEtag);
     },

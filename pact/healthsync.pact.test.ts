@@ -1,4 +1,4 @@
-import { pact, M, enveloped, authHeaders, privateHeaders, unauthorized } from './setup';
+import { pact, M, enveloped, authHeaders, privateHeaders, unauthorized, problems } from './setup';
 import { api } from '../src/api/client';
 
 /**
@@ -45,7 +45,7 @@ describe('HealthSync', () => {
       .willRespondWith(unauthorized());
 
     await p.executeTest(async () => {
-      await expect(api('/health/consent')).rejects.toMatchObject({ type: 'token-expired', status: 401 });
+      await expect(api('/health/consent')).rejects.toMatchObject({ type: problems.tokenExpired, status: 401 });
     });
   });
 });

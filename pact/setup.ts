@@ -1,6 +1,14 @@
 import path from 'path';
 import { PactV3, MatchersV3 } from '@pact-foundation/pact';
 import { MOCK_PORT } from './mockPort';
+import { problems } from '../src/api/problems';
+
+/**
+ * Die Kennungen kommen aus dem Quellcode der App und nicht aus einem zweiten
+ * Literal hier: was ein Screen vergleicht, ist damit dasselbe, was der Vertrag
+ * zusichert. Ein Auseinanderlaufen wäre sonst erst am toten Zweig zu merken.
+ */
+export { problems };
 
 export const M = MatchersV3;
 
@@ -85,7 +93,7 @@ export const privateHeaders = { ...jsonHeaders, 'Cache-Control': 'no-store' };
  */
 export const authResponseHeaders = { ...privateHeaders, 'X-Request-Id': M.string(REQUEST_ID) };
 
-/** Fehler tragen keinen Umschlag: `problem+json` bleibt, wie RFC 7807 es beschreibt. */
+/** Fehler tragen keinen Umschlag: `problem+json` bleibt, wie RFC 9457 es beschreibt. */
 export const problemHeaders = { 'Content-Type': 'application/problem+json' };
 
 /** JSON-Rumpf an einer Anfrage, deren Antwort Text trägt, den ein Screen zeigt. */
@@ -96,17 +104,29 @@ export const germanJsonHeaders = { ...jsonHeaders, 'Accept-Language': 'de' };
  * entscheidet der Client, was er tut, und ein anderer Wert ist ein anderer
  * Fehler.
  *
- * `detail` ist der Satz zu **diesem** Vorfall, `errors` die feldweise
- * Begründung: Feldname aus dem Anfrage-Rumpf auf Sätze. Die Schlüssel sind
- * feste Werte, weil der Screen an ihnen entscheidet, welches Feld er
- * anstreicht; die Sätze selbst sind Matcher — ihr Wortlaut gehört der
- * Gegenseite, nicht diesem Vertrag. Beides steht nur dort im Vertrag, wo ein
- * Screen es wirklich zeigt (Regel 2).
+ * Die Form ist die von RFC 9457, und sie steht vollständig in **jeder**
+ * Fehlerzusage — sie ist Form und nicht Bedarf (Regel 2, „Statuscode und
+ * Fehlerform"):
+ *
+ * - `type` ist die Kennung der Fehlerart und ein **fester Wert**: an ihr
+ *   entscheidet der Client, was er tut, und ein anderer Wert ist eine andere
+ *   Fehlerart (Regel 3). Verglichen wird sie ganz, nicht in Teilen.
+ * - `title` benennt die Art, `detail` erklärt **diesen** Vorfall, `instance`
+ *   benennt ihn. Alle drei sind Matcher: ihr Wortlaut gehört der Gegenseite.
+ * - `errors` ist die Erweiterung für die feldweise Begründung — Feldname des
+ *   Anfrage-Rumpfes auf Sätze. Sie steht nur dort, wo ein Screen sie zeigt.
  */
-export const problem = (type: string, title: string, status: number, extra?: { detail?: unknown; errors?: Record<string, unknown> }) => ({
+export const problem = (type: string, title: string, status: number, extra?: { detail?: string; errors?: Record<string, unknown> }) => ({
   status,
   headers: problemHeaders,
-  body: { type, title: M.string(title), status, ...extra },
+  body: {
+    type,
+    title: M.string(title),
+    status,
+    detail: M.string(extra?.detail ?? title),
+    instance: M.regex('^/api/v1/.+', '/api/v1/example'),
+    ...(extra?.errors ? { errors: extra.errors } : {}),
+  },
 });
 
 /**
@@ -118,7 +138,7 @@ export const problem = (type: string, title: string, status: number, extra?: { d
  * es zu merken. Deshalb steht dieser Fall je Kontext im Vertrag — auch dort, wo
  * kein Screen ihn eigens behandelt.
  */
-export const unauthorized = () => problem('token-expired', 'Anmeldung abgelaufen', 401);
+export const unauthorized = () => problem(problems.tokenExpired, 'Anmeldung abgelaufen', 401);
 
 /** Eine fremde Ressource. Ohne diese Zusage dürfte das Backend sie ausliefern. */
-export const forbidden = () => problem('forbidden', 'Kein Zugriff auf diese Ressource', 403);
+export const forbidden = () => problem(problems.forbidden, 'Kein Zugriff auf diese Ressource', 403);

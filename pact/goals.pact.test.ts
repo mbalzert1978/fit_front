@@ -1,4 +1,4 @@
-import { pact, M, enveloped, authHeaders, jsonAuthHeaders, privateHeaders, unauthorized } from './setup';
+import { pact, M, enveloped, authHeaders, jsonAuthHeaders, privateHeaders, unauthorized, problems } from './setup';
 import { api } from '../src/api/client';
 
 /**
@@ -77,7 +77,7 @@ describe('Goals', () => {
       .willRespondWith(unauthorized());
 
     await p.executeTest(async () => {
-      await expect(api('/goals')).rejects.toMatchObject({ type: 'token-expired', status: 401 });
+      await expect(api('/goals')).rejects.toMatchObject({ type: problems.tokenExpired, status: 401 });
     });
   });
 });

@@ -1,6 +1,7 @@
 import * as SecureStore from 'expo-secure-store';
 import type { DiaryDate } from './diaryDate';
 import type { AuthTokens, Envelope, Meta } from './types';
+import { clientProblems } from './problems';
 
 /**
  * Was eine Antwort trägt, nachdem der Umschlag ab ist: die Nutzlast aus `data`,
@@ -25,11 +26,21 @@ if (!BASE.startsWith('https://') && !LOOPBACK.test(BASE)) {
   throw new Error('EXPO_PUBLIC_API_URL muss https sein (Klartext nur gegen 127.0.0.1/localhost)');
 }
 
+/**
+ * Die Fehlerform nach RFC 9457. `type` ist die Kennung der Fehlerart (eine URI,
+ * siehe `problems.ts`), `title` benennt die Art, `detail` erklärt **diesen**
+ * Vorfall, `instance` benennt ihn. `errors` ist die Erweiterung für die
+ * feldweise Begründung: Feldname des Anfrage-Rumpfes auf Sätze.
+ *
+ * Fehlt `type`, gilt nach RFC `about:blank` — die Antwort sagt dann nur mit
+ * ihrem Status, was los ist.
+ */
 export type ProblemDetails = {
   type: string;
   title: string;
   status: number;
   detail?: string;
+  instance?: string;
   errors?: Record<string, string[]>;
 };
 
@@ -126,7 +137,7 @@ const secondsFromNow = (s: unknown) => (typeof s === 'number' && s > 0 ? Date.no
 export async function storeTokens(t: AuthTokens) {
   if (!t?.accessToken || !t?.refreshToken) {
     await clearSession();
-    throw new ApiError({ type: 'malformed-token-response', title: 'Antwort ohne vollständiges Token-Paar', status: 502 });
+    throw new ApiError({ type: clientProblems.malformedTokenResponse, title: 'Antwort ohne vollständiges Token-Paar', status: 502 });
   }
   const session: StoredSession = {
     accessToken: t.accessToken,
@@ -230,7 +241,7 @@ async function unwrap<T>(res: Response): Promise<ApiResponse<T>> {
   }
   const body = (await res.json().catch(() => null)) as Envelope<T> | null;
   if (!body || typeof body !== 'object' || !('data' in body)) {
-    throw new ApiError({ type: 'malformed-envelope', title: 'Antwort ohne data/meta-Umschlag', status: res.status });
+    throw new ApiError({ type: clientProblems.malformedEnvelope, title: 'Antwort ohne data/meta-Umschlag', status: res.status });
   }
   return { data: body.data, meta: body.meta ?? null, headers };
 }
