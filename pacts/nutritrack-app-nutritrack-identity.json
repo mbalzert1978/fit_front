@@ -526,16 +526,17 @@
       },
       "response": {
         "body": {
+          "detail": "Bitte überprüfen Sie die mit Fehlern markierten Felder",
           "errors": {
             "email": [
-              "Keine gültige E-Mail-Adresse"
+              "Die E-Mail-Adresse benötigt genau ein @-Zeichen (gefunden: 0)"
             ],
             "password": [
-              "Mindestens 10 Zeichen"
+              "Das Passwort muss mindestens 10 Zeichen lang sein (aktuell: 4)"
             ]
           },
           "status": 400,
-          "title": "Die Angaben sind nicht gültig",
+          "title": "Die Eingabe ist ungültig",
           "type": "validation-failed"
         },
         "headers": {
@@ -543,6 +544,14 @@
         },
         "matchingRules": {
           "body": {
+            "$.detail": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
             "$.errors.email": {
               "combine": "AND",
               "matchers": [
@@ -611,11 +620,7 @@
       },
       "response": {
         "body": {
-          "errors": {
-            "email": [
-              "Für diese E-Mail gibt es schon ein Konto"
-            ]
-          },
+          "detail": "Die E-Mail-Adresse a@b.de ist bereits mit einem anderen Konto verknüpft",
           "status": 409,
           "title": "E-Mail bereits vergeben",
           "type": "email-already-registered"
@@ -625,12 +630,11 @@
         },
         "matchingRules": {
           "body": {
-            "$.errors.email": {
+            "$.detail": {
               "combine": "AND",
               "matchers": [
                 {
-                  "match": "type",
-                  "min": 1
+                  "match": "type"
                 }
               ]
             },

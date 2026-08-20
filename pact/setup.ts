@@ -96,15 +96,17 @@ export const germanJsonHeaders = { ...jsonHeaders, 'Accept-Language': 'de' };
  * entscheidet der Client, was er tut, und ein anderer Wert ist ein anderer
  * Fehler.
  *
- * `errors` ist die feldweise Begründung: Feldname aus dem Anfrage-Rumpf auf
- * Sätze. Die Schlüssel sind feste Werte, weil der Screen an ihnen entscheidet,
- * welches Feld er anstreicht; die Sätze selbst sind Matcher — ihr Wortlaut
- * gehört der Gegenseite, nicht diesem Vertrag.
+ * `detail` ist der Satz zu **diesem** Vorfall, `errors` die feldweise
+ * Begründung: Feldname aus dem Anfrage-Rumpf auf Sätze. Die Schlüssel sind
+ * feste Werte, weil der Screen an ihnen entscheidet, welches Feld er
+ * anstreicht; die Sätze selbst sind Matcher — ihr Wortlaut gehört der
+ * Gegenseite, nicht diesem Vertrag. Beides steht nur dort im Vertrag, wo ein
+ * Screen es wirklich zeigt (Regel 2).
  */
-export const problem = (type: string, title: string, status: number, errors?: Record<string, unknown>) => ({
+export const problem = (type: string, title: string, status: number, extra?: { detail?: unknown; errors?: Record<string, unknown> }) => ({
   status,
   headers: problemHeaders,
-  body: errors ? { type, title: M.string(title), status, errors } : { type, title: M.string(title), status },
+  body: { type, title: M.string(title), status, ...extra },
 });
 
 /**

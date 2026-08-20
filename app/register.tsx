@@ -6,26 +6,45 @@ import { useTheme } from '../src/theme/ThemeProvider';
 import { register, minPasswordLength, maxDisplayNameLength } from '../src/api/session';
 import { ApiError, OfflineError } from '../src/api/client';
 
-/** Die Sätze aus `problem+json`, nach den Feldnamen des Rumpfes geordnet. */
-type FieldHints = { displayName?: string[]; email?: string[]; password?: string[] };
+/** Die Felder, die diese Maske zeigt. Wozu sie keines hat, kann sie nicht anstreichen. */
+const sichtbareFelder = ['displayName', 'email', 'password'] as const;
+type SichtbaresFeld = (typeof sichtbareFelder)[number];
+
+/** Die Sätze aus `problem+json`, nach den Feldnamen des Anfrage-Rumpfes geordnet. */
+type FieldHints = Partial<Record<SichtbaresFeld, string[]>>;
 
 /**
- * Was an die Felder gehört. Es redet der Server: er kennt seine Regeln, er
- * kennt den Bestand, und er schickt zu beidem Sätze. Die Maske hat für die
- * vergebene E-Mail einen eigenen Satz — aber nur als Rückfall, falls einmal
- * keiner mitkommt. Wo der Server spricht, schweigt sie.
+ * Trennt, was an ein Feld gehört, von dem, was hier kein Feld hat.
+ *
+ * Der Server prüft mehr, als diese Maske abfragt — `locale` und `timeZoneId`
+ * kommen aus dem Gerät und stehen in keiner Zeile. Käme dazu eine Begründung
+ * und niemand finge sie auf, scheiterte die Registrierung **stumm**: kein roter
+ * Rand, kein Satz, nur ein Knopf, der wieder angeht.
  */
-function fieldHintsFor(e: unknown): FieldHints {
-  if (!(e instanceof ApiError)) return {};
-  const vomServer = (e.errors ?? {}) as FieldHints;
-  if (Object.keys(vomServer).length > 0) return vomServer;
-  if (e.type === 'email-already-registered') return { email: ['Für diese E-Mail gibt es schon ein Konto'] };
-  return {};
+function splitHints(errors: Record<string, string[]>) {
+  const fields: FieldHints = {};
+  const ohneFeld: string[] = [];
+  for (const [feld, saetze] of Object.entries(errors)) {
+    if ((sichtbareFelder as readonly string[]).includes(feld)) fields[feld as SichtbaresFeld] = saetze;
+    else ohneFeld.push(...saetze);
+  }
+  return { fields, ohneFeld };
 }
 
-/** Was übrig bleibt, wenn kein einzelnes Feld schuld ist. */
-function generalHintFor(e: unknown): string {
+/** Die feldweisen Begründungen, wenn welche kamen. */
+function errorsOf(e: unknown): Record<string, string[]> {
+  return e instanceof ApiError ? (e.errors ?? {}) : {};
+}
+
+/**
+ * Die Zeile unter den Feldern. Der Server redet zuerst: `detail` ist sein Satz
+ * zu genau diesem Vorfall. Eigene Sätze hat die Maske nur, wo keiner kommt —
+ * beim Netzfehler, und als letzter Rückfall.
+ */
+function generalHintFor(e: unknown, ohneFeld: string[]): string | null {
+  if (ohneFeld.length > 0) return ohneFeld.join(' ');
   if (e instanceof OfflineError) return 'Keine Verbindung';
+  if (e instanceof ApiError) return e.detail ?? 'Registrierung derzeit nicht möglich';
   return 'Registrierung derzeit nicht möglich';
 }
 
@@ -35,6 +54,9 @@ export default function RegisterScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [fields, setFields] = useState<FieldHints>({});
+  // Die vergebene E-Mail steht in keinem `errors`-Eintrag: sie verstößt gegen
+  // keine Feldregel. Rot wird das Feld trotzdem — gemeint ist genau dieses.
+  const [conflict, setConflict] = useState(false);
   const [hint, setHint] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -46,15 +68,16 @@ export default function RegisterScreen() {
   async function submit() {
     setBusy(true);
     setFields({});
+    setConflict(false);
     setHint(null);
     try {
       await register({ email: email.trim(), password, displayName: name.trim() });
       router.replace('/(tabs)/diary');
     } catch (e) {
-      const named = fieldHintsFor(e);
-      setFields(named);
-      // Entweder das Feld sagt es oder die Zeile darunter — nie beides.
-      setHint(Object.keys(named).length > 0 ? null : generalHintFor(e));
+      const { fields: benannt, ohneFeld } = splitHints(errorsOf(e));
+      setFields(benannt);
+      setConflict(e instanceof ApiError && e.type === 'email-already-registered');
+      setHint(generalHintFor(e, ohneFeld));
     } finally {
       setBusy(false);
     }
@@ -81,6 +104,7 @@ export default function RegisterScreen() {
         <FormField
           label="E-Mail"
           hints={fields.email}
+          invalid={conflict}
           value={email}
           onChangeText={setEmail}
           autoCapitalize="none"

@@ -46,6 +46,10 @@ export class ApiError extends Error {
   get errors() {
     return this.problem.errors;
   }
+  /** Der Satz zu diesem Vorfall (RFC 7807). Wo er steht, redet der Server. */
+  get detail() {
+    return this.problem.detail;
+  }
 }
 
 /** Netzwerkfehler: löst keinen Dialog aus, sondern den Rückfall auf die Outbox. */

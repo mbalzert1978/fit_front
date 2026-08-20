@@ -178,12 +178,13 @@ describe('Identity', () => {
         body: { email: 'a@b.de', password: 'geheim123!', displayName: 'Markus', locale: 'de', timeZoneId: anyTimeZoneId },
       })
       // Zwei Zusagen in einer: der `type`, an dem der Screen diesen Fall von
-      // jedem sonstigen Fehlschlag unterscheidet, **und** der Satz am Feld.
-      // Auch hier redet der Server, nicht die Maske — sie hat nur einen
-      // Rückfall für den Fall, dass nichts mitkommt.
+      // jedem sonstigen Fehlschlag unterscheidet, **und** `detail` — der Satz zu
+      // genau diesem Vorfall. Kein `errors`: eine vergebene Adresse verstößt
+      // gegen keine Feldregel, und RFC 7807 hat für den Satz zum Vorfall schon
+      // ein Feld. Auch hier redet der Server; die Maske hat nur einen Rückfall.
       .willRespondWith(
         problem('email-already-registered', 'E-Mail bereits vergeben', 409, {
-          email: M.eachLike('Für diese E-Mail gibt es schon ein Konto'),
+          detail: M.string('Die E-Mail-Adresse a@b.de ist bereits mit einem anderen Konto verknüpft'),
         }),
       );
 
@@ -192,7 +193,7 @@ describe('Identity', () => {
       expect(e).toBeInstanceOf(ApiError);
       const fehler = e as ApiError;
       expect(fehler.type).toBe('email-already-registered');
-      expect(fehler.errors?.email?.[0]).toEqual(expect.any(String));
+      expect(fehler.detail).toEqual(expect.any(String));
     });
   });
 
@@ -221,9 +222,14 @@ describe('Identity', () => {
       // Server, und seine Regeln kennt die Maske nicht. Sie zeigt den Satz, den
       // sie bekommt — deshalb trägt die Anfrage `Accept-Language`.
       .willRespondWith(
-        problem('validation-failed', 'Die Angaben sind nicht gültig', 400, {
-          email: M.eachLike('Keine gültige E-Mail-Adresse'),
-          password: M.eachLike('Mindestens 10 Zeichen'),
+        problem('validation-failed', 'Die Eingabe ist ungültig', 400, {
+          detail: M.string('Bitte überprüfen Sie die mit Fehlern markierten Felder'),
+          errors: {
+            // Die Beispiele stehen so genau da, wie die Sätze wirklich kommen:
+            // sie zeigen, welchen Platz die Maske einplanen muss.
+            email: M.eachLike('Die E-Mail-Adresse benötigt genau ein @-Zeichen (gefunden: 0)'),
+            password: M.eachLike('Das Passwort muss mindestens 10 Zeichen lang sein (aktuell: 4)'),
+          },
         }),
       );
 
