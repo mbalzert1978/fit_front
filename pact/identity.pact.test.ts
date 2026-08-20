@@ -1,6 +1,7 @@
 import { pact, M, enveloped, jsonHeaders, authResponseHeaders, problem } from './setup';
 import { api, apiWithMeta, signOut } from '../src/api/client';
 import { register } from '../src/api/session';
+import { setTimeProvider, resetTimeProvider } from '../src/time';
 import { __seedSession, __readSession } from './stubs/expoSecureStore';
 import type { AuthTokens } from '../src/api/types';
 
@@ -19,6 +20,21 @@ import type { AuthTokens } from '../src/api/types';
  * `docs/regeln.md` Regel 2.
  */
 const provider = () => pact('nutritrack-identity');
+
+/**
+ * Die Zonenkennung, wie das Gerät sie nennt — deshalb ein Matcher und nicht
+ * dieser eine Ort: zugesagt ist die Form, nicht Berlin.
+ *
+ * Und die Form ist bewusst weit. Der Regelfall ist `Bereich/Ort`
+ * (`Europe/Berlin`), aber `UTC` ist genauso eine gültige Kennung, und Android
+ * kann eine Versatz-Kennung liefern, wenn es keine benannte Zone auflöst
+ * (`GMT+01:00`). Der Client normalisiert nichts — er hat keine zweite Quelle,
+ * die es besser wüsste. Zugesagt ist deshalb nur, was er wirklich einhalten
+ * kann: nicht leer, kein Leerzeichen, nichts außerhalb dieser Zeichen. Leer
+ * kommt ohnehin nicht vor — ohne Zone entsteht gar keine Anfrage
+ * (`timeZoneId()` in `src/time.ts` wirft).
+ */
+const anyTimeZoneId = M.regex('^[A-Za-z0-9_+:/-]+$', 'Europe/Berlin');
 
 const tokenPair = {
   tokenType: 'Bearer',
@@ -85,7 +101,7 @@ describe('Identity', () => {
           password: 'geheim123!',
           displayName: 'Markus',
           locale: 'de',
-          timeZoneId: 'Europe/Berlin',
+          timeZoneId: anyTimeZoneId,
         },
       })
       .willRespondWith({
@@ -108,6 +124,46 @@ describe('Identity', () => {
     });
   });
 
+  it('legt ein Konto auch mit einer Zone ohne Ortsnamen an', async () => {
+    const p = provider();
+    p.given('Keine Registrierung mit a@b.de vorhanden')
+      .uponReceiving('Registrierung mit einer Versatz-Zone')
+      .withRequest({
+        method: 'POST',
+        path: '/api/v1/identity/register',
+        headers: jsonHeaders,
+        // Hier steht der Wert selbst und kein Matcher: `GMT+01:00` **ist** die
+        // Zusage. Android liefert diese Form, wenn das System keine benannte
+        // Zone auflöst; der Nutzer kann dafür nichts, und ein Konto muss auch
+        // dann entstehen. Der Vertrag sagt das mit einer 201 und nicht mit
+        // einem Fehlerfall — bestellt ist die Abwesenheit einer Ablehnung.
+        body: {
+          email: 'a@b.de',
+          password: 'geheim123!',
+          displayName: 'Markus',
+          locale: 'de',
+          timeZoneId: 'GMT+01:00',
+        },
+      })
+      .willRespondWith({
+        status: 201,
+        headers: authResponseHeaders,
+        body: enveloped(tokenPair),
+      });
+
+    await p.executeTest(async () => {
+      // Über die Naht, damit der Wert denselben Weg nimmt wie auf dem Gerät —
+      // von Hand in den Rumpf geschrieben wäre es eine Zusage über nichts.
+      setTimeProvider({ now: () => new Date(), timeZoneId: () => 'GMT+01:00' });
+      try {
+        const s = await register({ email: 'a@b.de', password: 'geheim123!', displayName: 'Markus' });
+        expect(s.accessToken).toBeTruthy();
+      } finally {
+        resetTimeProvider();
+      }
+    });
+  });
+
   it('lehnt eine schon vergebene E-Mail mit 409 ab', async () => {
     const p = provider();
     p.given('Nutzer a@b.de existiert mit Passwort geheim123')
@@ -116,7 +172,7 @@ describe('Identity', () => {
         method: 'POST',
         path: '/api/v1/identity/register',
         headers: jsonHeaders,
-        body: { email: 'a@b.de', password: 'geheim123!', displayName: 'Markus', locale: 'de', timeZoneId: 'Europe/Berlin' },
+        body: { email: 'a@b.de', password: 'geheim123!', displayName: 'Markus', locale: 'de', timeZoneId: anyTimeZoneId },
       })
       // Der Screen sagt dazu etwas anderes als bei jedem sonstigen Fehlschlag;
       // deshalb muss dieser Fall an seinem `type` erkennbar sein.
@@ -137,7 +193,7 @@ describe('Identity', () => {
         method: 'POST',
         path: '/api/v1/identity/register',
         headers: jsonHeaders,
-        body: { email: 'a@b.de', password: 'kurz', displayName: 'Markus', locale: 'de', timeZoneId: 'Europe/Berlin' },
+        body: { email: 'a@b.de', password: 'kurz', displayName: 'Markus', locale: 'de', timeZoneId: anyTimeZoneId },
       })
       .willRespondWith(problem('password-too-weak', 'Passwort zu kurz', 400));
 
