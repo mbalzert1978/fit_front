@@ -23,8 +23,11 @@ Consumer-driven: die App schreibt den Vertrag, das Backend verifiziert ihn.
    (`tokenType`, `expiresIn`, `refreshExpiresIn`, `user.id`), der `Authorization`-Header an jeder
    geschützten Anfrage, `Cache-Control: no-store` an jeder Antwort mit personenbezogenen Daten,
    `Idempotency-Key` an jedem nicht wiederholbaren Schreibaufruf — die Registrierung
-   eingeschlossen —, `Location` an jeder `201`, `Accept-Language` an **jeder** Anfrage und
-   `Content-Language` an jeder Fehlerantwort sowie Statuscode und Fehlerform.
+   eingeschlossen —, `Location` an jeder `201`, **deren Ressource einen festen Ort hat**,
+   `Accept-Language` an **jeder** Anfrage und `Content-Language` an jeder Fehlerantwort sowie
+   Statuscode und Fehlerform. Trägt die Adresse der neuen Ressource dagegen eine erzeugte Id, nennt
+   der Rumpf sie und der Screen liest sie von dort — dann ist die `Location` ein zweiter Name, den
+   niemand benutzt, und wird nicht zugesichert.
    Die Fehlerform ist die von **RFC 9457** und steht vollständig in jeder Fehlerzusage: `type`,
    `title`, `status`, `detail`, `instance`. `errors` kommt dazu, wo ein Screen die feldweise
    Begründung zeigt.
