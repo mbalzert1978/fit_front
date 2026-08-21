@@ -4,6 +4,10 @@ Nach Gewicht sortiert. Jeder Punkt ist bewusst offen gelassen, nicht vergessen.
 Wird einer davon gebaut, verschwindet er hier — und was dabei entschieden wurde,
 kommt nach [`decisions/`](decisions/).
 
+Die **Nummer steht fest**, sobald sie vergeben ist: aus [`decisions/`](decisions/)
+heraus wird auf sie verwiesen, und eine Entscheidung wird nicht überschrieben. Die
+Reihenfolge im Text folgt dem Gewicht, die Zählung deshalb nicht durchgehend.
+
 ## 1 — Offline-Warteschlange und Sync
 
 Nicht angelegt. Schreibende Aktionen gehen derzeit direkt an die API; bei
@@ -160,6 +164,30 @@ Uhrzeit gehört — eine Erinnerung, ein wöchentlicher Bericht. Dann käme es z
 Zu bauen wäre dann das Kleinste, das reicht: beim Start die Gerätezone gegen die zuletzt gesendete
 halten und bei Abweichung einmal nachreichen. Der Endpunkt dafür ist nicht bestellt — solange kein
 Screen ihn braucht, wäre er eine Zusage ohne Bedarf (Regel 2).
+
+## 14 — Kein Certificate Pinning
+
+Über diese Verbindung gehen Bearer-Token und Gesundheitsdaten; geprüft wird die Gegenstelle allein
+gegen den Trust-Store des Systems. Auf **iOS** vertraut ATS auch einer Root-CA, die ein Nutzer oder
+ein MDM installiert hat — wer eine unterschieben kann, liest Access- **und** Refresh-Token im
+Klartext mit und hat damit das Konto, nicht nur die Sitzung. Auf **Android** greift seit API 24 die
+Voreinstellung, Nutzer-CAs nicht zu trauen; dort ist der Fall entschärft, aber nicht durch etwas,
+das dieses Repo entschieden hätte.
+
+Was steht, ist die Verschlüsselung, nicht die Identität der Gegenstelle:
+[`../src/api/client.ts`](../src/api/client.ts) erzwingt `https` (Klartext nur gegen Loopback), und
+`NSAllowsArbitraryLoads` wie `usesCleartextTraffic` stehen in [`../app.json`](../app.json) auf der
+sicheren Seite.
+
+Zu bauen wäre eine Bindung an den öffentlichen Schlüssel des Servers — als Config-Plugin, das in
+Expo Go nicht läuft und einen Dev-Client braucht. Der Ort dafür steht schon fest: `client.ts` ist
+der einzige Weg nach draußen, und ein zweiter daneben ist ausgeschlossen.
+
+Aufgeschoben ist es nicht wegen des Aufwands, sondern weil die Entscheidung nicht hier allein
+fällt. Ein Pin ohne abgestimmten Rotationsplan legt die App still, sobald das Zertifikat wechselt —
+in einem ausgelieferten Binary, das niemand zurückholt. Nötig sind mindestens ein zweiter Pin für
+den Nachfolger und die Zusage, ab wann er gilt; das gehört mit der Gegenseite abgestimmt, ehe eine
+Zeile davon entsteht.
 
 ## 13 — Kleinigkeiten
 
