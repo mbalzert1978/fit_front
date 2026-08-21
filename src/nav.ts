@@ -1,9 +1,8 @@
 import type { DiaryDate } from './api/diaryDate';
 
 /**
- * Ziel-Mahlzeit und Datum werden beim Start des Scans mitgegeben und wandern
- * durch den ganzen Ablauf. Auf /product/[id] werden sie deshalb nicht noch
- * einmal zur Auswahl gestellt.
+ * Wandert vom Start des Scans durch den ganzen Ablauf — deshalb stellt
+ * `/product/[id]` Mahlzeit und Datum nicht noch einmal zur Auswahl.
  */
 export type CaptureContext = {
   date: DiaryDate;

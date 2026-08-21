@@ -1,34 +1,22 @@
 import { getLocales } from 'expo-localization';
 
 /**
- * Die Naht zur Sprache des Nutzers.
- *
- * Sie steht neben `src/time.ts` und nicht darin: die Zeit ist die Eingabe, die
- * sich nicht wiederholen lässt, die Sprache dagegen eine Vorliebe. Was beide
- * teilen, ist die Herkunft — beide kommen aus dem Gerät, und kein Aufrufer
- * fragt es selbst.
- *
- * An dieser einen Stelle entsteht der Wert, der zweimal hinausgeht: als
- * `Accept-Language` an jeder Anfrage und als `locale` beim Anlegen eines
- * Kontos. Zwei Quellen dafür liefen auseinander, und das Konto trüge dann eine
- * andere Sprache, als der Nutzer zu sehen bekommt.
+ * Die Naht zur Sprache des Nutzers: die eine Stelle, an der der Wert entsteht,
+ * der zweimal hinausgeht — als `Accept-Language` an jeder Anfrage und als
+ * `locale` beim Anlegen eines Kontos (`docs/regeln.md`, Beschriftungen).
  */
 
 /**
- * Die Sprachen, in denen die API Sätze für den Nutzer liefert. Die Liste ist
- * eine Zusage der Gegenseite und kein Wunsch von hier: `locale` nimmt beim
- * Anlegen eines Kontos genau diese Kennungen an und lehnt jede andere ab.
- * Wächst sie dort, wächst sie hier — und nicht umgekehrt.
+ * Eine Zusage der Gegenseite, kein Wunsch von hier: `locale` nimmt genau diese
+ * Kennungen an. Wächst die Liste dort, wächst sie hier — nicht umgekehrt.
  */
 export const supportedLanguages = ['de', 'en'] as const;
 
 export type Language = (typeof supportedLanguages)[number];
 
 /**
- * Wohin es fällt, wenn das Gerät keine dieser Sprachen nennt. Anders als bei
- * der Zeitzone wird hier nicht geworfen: eine Sprache, die niemand anbietet,
+ * Anders als bei der Zeitzone wird hier nicht geworfen: eine unbediente Sprache
  * ist kein kaputter Build, sondern ein Nutzer, für den wir noch nichts haben.
- * Er bekommt Deutsch — für ihn vielleicht unverständlich, aber vollständig.
  */
 export const defaultLanguage: Language = 'de';
 
@@ -41,14 +29,10 @@ const isSupported = (code: string | null | undefined): code is Language =>
   !!code && (supportedLanguages as readonly string[]).includes(code);
 
 /**
- * `getLocales()` gibt die Sprachen in der Reihenfolge, die der Nutzer in den
- * Systemeinstellungen gesetzt hat. Genommen wird die erste, die wir bedienen
- * können — nicht die erste überhaupt: wer Französisch vor Englisch stellt,
- * bekommt Englisch und nicht Deutsch, weil das seiner Wahl näher kommt.
- *
- * Verglichen wird der Sprachanteil ohne Region (`de` aus `de-AT`): die Region
- * entscheidet über Datums- und Zahlformate, nicht darüber, welchen Satz ein
- * Server schickt.
+ * Genommen wird die erste **unterstützte** Sprache der Systemliste, nicht die
+ * erste überhaupt: wer Französisch vor Englisch stellt, bekommt Englisch.
+ * Verglichen wird ohne Region (`de` aus `de-AT`) — die Region entscheidet über
+ * Formate, nicht über den Satz, den ein Server schickt.
  */
 const deviceLanguage: LanguageProvider = {
   tag: () => {
@@ -62,26 +46,17 @@ const deviceLanguage: LanguageProvider = {
 let current: LanguageProvider = deviceLanguage;
 
 /**
- * Was der Nutzer in den Einstellungen gewählt hat, sobald es gelesen ist —
- * `null`, solange nicht.
+ * Was der Nutzer gewählt hat, sobald es gelesen ist — `null`, solange nicht.
  *
- * Die Wahl schlägt das Gerät: wer in der App auf Englisch stellt, hat damit
- * gesagt, in welcher Sprache er lesen will, und das gilt auch auf einem
- * deutschen Telefon. Der Server kann uns das nicht abnehmen — er entscheidet
- * die Sprache **allein** an `Accept-Language` und ausdrücklich nicht an
- * `User.locale` (`src/api/i18n.py` im Backend-Repo), damit ihn nicht jeder
- * Fehlerfall am Rand einen Datenbankzugriff kostet. Wer die Wahl kennt, muss
- * sie also mitschicken, und das sind wir.
+ * Die Wahl schlägt das Gerät. Der Server kann sie uns nicht abnehmen: er
+ * entscheidet die Sprache **allein** an `Accept-Language` und nicht am Konto.
+ * Wer die Wahl kennt, muss sie also mitschicken, und das sind wir.
  */
 let chosen: Language | null = null;
 
 /**
- * Wer mitbekommen muss, dass sie sich geändert hat.
- *
- * Die Oberfläche liest die Sprache nicht bei jedem Zeichnen neu, sie hängt an
- * dieser Menge (`src/i18n`). Ohne sie stünde die Maske bis zum Neustart in der
- * alten Sprache, während der Server schon in der neuen antwortet — und der
- * Schalter sähe kaputt aus.
+ * Woran `src/i18n` hängt: ohne diese Menge stünde die Maske bis zum Neustart in
+ * der alten Sprache, während der Server schon in der neuen antwortet.
  */
 const listeners = new Set<() => void>();
 
@@ -93,10 +68,8 @@ export function subscribeLanguage(listener: () => void) {
 const announce = () => listeners.forEach((l) => l());
 
 /**
- * Die gelesene oder gerade gespeicherte Vorliebe setzen; `null` nimmt sie
- * zurück. Gerufen wird das dort, wo `/preferences` durchkommt
- * (`src/api/hooks.ts`) und beim Abmelden — die Wahl gehört einem Konto, nicht
- * dem Gerät, und darf dem nächsten Nutzer nicht anhängen.
+ * `null` nimmt die Vorliebe zurück — beim Abmelden: die Wahl gehört einem
+ * Konto, nicht dem Gerät, und darf dem nächsten Nutzer nicht anhängen.
  */
 export function preferLanguage(tag: Language | null) {
   chosen = tag;

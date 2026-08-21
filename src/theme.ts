@@ -1,9 +1,7 @@
 /**
- * Einzige Quelle für Farben, Typografie und Abstände (Designsystem "Nocturne").
- * Keine Farb-, Größen- oder Abstandsliterale irgendwo sonst im UI-Code.
- *
- * Zwei Paletten, identische Schlüssel. Standard beim ersten Start: dark.
- * Typografie, Radien und Abstände sind modusunabhängig.
+ * Designsystem „Nocturne" — die einzige Quelle für Farben, Typografie und
+ * Abstände (`docs/regeln.md`, Farb- und Maßliterale). Zwei Paletten mit
+ * identischen Schlüsseln; Typografie, Radien und Abstände sind modusunabhängig.
  */
 
 import type { TextStyle } from 'react-native';

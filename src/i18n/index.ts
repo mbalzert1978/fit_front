@@ -4,27 +4,18 @@ import { de, type Texts } from './de';
 import { en } from './en';
 
 /**
- * Die Schicht vor den Ressourcendateien.
+ * Die Schicht vor den Ressourcendateien; welche Sprache gilt, entscheidet die
+ * Naht in `src/language.ts` (`docs/regeln.md`, Beschriftungen).
  *
- * Sie bestimmt nicht, welche Sprache gilt — das tut die Naht in
- * `src/language.ts`, und sie tut es für die Oberfläche und für
- * `Accept-Language` gemeinsam. Zwei Quellen liefen auseinander, und der Nutzer
- * läse englische Serversätze in einer deutschen Maske. Genau das war der Anlass.
- *
- * Der Rückfall ist ein Spread und keine Suche: die englische Fassung liegt über
- * der deutschen, die deutsche ist vollständig. Ein fehlender Satz ist damit
- * deutsch — ein Schlüssel steht nie auf dem Schirm.
+ * Der Rückfall ist ein Spread und keine Suche: die deutsche Fassung ist
+ * vollständig, ein fehlender Satz ist damit deutsch und nie ein Schlüssel.
  */
 const bundles: Record<Language, Texts> = { de, en: { ...de, ...en } };
 
 /** Die Sätze der geltenden Sprache, außerhalb von React. */
 export const texts = (): Texts => bundles[language.tag()];
 
-/**
- * Die Sätze der geltenden Sprache, innerhalb von React — und ein Neuzeichnen,
- * sobald sie wechselt. Ohne das bliebe die Oberfläche bis zum Neustart stehen,
- * während der Server längst in der neuen Sprache antwortet.
- */
+/** Wie `texts()`, innerhalb von React — samt Neuzeichnen, sobald die Sprache wechselt. */
 export function useTexts(): Texts {
   return useSyncExternalStore(subscribeLanguage, texts);
 }

@@ -6,9 +6,8 @@ type Ctx = { theme: Theme; mode: ThemeMode; setMode: (m: ThemeMode) => void };
 const ThemeContext = createContext<Ctx>({ theme: themes[defaultMode], mode: defaultMode, setMode: () => {} });
 
 /**
- * Der Modus wird serverseitig gehalten (GET/PATCH /preferences, theme: "Dark" | "Light").
- * Dieser Provider hält nur den aktiven Wert für die Darstellung; das Setzen läuft
- * über die Mutation in den Einstellungen, die anschließend setMode aufruft.
+ * Hält nur den aktiven Wert; gespeichert wird der Modus serverseitig über
+ * `/preferences`, und die Mutation in den Einstellungen ruft danach `setMode`.
  */
 export function ThemeProvider({ children, initialMode = defaultMode }: { children: React.ReactNode; initialMode?: ThemeMode }) {
   const [mode, setModeState] = useState<ThemeMode>(initialMode);
