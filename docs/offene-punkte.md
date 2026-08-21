@@ -55,6 +55,18 @@ App, und wer sein Passwort verliert, kommt an keiner Stelle wieder hinein. Der
 Weg dorthin braucht einen Kanal außerhalb der App (E-Mail), den es bisher nicht
 gibt — deshalb ist er aufgeschoben und nicht nebenbei gebaut.
 
+Wo die drei angestoßen werden, ist damit schon entschieden: **Passwort ändern**
+und **Konto löschen** gehören in den Abschnitt „Konto" in
+[`../app/(tabs)/settings.tsx`](../app/(tabs)/settings.tsx) — dort steht seit Punkt 9
+der angemeldete Nutzer, und dorthin gehört auch die Abmelde-Zeile. Beide setzen
+eine bestehende Sitzung voraus.
+
+**Passwort vergessen** kann dort nicht liegen: Wer es braucht, kommt an den
+Einstellungen nicht vorbei, weil er sich nicht anmelden kann. Sein Ort ist
+[`../app/login.tsx`](../app/login.tsx), unter den beiden Knöpfen. Aus den
+Einstellungen wird derselbe Weg allenfalls zusätzlich angestoßen — für den
+angemeldeten Nutzer, der sein Passwort ändern will, ohne das alte zu kennen.
+
 ## 6 — Sprache: die Sätze des Servers folgen dem Nutzer, unsere eigenen noch nicht
 
 Halb erledigt. Was der **Server** sagt, kommt seit
