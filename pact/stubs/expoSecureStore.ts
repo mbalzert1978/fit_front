@@ -1,23 +1,18 @@
 /**
- * Ersatz fuer `expo-secure-store` im Node-Testlauf.
+ * Stands in for `expo-secure-store` in the Node test run. The session lies as
+ * one record under one key, as it does on the device.
  *
- * Die Sitzung liegt — wie im Geraet — als **ein** Datensatz unter **einem**
- * Schluessel. Der Access-Token ist gesetzt und laeuft weit in der Zukunft ab,
- * damit der Client den `Authorization`-Header schickt, den die Vertraege
- * zusichern, und dabei keine unerwartete Erneuerung ausloest.
+ * The refresh token is empty by default: otherwise the client answers an
+ * assured 401 with a further call to `/identity/refresh` or `/identity/logout`
+ * that the contract does not describe, and the mock server counts it as an
+ * unexpected request. A test that wants to assure that follow-up seeds it with
+ * `__seedSession`.
  *
- * Der Refresh-Token ist im Standard bewusst leer: sonst beantwortet der Client
- * eine zugesicherte 401 mit einem zusaetzlichen Aufruf von `/identity/refresh`
- * oder `/identity/logout`, den der jeweilige Vertrag nicht beschreibt — der
- * Mockserver wertet das als unerwartete Anfrage. Wo ein Test genau diese
- * Folgeanfrage zusichern will, setzt er ihn ueber `__seedSession`.
- *
- * Der Speicher ist schreibbar und zustandsbehaftet, weil der Client waehrend
- * eines Tests tatsaechlich schreibt (Erneuerung) und loescht (Abmeldung).
- * `pact/reset.ts` setzt ihn vor jedem Test zurueck.
+ * The store is writable and stateful because the client really writes
+ * (renewal) and deletes (sign-out) during a test.
  */
 
-/** Entspricht der Konstante der echten Bibliothek; hier nur ein Platzhalter. */
+/** Matches the constant of the real library; a placeholder here. */
 export const WHEN_UNLOCKED_THIS_DEVICE_ONLY = 'whenUnlockedThisDeviceOnly';
 
 export const ACCESS_TOKEN = 'eyJhbGciOiJIUzI1NiJ9.pact';
@@ -33,12 +28,12 @@ const defaults = () => ({
 
 let store: Record<string, string> = defaults();
 
-/** Setzt den Speicher auf den Standard zurueck — laeuft vor jedem Test. */
+/** Back to the default — runs before every test (`pact/reset.ts`). */
 export function __reset() {
   store = defaults();
 }
 
-/** Legt eine Sitzung mit Refresh-Token an, wo ein Test die Folgeanfrage zusichert. */
+/** A session with a refresh token, where a test assures the follow-up request. */
 export function __seedSession(refreshToken: string, accessTokenExpiresAt = Date.now() + 60 * 60 * 1000) {
   store.session = JSON.stringify({
     accessToken: ACCESS_TOKEN,
@@ -48,7 +43,7 @@ export function __seedSession(refreshToken: string, accessTokenExpiresAt = Date.
   });
 }
 
-/** Was gerade abgelegt ist — fuer Tests, die das Ergebnis eines Schreibvorgangs pruefen. */
+/** What is stored — for tests that check the result of a write. */
 export function __readSession(): Record<string, unknown> | null {
   return store.session ? JSON.parse(store.session) : null;
 }

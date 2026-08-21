@@ -1,37 +1,18 @@
 import type { DiaryDate } from './diaryDate';
 import type { Language } from '../language';
 
-/**
- * Begleitinformation, die jede Antwort mit Rumpf trägt. Kein Screen liest sie —
- * sie ist für Support und Fehlersuche da: `requestId` spiegelt den Header
- * `X-Request-Id`, `apiVersion` die Fassung hinter `/api/v1`.
- */
+/** For support and diagnosis; no screen reads it. `requestId` mirrors `X-Request-Id`. */
 export type Meta = { requestId: string; timestamp: string; apiVersion: string };
 
-/**
- * Der Umschlag jeder Antwort mit Rumpf: Nutzlast unter `data`, Begleitinformation
- * unter `meta`. Ausgepackt wird er genau einmal — in `client.ts`. Kein Hook und
- * kein Screen sieht ihn, deshalb steht er in keiner weiteren Signatur.
- */
+/** Unwrapped exactly once, in `client.ts` — hence it stands in no other signature. */
 export type Envelope<T> = { data: T; meta: Meta };
 
 /**
- * Anmeldung und Erneuerung, benannt wie in OAuth 2. `expiresIn` und
- * `refreshExpiresIn` sind Sekunden — die Einheit steht in dieser Zusage, nicht
- * im Feldnamen. Die Identität ist ein Objekt, damit sie wachsen kann, ohne dass
- * ein zweites flaches Feld daneben entsteht.
- */
-/**
- * Die Sitzung, wie der Server sie ausgibt — nach OAuth 2 benannt (RFC 6749
- * §5.1), nur in camelCase wie die übrige API. `refreshExpiresIn` ist eine
- * Erweiterung; für die Laufzeit des Refresh-Tokens hat der RFC kein Feld.
+ * Named after OAuth 2 (RFC 6749 §5.1), in camelCase; `refreshExpiresIn` is an
+ * extension the RFC has no field for.
  *
- * Die Laufzeiten sind **relativ in Sekunden** und keine Zeitstempel: der
- * Client hat eine eigene Uhr, und die geht falsch. Aus der Sekundenzahl wird
- * erst in `client.ts` ein Zeitpunkt, gemessen an genau dieser Uhr.
- *
- * Dieselben fünf Felder überall, wo eine Sitzung entsteht oder erneuert wird —
- * ein Ableser im ganzen Repo.
+ * The lifetimes are **relative, in seconds**, and no timestamps: the client's
+ * clock runs wrong, and only `client.ts` makes a point in time of them.
  */
 export type Session = {
   tokenType: 'Bearer';
@@ -42,11 +23,9 @@ export type Session = {
 };
 
 /**
- * Das Konto, wie der Server es führt. `locale` und `timeZoneId` stehen hier,
- * weil sie die **wirksamen** Werte sind und nicht die gefragten: der Server
- * normalisiert eine Versatz-Zone (`GMT+01:00` wird `+01:00`), und was dabei
- * herauskommt, steht in der Antwort. Die Anfrage ist ein Wunsch, die Antwort
- * die Wahrheit über die Ressource.
+ * `locale` and `timeZoneId` are the **effective** values, not the ones asked
+ * for: the request is a wish, the response the truth about the resource
+ * (`docs/decisions/2026-08-20-1230-die-zone-wird-normalisiert-und-kommt-zurueck.md`).
  */
 export type AccountUser = {
   id: string;
@@ -56,22 +35,18 @@ export type AccountUser = {
   timeZoneId: string;
 };
 
-/**
- * Was `register` und `login` zurückgeben: das Konto **und** die Sitzung. Die
- * Erneuerung liefert nur `Session` — sie liegt auf dem heißen Pfad und soll den
- * User-Store nicht anfassen.
- */
+/** Account **and** session; the renewal delivers only `Session` and leaves the user store alone. */
 export type SignIn = { user: AccountUser; session: Session };
 
 /**
- * Was auf `DELETE /identity/me` zurückkommt. Der Server löscht nicht sofort: er
- * nimmt an (202) und nennt den Zeitpunkt, ab dem es wirksam wird — ein
- * ISO-8601-Zeitpunkt in UTC, wie der Feldname sagt. Deshalb trägt diese Antwort
- * überhaupt einen Rumpf; ein 204 wäre die Behauptung, es sei schon geschehen.
+ * What comes back from `DELETE /identity/me`. The server does not delete right
+ * away: it accepts (202) and names the point in time from which it takes
+ * effect — an ISO-8601 instant in UTC, as the field name says. That is why this
+ * response carries a body at all; a 204 would claim it had already happened.
  */
 export type AccountDeletion = { deletionEffectiveUtc: string };
 
-/** Nährwerte je 100 g. Optionale Felder dürfen fehlen — dann sind sie nicht gesetzt. */
+/** Nutrients per 100 g. Optional fields may be missing — then they are not set. */
 export type Nutrients = {
   kcal: number;
   fatG: number;
@@ -108,8 +83,7 @@ export type MealSlotDay = { id: string; name: string; kcal: number; entries: Dia
 export type ActivityEntry = { externalId: string; name: string; detail: string; kcal: number };
 
 /**
- * Ohne `isFuture`: ob ein Tag in der Zukunft liegt, ist der Vergleich zweier
- * Kalendertage und kommt ohne Antwort vom Server aus — siehe
+ * Without `isFuture`, see
  * `docs/decisions/2026-08-20-0925-kalendertag-ist-reine-client-sache.md`.
  */
 export type DiaryDay = {
@@ -162,7 +136,7 @@ export type Recipe = {
   kcalPerPortion: number;
   macrosPerPortion: { carbsG: number; proteinG: number; fatG: number };
   ingredients: RecipeIngredient[];
-  /** Aus dem Antwort-Header `ETag`, nicht aus dem Rumpf; geht unverändert als `If-Match` zurück. */
+  /** From the `ETag` response header, not from the body; goes back unchanged as `If-Match`. */
   etag?: string;
 };
 
@@ -175,11 +149,8 @@ export type Goals = {
 };
 
 /**
- * Was am Tagesziel geändert werden darf — jedes Feld für sich, der Screen
- * speichert in kleinen Teilnutzlasten. Ein offener `Record<string, unknown>`
- * stand hier vorher und ließ jedes beliebige Feld mitlaufen; abgeleitete Werte
- * (`grams`, `kcal`) und alles, was der Server aus eigener Autorität setzt,
- * gehören nicht in eine Anfrage.
+ * Every field on its own — the screen saves in small part-payloads. Derived
+ * values (`grams`, `kcal`) do not belong in a request.
  */
 export type GoalsUpdate = {
   dailyKcal?: number;
@@ -190,10 +161,8 @@ export type GoalsUpdate = {
 };
 
 /**
- * Ein neu angelegtes Produkt. `source` und `verifiedByUser` stehen hier, weil
- * der Bestätigungs-Screen sie setzt — welchen Wert der Server davon übernimmt,
- * ist seine Sache. Weitere Felder gibt es nicht: was nicht aufgezählt ist,
- * kommt auch nicht mit.
+ * The confirmation screen sets `source` and `verifiedByUser`; which of them the
+ * server adopts is his business.
  */
 export type ProductCreate = {
   id: string;
@@ -207,7 +176,7 @@ export type ProductCreate = {
   nutrientsPer100g: Record<keyof Nutrients, number | null>;
 };
 
-/** Was ein Rezept beim Speichern trägt. `etag` geht als `If-Match` hinaus, nicht in den Rumpf. */
+/** What a recipe carries when saved. `etag` goes out as `If-Match`, not into the body. */
 export type RecipeSave = {
   id: string;
   name: string;
@@ -216,29 +185,20 @@ export type RecipeSave = {
   etag?: string;
 };
 
-/**
- * `language` steht hier nicht als zweite Liste: sie ist dieselbe Menge, die
- * `src/language.ts` an `Accept-Language` und beim Anlegen eines Kontos an
- * `locale` schickt. Zwei Aufzählungen dafür liefen auseinander, sobald eine
- * dritte Sprache dazukommt.
- */
+/** `language` is the same set as in `src/language.ts` — no second enumeration. */
 export type Preferences = { theme: 'Dark' | 'Light'; language: Language };
 
 export type HealthConsent = { connected: boolean; importActivity: boolean; exportNutrition: boolean };
 
 /**
- * Schritt 1 des Foto-Uploads: das Ziel, an das die Bytes gehen.
- *
- * `uploadHeaders` sind die Header, die der Server **mitsigniert** hat, und
- * gehen unverändert an den Objektspeicher zurück. Es ist deshalb eine Abbildung
- * vom Server und keine Liste, die der Client selbst zusammenstellt: weicht auch
- * nur ein Header ab, weist der Objektspeicher die Bytes mit einer
- * Signaturabweichung zurück.
+ * Step 1 of the photo upload. The server **co-signed** `uploadHeaders` — a map
+ * from him and no list of the client's: if one header deviates, the object store
+ * rejects the bytes.
  */
 export type PhotoUploadTarget = {
   photoId: string;
   uploadUrl: string;
   uploadHeaders: Record<string, string>;
-  /** Laufzeit der Signatur in Sekunden, gerechnet ab der Antwort. */
+  /** Lifetime of the signature in seconds, counted from the response. */
   expiresIn: number;
 };

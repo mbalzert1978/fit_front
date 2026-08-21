@@ -2,7 +2,7 @@ import React from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { useTheme } from '../theme/ThemeProvider';
 
-/** Zeile mit Titel, Unterzeile und rechtem Wert. onPress macht sie tippbar (≥ 44 pt hoch). */
+/** Title, subtitle and a value on the right. `onPress` makes it tappable (≥ 44 pt high). */
 export function ListRow({
   title,
   subtitle,

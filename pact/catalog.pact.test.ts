@@ -1,5 +1,6 @@
 import {
   pact,
+  against,
   M,
   enveloped,
   jsonHeaders,
@@ -14,13 +15,12 @@ import { api, endpoints } from '../src/api/client';
 import type { PhotoUploadTarget } from '../src/api/types';
 
 /**
- * Bedarf: `app/(tabs)/scan.tsx` (Barcode und Suche), `app/product/[id].tsx`
- * (Produktblatt), `app/capture/photo.tsx` (Tabelle hochladen),
- * `app/capture/processing.tsx` (Fortschritt der OCR) und
- * `app/capture/confirm.tsx` (bestätigtes Produkt anlegen).
+ * Needed by: `app/(tabs)/scan.tsx` (barcode and search), `app/product/[id].tsx`,
+ * `app/capture/photo.tsx`, `app/capture/processing.tsx` and
+ * `app/capture/confirm.tsx`.
  *
- * Nährwerte sind `M.number` und nicht `M.decimal`: der Bestätigungs-Screen gibt
- * ein, was in der Tabelle steht — „4" ebenso wie „4,1".
+ * Nutrients are `M.number` and not `M.decimal`: the confirmation screen types
+ * in what the table says — "4" as readily as "4.1".
  */
 const provider = () => pact('nutritrack-catalog');
 
@@ -53,7 +53,7 @@ describe('Catalog — Produkte', () => {
         }),
       });
 
-    await p.executeTest(async () => {
+    await against(p, async () => {
       const product = await api<{ barcode: string }>(endpoints.productByBarcode('4008400401027'));
       expect(product.barcode).toBe('4008400401027');
     });
@@ -66,8 +66,8 @@ describe('Catalog — Produkte', () => {
       .withRequest({ method: 'GET', path: '/api/v1/catalog/products/by-barcode/0000000000000', headers: authHeadersIn('de') })
       .willRespondWith(problem(problems.productNotFound, 'Produkt nicht gefunden', 404));
 
-    await p.executeTest(async () => {
-      // Dieser Fall ist kein Fehler im UI: er führt in den Foto-Flow.
+    await against(p, async () => {
+      // Not an error in the UI: this case leads into the photo flow.
       await expect(api(endpoints.productByBarcode('0000000000000'))).rejects.toMatchObject({ type: problems.productNotFound });
     });
   });
@@ -83,10 +83,9 @@ describe('Catalog — Produkte', () => {
       })
       .willRespondWith(unauthorized());
 
-    await p.executeTest(async () => {
-      // 404 und 401 sind zwei verschiedene Ausgänge: der eine führt in den
-      // Foto-Flow, der andere beendet die Sitzung. Ohne Zusage stünde nicht
-      // fest, dass sie unterscheidbar bleiben.
+    await against(p, async () => {
+      // 404 and 401 are two different outcomes — one leads into the photo flow,
+      // the other ends the session. Without an assurance they might blur.
       await expect(api(endpoints.productByBarcode('4008400401027'))).rejects.toMatchObject({
         type: problems.tokenExpired,
         status: 401,
@@ -110,7 +109,7 @@ describe('Catalog — Produkte', () => {
           id: M.uuid(),
           name: M.string('Skyr Natur'),
           brand: M.string('Arla'),
-          // `source` steuert die Quellzeile unter dem Namen — der Wert selbst ist Teil der Zusage.
+          // `source` drives the source line under the name — the value itself is part of the assurance.
           source: M.regex('Curated|Ocr|Manual', 'Curated'),
           nutrientsPer100g: {
             kcal: M.integer(63),
@@ -121,7 +120,7 @@ describe('Catalog — Produkte', () => {
         }),
       });
 
-    await p.executeTest(async () => {
+    await against(p, async () => {
       const product = await api<{ id: string }>(`/catalog/products/${productId}`);
       expect(product.id).toBeTruthy();
     });
@@ -165,7 +164,7 @@ describe('Catalog — Produkte', () => {
         }),
       });
 
-    await p.executeTest(async () => {
+    await against(p, async () => {
       const created = await api<{ id: string }>('/catalog/products', {
         method: 'POST',
         idempotencyKey: productId,
@@ -189,7 +188,7 @@ describe('Catalog — Produkte', () => {
           },
         },
       });
-      // Die Id der Antwort bestimmt, auf welches Produktblatt der Ablauf weiterläuft.
+      // The id of the response decides which product sheet the flow continues on.
       expect(created.id).toBeTruthy();
     });
   });
@@ -198,16 +197,16 @@ describe('Catalog — Produkte', () => {
 describe('Catalog — Suche', () => {
   it('liefert Treffer über Produkte und Rezepte hinweg', async () => {
     const p = provider();
-    // Ein Treffer trägt seinen `sourceType` selbst — daran entscheidet der
-    // Scan-Screen, ob er aufs Produktblatt oder ins Rezept springt.
+    // A hit carries its own `sourceType` — the scan screen decides on it whether
+    // to jump to the product sheet or into the recipe.
     p.given('Nutzer hat Produkte und Rezepte zum Suchwort skyr')
       .uponReceiving('Volltextsuche über Produkte und Rezepte')
       .withRequest({ method: 'GET', path: '/api/v1/search', query: { query: 'skyr', take: '20' }, headers: authHeadersIn('de') })
       .willRespondWith({
         status: 200,
         headers: privateHeaders,
-        // Die Trefferliste steht direkt unter `data`; das frühere `items` war ein
-        // eigener kleiner Umschlag und fällt mit diesem hier weg.
+        // The hits stand directly under `data`; the earlier `items` was a small
+        // envelope of its own and falls away with this one.
         body: enveloped(
           M.eachLike({
             sourceType: M.regex('Product|Recipe', 'Product'),
@@ -218,7 +217,7 @@ describe('Catalog — Suche', () => {
         ),
       });
 
-    await p.executeTest(async () => {
+    await against(p, async () => {
       const hits = await api<unknown[]>('/search?query=skyr&take=20');
       expect(Array.isArray(hits)).toBe(true);
     });
@@ -227,42 +226,30 @@ describe('Catalog — Suche', () => {
 
 describe('Catalog — Foto-Auftrag', () => {
   /**
-   * Der Upload läuft in drei Schritten: das Ziel bei der eigenen API holen, die
-   * Bytes an den Objektspeicher legen, den Abschluss melden. **Zugesichert sind
-   * nur der erste und der dritte.**
+   * The upload takes three steps, of which **only the first and the third are
+   * assured**: the second goes to a foreign origin, and the object store is no
+   * provider of this repo — nothing written here would ever be verified there.
+   * The assurance therefore ends visibly at `uploadUrl` and `uploadHeaders`.
    *
-   * Der zweite geht an einen fremden Origin. Ein Vertrag gilt zwischen diesem
-   * Consumer und `nutritrack-catalog`; der Objektspeicher ist kein Provider
-   * dieses Repos, und nichts, was hier stünde, würde dort je verifiziert. Ein
-   * Mock-Provider dafür wäre kein Vertrag, sondern eine Zusage an uns selbst.
-   *
-   * Die Zusage endet deshalb sichtbar an `uploadUrl` und `uploadHeaders`: was
-   * der Server dort nennt, geht unverändert hinaus — dass der Objektspeicher es
-   * dann annimmt, sichert dieser Vertrag nicht zu.
-   *
-   * Alle drei Schritte gegen die eigene API sind `PUT` auf eine Adresse, die der
-   * Client schon kennt: er erzeugt die `photoId` selbst. Deshalb steht an keinem
-   * ein `Idempotency-Key` — ein Schlüssel liefert die gespeicherte erste Antwort
-   * erneut aus und damit genau die abgelaufene Upload-URL, wegen der wiederholt
-   * wird.
+   * No step carries an `Idempotency-Key`; reasoning in
+   * `docs/decisions/2026-08-18-1800-foto-upload-ueber-presigned-url.md`.
    */
   const uploadTarget = {
     photoId: M.uuid(),
-    // Der Client sendet die Bytes nur über https; eine http-Adresse hier lässt
-    // ihn abbrechen, statt das Foto im Klartext hinauszugeben.
+    // The client sends the bytes over https only; an http address here makes it
+    // break off rather than hand out the photo in the clear.
     uploadUrl: M.regex('https://.+', `https://objektspeicher.example/nutritrack/${photoId}?X-Amz-Expires=900&X-Amz-Signature=8d1f2c`),
-    // Genau die Header, die der Server mitsigniert hat. `Content-Type` ist immer
-    // dabei: er steht in der Signatur, und ein abweichender Wert lässt den
-    // Objektspeicher die Bytes zurückweisen.
+    // Exactly the headers the server co-signed. `Content-Type` is always among
+    // them, and a deviating value makes the object store reject the bytes.
     uploadHeaders: { 'Content-Type': M.string('image/jpeg') },
     expiresIn: M.integer(900),
   };
 
-  /** `contentType` ist ein fester Wert: die App schickt ausschließlich JPEG (`expo-image-manipulator`). */
+  /** A fixed value: the app sends JPEG only (`expo-image-manipulator`). */
   const targetRequest = {
     contentType: 'image/jpeg',
-    // Die Größe geht mit, damit ein zu großes Bild abgelehnt wird, bevor die
-    // Bytes fließen — der alte Multipart-Weg merkte es erst danach.
+    // The size travels along so an oversized image is rejected before the bytes
+    // flow — the old multipart path only noticed afterwards.
     byteSize: M.integer(412_388),
     barcode: M.string('4008400401027'),
   };
@@ -276,7 +263,7 @@ describe('Catalog — Foto-Auftrag', () => {
       .withRequest({ method: 'PUT', path: photoPath, headers: jsonAuthHeadersIn('de'), body: targetRequest })
       .willRespondWith({ status: 201, headers: privateHeaders, body: enveloped(uploadTarget) });
 
-    await p.executeTest(async () => {
+    await against(p, async () => {
       const target = await api<PhotoUploadTarget>(endpoints.photo(photoId), {
         method: 'PUT',
         body: { contentType: 'image/jpeg', byteSize: 412_388, barcode: '4008400401027' },
@@ -289,16 +276,16 @@ describe('Catalog — Foto-Auftrag', () => {
 
   it('nennt ein frisches Ziel, wenn dieselbe Aufnahme erneut fragt', async () => {
     const p = provider();
-    // Der Fall, für den `expiresIn` da ist: die Signatur ist abgelaufen, bevor
-    // die Bytes durch waren. Dieselbe `photoId` fragt erneut — eine neue erzeugte
-    // ein zweites Foto und einen zweiten OCR-Auftrag für dieselbe Aufnahme.
+    // What `expiresIn` is there for: the signature ran out before the bytes were
+    // through. The **same** `photoId` asks again — a new one would mean a second
+    // photo and a second OCR job for the same shot.
     p.given('Foto-Auftrag wartet auf den Upload')
       .uponReceiving('Upload-Ziel nach abgelaufener Signatur erneut anfordern')
       .withRequest({ method: 'PUT', path: photoPath, headers: jsonAuthHeadersIn('de'), body: targetRequest })
-      // 200 statt 201: das Foto besteht schon, nur die Signatur ist neu.
+      // 200 instead of 201: the photo already exists, only the signature is new.
       .willRespondWith({ status: 200, headers: privateHeaders, body: enveloped(uploadTarget) });
 
-    await p.executeTest(async () => {
+    await against(p, async () => {
       const target = await api<PhotoUploadTarget>(endpoints.photo(photoId), {
         method: 'PUT',
         body: { contentType: 'image/jpeg', byteSize: 412_388, barcode: '4008400401027' },
@@ -319,12 +306,12 @@ describe('Catalog — Foto-Auftrag', () => {
       .willRespondWith({
         status: 202,
         headers: privateHeaders,
-        // Erst diese Meldung stößt die OCR an; ab hier fragt der
-        // Fortschritts-Screen auf `photoId` weiter.
+        // Only this report kicks off the OCR; from here the progress screen polls
+        // on `photoId`.
         body: enveloped({ photoId: M.uuid(), status: 'Processing' }),
       });
 
-    await p.executeTest(async () => {
+    await against(p, async () => {
       const job = await api<{ status: string }>(endpoints.photoUpload(photoId), { method: 'PUT' });
       expect(job.status).toBe('Processing');
     });
@@ -342,11 +329,11 @@ describe('Catalog — Foto-Auftrag', () => {
       .willRespondWith({
         status: 200,
         headers: privateHeaders,
-        // `status` ist der Wert, an dem der Screen weiterschaltet — kein Matcher.
+        // `status` is the value the screen moves on by — no matcher.
         body: enveloped({ photoId: M.uuid(), status: 'Processing' }),
       });
 
-    await p.executeTest(async () => {
+    await against(p, async () => {
       const job = await api<{ status: string }>(endpoints.photo(photoId));
       expect(job.status).toBe('Processing');
     });
@@ -370,7 +357,7 @@ describe('Catalog — Foto-Auftrag', () => {
           barcode: M.string('4008400401027'),
           suggestedName: M.string('Skyr Natur'),
           basis: M.regex('Per100g|PerPortion', 'Per100g'),
-          // Ein Feld je Zeile der Bestätigungsmaske; `null` heißt „nicht erkannt".
+          // One field per row of the confirmation form; `null` means "not recognised".
           fields: {
             kcal: { value: M.number(63), confidence: M.number(0.97) },
             fatG: { value: M.number(0.2), confidence: M.number(0.91) },
@@ -383,7 +370,7 @@ describe('Catalog — Foto-Auftrag', () => {
         }),
       });
 
-    await p.executeTest(async () => {
+    await against(p, async () => {
       const job = await api<{ status: string; fields: Record<string, unknown> }>(endpoints.photo(photoId));
       expect(job.status).toBe('Completed');
       expect(job.fields.kcal).toBeDefined();
@@ -402,11 +389,11 @@ describe('Catalog — Foto-Auftrag', () => {
       .willRespondWith({
         status: 200,
         headers: privateHeaders,
-        // Der Screen schickt den Nutzer zurück zur Kamera; `reason` unterscheidet ihn von 'Processing'.
+        // The screen sends the user back to the camera; `reason` tells it from 'Processing'.
         body: enveloped({ photoId: M.uuid(), status: 'Failed', reason: M.string('Tabelle nicht lesbar') }),
       });
 
-    await p.executeTest(async () => {
+    await against(p, async () => {
       const job = await api<{ status: string }>(endpoints.photo(photoId));
       expect(job.status).toBe('Failed');
     });

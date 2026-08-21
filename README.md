@@ -14,6 +14,8 @@ drüben.
 - [`CLAUDE.md`](CLAUDE.md) — wohin man vor einer Annahme schaut. Der Einstieg für
   alles Weitere, für Menschen wie für Agenten.
 - [`docs/regeln.md`](docs/regeln.md) — was für jede Änderung gilt.
+- [`docs/neue-sprache.md`](docs/neue-sprache.md) — wie eine weitere Sprache dazukommt, Schritt für
+  Schritt bis zum Pull Request.
 - Die Issues dieses Repositories auf GitHub — was bewusst offen ist.
 - [`docs/decisions/`](docs/decisions/) — was entschieden wurde.
 - [`make.ps1`](make.ps1) — der eine Weg durch dieses Repo: `./make.ps1 help` listet die

@@ -132,7 +132,7 @@ $targetTable = [ordered]@{
     }
 
     'test' = @{
-        Description = 'Consumer-Tests fahren; schreibt ./pacts/*.json'
+        Description = 'Tests fahren; schreibt ./pacts/*.json'
         Action      = {
             Use-Node
             # Pact ergaenzt eine bestehende Datei, statt sie zu ersetzen. Ohne
@@ -140,7 +140,7 @@ $targetTable = [ordered]@{
             # der Diff loege.
             $pacts = Join-Path $PSScriptRoot 'pacts'
             if (Test-Path $pacts) { Remove-Item "$pacts\*.json" -Force }
-            Invoke-Step 'test' { npm run test:pact }
+            Invoke-Step 'test' { npm test }
         }
     }
 

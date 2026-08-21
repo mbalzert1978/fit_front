@@ -2,7 +2,7 @@ import React from 'react';
 import { Text, View } from 'react-native';
 import { useTheme } from '../theme/ThemeProvider';
 
-/** Überschrift im Label-Stil mit Haarlinie darunter. Rechts optional eine Aktion. */
+/** Heading in label style with a hairline below. Optionally an action on the right. */
 export function SectionHeading({ children, right }: { children: string; right?: React.ReactNode }) {
   const t = useTheme();
   return (

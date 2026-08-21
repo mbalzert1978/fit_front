@@ -5,24 +5,17 @@ import { putToSignedUrl, SignedUploadError } from './signedUpload';
 import type { PhotoUploadTarget } from './types';
 
 /**
- * Der Foto-Upload in drei Schritten: Ziel holen, Bytes legen, Abschluss melden.
- *
- * Alle drei Schritte gegen die eigene API sind `PUT` auf eine Adresse, die der
- * Client schon kennt — er erzeugt die `photoId` selbst. Das ist kein Zufall,
- * sondern der Grund, warum hier kein `Idempotency-Key` steht: ein Schlüssel
- * liefert die *gespeicherte erste* Antwort erneut aus, und damit genau die
- * abgelaufene Upload-URL, wegen der wiederholt wird. `PUT` sagt stattdessen
- * „dieses Foto, dieser Zustand" und darf beliebig oft dasselbe bedeuten.
+ * The photo upload in three steps: fetch the target, place the bytes, report
+ * completion. No `Idempotency-Key` on any of them — a key would hand out the
+ * stored first response again, and with it the expired upload URL the retry is
+ * happening because of. Reasoning:
+ * `docs/decisions/2026-08-18-1800-foto-upload-ueber-presigned-url.md`.
  */
 
-/** Was `expo-image-manipulator` erzeugt. Steht im Rumpf und in der Signatur der Upload-URL. */
+/** What `expo-image-manipulator` produces. Stands in the body and in the signature of the upload URL. */
 const CONTENT_TYPE = 'image/jpeg';
 
-/**
- * Vorlauf, mit dem eine Upload-URL als abgelaufen gilt. Deckt Uhrenversatz und
- * die Laufzeit des `PUT` selbst ab: eine URL, die in zwei Sekunden abläuft, ist
- * für ein Bild von einigen hundert Kilobyte bereits abgelaufen.
- */
+/** Covers clock skew and the duration of the `PUT` itself. */
 const EXPIRY_SKEW_MS = 5_000;
 
 async function byteSizeOf(fileUri: string): Promise<number> {
@@ -32,9 +25,8 @@ async function byteSizeOf(fileUri: string): Promise<number> {
 }
 
 /**
- * Schritt 1. Die Größe geht mit, damit der Server sie in die Signatur nehmen
- * und ein zu großes Bild ablehnen kann, **bevor** die Bytes fließen — im alten
- * Multipart-Weg fiel das erst nach der Übertragung auf.
+ * Step 1. The size travels along so the server can sign it and reject an
+ * oversized image before the bytes flow.
  */
 const requestTarget = (photoId: string, byteSize: number, barcode?: string) =>
   api<PhotoUploadTarget>(endpoints.photo(photoId), {
@@ -43,13 +35,11 @@ const requestTarget = (photoId: string, byteSize: number, barcode?: string) =>
   });
 
 /**
- * Lädt die fotografierte Nährwerttabelle hoch und gibt die `photoId` zurück,
- * unter der der Fortschritts-Screen den OCR-Auftrag abfragt.
+ * Returns the `photoId` under which the progress screen polls the OCR job.
  *
- * Weist der Objektspeicher die Bytes zurück, **nachdem** die Signatur abgelaufen
- * ist, wird genau einmal ein frisches Ziel geholt — mit derselben `photoId`,
- * nie mit einer neuen. Eine neue erzeugte ein zweites Foto und einen zweiten
- * OCR-Auftrag für dieselbe Aufnahme.
+ * On an expired signature a fresh target is fetched once, with the **same**
+ * `photoId`: a new one would mean a second photo and a second OCR job for the
+ * same shot.
  */
 export async function uploadNutritionPhoto(fileUri: string, barcode?: string): Promise<string> {
   const photoId = newId();
@@ -66,8 +56,8 @@ export async function uploadNutritionPhoto(fileUri: string, barcode?: string): P
     await putToSignedUrl(fresh.uploadUrl, fileUri, fresh.uploadHeaders);
   }
 
-  // Schritt 3. Erst diese Meldung stößt die OCR an; der Objektspeicher selbst
-  // sagt der eigenen API nichts.
+  // Step 3. Only this report kicks off the OCR — the object store says nothing
+  // to our own API.
   await api(endpoints.photoUpload(photoId), { method: 'PUT' });
   return photoId;
 }

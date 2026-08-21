@@ -1,39 +1,27 @@
 import { getLocales } from 'expo-localization';
 
 /**
- * Die Naht zur Sprache des Nutzers.
- *
- * Sie steht neben `src/time.ts` und nicht darin: die Zeit ist die Eingabe, die
- * sich nicht wiederholen lässt, die Sprache dagegen eine Vorliebe. Was beide
- * teilen, ist die Herkunft — beide kommen aus dem Gerät, und kein Aufrufer
- * fragt es selbst.
- *
- * An dieser einen Stelle entsteht der Wert, der zweimal hinausgeht: als
- * `Accept-Language` an jeder Anfrage und als `locale` beim Anlegen eines
- * Kontos. Zwei Quellen dafür liefen auseinander, und das Konto trüge dann eine
- * andere Sprache, als der Nutzer zu sehen bekommt.
+ * The seam to the user's language: the one place where the value arises that
+ * goes out twice — as `Accept-Language` on every request and as `locale` when
+ * an account is created (`docs/regeln.md`, Beschriftungen).
  */
 
 /**
- * Die Sprachen, in denen die API Sätze für den Nutzer liefert. Die Liste ist
- * eine Zusage der Gegenseite und kein Wunsch von hier: `locale` nimmt beim
- * Anlegen eines Kontos genau diese Kennungen an und lehnt jede andere ab.
- * Wächst sie dort, wächst sie hier — und nicht umgekehrt.
+ * An assurance of the other side, no wish from here: `locale` accepts exactly
+ * these identifiers. If the list grows there, it grows here — not the reverse.
  */
 export const supportedLanguages = ['de', 'en'] as const;
 
 export type Language = (typeof supportedLanguages)[number];
 
 /**
- * Wohin es fällt, wenn das Gerät keine dieser Sprachen nennt. Anders als bei
- * der Zeitzone wird hier nicht geworfen: eine Sprache, die niemand anbietet,
- * ist kein kaputter Build, sondern ein Nutzer, für den wir noch nichts haben.
- * Er bekommt Deutsch — für ihn vielleicht unverständlich, aber vollständig.
+ * Unlike the time zone, this does not throw: an unserved language is no broken
+ * build, but a user we have nothing for yet.
  */
 export const defaultLanguage: Language = 'de';
 
 export type LanguageProvider = {
-  /** Die Sprache, in der diese App mit diesem Nutzer redet. */
+  /** The language this app speaks to this user in. */
   tag(): Language;
 };
 
@@ -41,14 +29,10 @@ const isSupported = (code: string | null | undefined): code is Language =>
   !!code && (supportedLanguages as readonly string[]).includes(code);
 
 /**
- * `getLocales()` gibt die Sprachen in der Reihenfolge, die der Nutzer in den
- * Systemeinstellungen gesetzt hat. Genommen wird die erste, die wir bedienen
- * können — nicht die erste überhaupt: wer Französisch vor Englisch stellt,
- * bekommt Englisch und nicht Deutsch, weil das seiner Wahl näher kommt.
- *
- * Verglichen wird der Sprachanteil ohne Region (`de` aus `de-AT`): die Region
- * entscheidet über Datums- und Zahlformate, nicht darüber, welchen Satz ein
- * Server schickt.
+ * Takes the first **supported** language of the system list and not the first
+ * one at all: whoever puts French before English gets English. Compared without
+ * the region (`de` from `de-AT`) — the region decides about formats, not about
+ * the sentence a server sends.
  */
 const deviceLanguage: LanguageProvider = {
   tag: () => {
@@ -62,41 +46,50 @@ const deviceLanguage: LanguageProvider = {
 let current: LanguageProvider = deviceLanguage;
 
 /**
- * Was der Nutzer in den Einstellungen gewählt hat, sobald es gelesen ist —
- * `null`, solange nicht.
+ * What the user chose, as soon as it is read — `null` until then.
  *
- * Die Wahl schlägt das Gerät: wer in der App auf Englisch stellt, hat damit
- * gesagt, in welcher Sprache er lesen will, und das gilt auch auf einem
- * deutschen Telefon. Der Server kann uns das nicht abnehmen — er entscheidet
- * die Sprache **allein** an `Accept-Language` und ausdrücklich nicht an
- * `User.locale` (`src/api/i18n.py` im Backend-Repo), damit ihn nicht jeder
- * Fehlerfall am Rand einen Datenbankzugriff kostet. Wer die Wahl kennt, muss
- * sie also mitschicken, und das sind wir.
+ * The choice beats the device. The server cannot take that off our hands: he
+ * decides the language **on `Accept-Language` alone** and not on the account.
+ * Whoever knows the choice has to send it, and that is us.
  */
 let chosen: Language | null = null;
 
 /**
- * Die gelesene oder gerade gespeicherte Vorliebe setzen; `null` nimmt sie
- * zurück. Gerufen wird das dort, wo `/preferences` durchkommt
- * (`src/api/hooks.ts`) und beim Abmelden — die Wahl gehört einem Konto, nicht
- * dem Gerät, und darf dem nächsten Nutzer nicht anhängen.
+ * What `src/i18n` hangs on: without this set the form would stand in the old
+ * language until restart while the server already answers in the new one.
+ */
+const listeners = new Set<() => void>();
+
+export function subscribeLanguage(listener: () => void) {
+  listeners.add(listener);
+  return () => listeners.delete(listener);
+}
+
+const announce = () => listeners.forEach((l) => l());
+
+/**
+ * `null` takes the preference back — on sign-out: the choice belongs to an
+ * account, not to the device, and must not stick to the next user.
  */
 export function preferLanguage(tag: Language | null) {
   chosen = tag;
+  announce();
 }
 
-/** Nur für Tests und Prototypen: die Naht von außen besetzen. */
+/** For tests and prototypes only: occupy the seam from outside. */
 export function setLanguageProvider(p: LanguageProvider) {
   current = p;
+  announce();
 }
 
-/** Zurück zur Sprache des Geräts, ohne gewählte Vorliebe. */
+/** Back to the device's language, without a chosen preference. */
 export function resetLanguageProvider() {
   current = deviceLanguage;
   chosen = null;
+  announce();
 }
 
-/** Der eine Zugang für allen übrigen Code. */
+/** The one way in for all remaining code. */
 export const language: LanguageProvider = {
   tag: () => chosen ?? current.tag(),
 };

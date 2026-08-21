@@ -22,8 +22,11 @@ Einen Weg zurück innerhalb der Frist gibt es nicht — er wird auch nicht beste
 **Ein Wort statt eines Passworts.** Beides schützt gegen das versehentliche Tippen, aber das
 Passwort schützt gegen etwas anderes — ein fremdes, entsperrtes Gerät —, und es kostet einen
 Rumpf am `DELETE`, den die Spezifikation nicht kennt. Das wäre eine Bestellung nach Regel 8 für
-einen Schutz, den die Anmeldung schon leistet. Ohne Umlaut, weil eine Tastatur ohne `Ö` sonst den
-Weg schwierig statt bedacht macht.
+einen Schutz, den die Anmeldung schon leistet. Das Wort steht als Beschriftung in
+[`../../src/i18n/de.ts`](../../src/i18n/de.ts) und wechselt mit der Sprache (`LOESCHEN` /
+`DELETE`) — ein deutsches Wort in einer englischen Maske wäre dieselbe Naht-Verletzung wie ein
+deutscher Knopf. Ohne Umlaut, weil eine Tastatur ohne `Ö` sonst den Weg schwierig statt bedacht
+macht; verglichen wird ohne Rücksicht auf Groß- und Kleinschreibung.
 
 **Die Frist bleibt stehen, bis der Nutzer weitergeht.** Sofort abzumelden hieße, den einen Wert
 wegzuräumen, um den es in diesem Ticket geht: der Nutzer sähe die Anmeldemaske und wüsste nicht,
@@ -48,6 +51,9 @@ Sicherheit, die das Backend gibt; sie ist eine Sache seiner Datenhaltung und nic
   ihn mit `new Date(...)`, und ein Wort statt eines Zeitpunkts stünde dort als `Invalid Date`.
 - `useDeleteAccount` in [`../../src/api/hooks.ts`](../../src/api/hooks.ts) räumt keinen Cache und
   meldet nicht ab; beides gehört an den Knopf im Screen.
+- Alle Sätze dieses Wegs — Knopf, Feldbeschriftung, Hinweis, Fristsatz — liegen in
+  [`../../src/i18n/`](../../src/i18n/); das Datumsmuster der Frist steht dort als `instantFormat`.
+  Was der Server zum Fehlschlag sagt (`detail`), geht unverändert auf den Schirm.
 - Wird ein Weg zurück innerhalb der Frist doch gebraucht, entsteht dafür eine neue Entscheidung und
   ein neuer Vertrag. Diese hier bleibt bis dahin gültig.
 - Das Abnahmekriterium aus Issue #19, `docs/offene-punkte.md` Punkt 5 nachzuziehen, entfällt: die

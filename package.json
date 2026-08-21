@@ -13,6 +13,7 @@
     "format": "prettier --write .",
     "format-check": "prettier --check .",
     "api:types": "openapi-typescript $EXPO_PUBLIC_API_URL/swagger/v1/swagger.json -o src/api/schema.ts",
+    "test": "jest --runInBand",
     "test:pact": "jest --runInBand --testPathPattern pact",
     "pact:publish": "pact-broker publish ./pacts --consumer-app-version=$(git rev-parse --short HEAD) --branch=$(git rev-parse --abbrev-ref HEAD)"
   },

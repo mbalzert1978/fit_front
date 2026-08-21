@@ -2,9 +2,8 @@ import { format } from 'date-fns';
 import { time } from '../time';
 
 /**
- * Kalendertag als eigener Typ (Gegenstück zu DiaryDate im Backend).
- * Nie ein Date-Objekt an die API geben: ein Tagebuchtag hat keine Uhrzeit und
- * keine Zeitzone. Zeitpunkte kommen dagegen als DateTimeOffset-String zurück.
+ * Calendar day as its own type. Never hand a Date object to the API: a diary
+ * day has no time of day and no time zone.
  */
 export type DiaryDate = string & { readonly __brand: 'DiaryDate' };
 
@@ -17,9 +16,5 @@ export function parseDiaryDate(s: string): DiaryDate {
   return s as DiaryDate;
 }
 
-/**
- * „Heute" ist die Zeit des Geräts, und die kommt aus der Naht in `src/time.ts`
- * statt aus einem `new Date()` mitten im Code — sonst prüft jeder Test an jedem
- * Tag etwas anderes.
- */
+/** Through the seam in `src/time.ts`, so a test can set the day. */
 export const today = () => toDiaryDate(time.now());

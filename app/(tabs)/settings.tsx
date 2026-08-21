@@ -4,6 +4,8 @@ import Slider from '@react-native-community/slider';
 import { format } from 'date-fns';
 import { Screen, SectionHeading, ValueField, FormField, Segmented, Toggle, OutlineButton, SquareIconButton } from '../../src/components';
 import { useTheme, useThemeMode } from '../../src/theme/ThemeProvider';
+import { useLanguage, useTexts, type Texts } from '../../src/i18n';
+import { preferLanguage } from '../../src/language';
 import {
   useMe,
   useDeleteAccount,
@@ -20,10 +22,11 @@ import { ApiError, OfflineError, signOut } from '../../src/api/client';
 import { problems } from '../../src/api/problems';
 
 type MacroKey = 'carbs' | 'protein' | 'fat';
-const macroLabel: Record<MacroKey, string> = { carbs: 'Kohlenhydrate', protein: 'Eiweiß', fat: 'Fett' };
+const macroLabel = (txt: Texts): Record<MacroKey, string> => ({ carbs: txt.macroCarbs, protein: txt.macroProtein, fat: txt.macroFat });
 
 function SlotList() {
   const t = useTheme();
+  const txt = useTexts();
   const { data: slots } = useSlots();
   const slotOps = useSlotMutations();
   const [slotError, setSlotError] = useState<string | null>(null);
@@ -32,7 +35,7 @@ function SlotList() {
 
   return (
     <>
-      <SectionHeading>Mahlzeiten-Slots</SectionHeading>
+      <SectionHeading>{txt.settingsSlots}</SectionHeading>
       {list.map((s, i) => (
         <View key={s.id} style={{ flexDirection: 'row', alignItems: 'center', gap: t.space[3], paddingVertical: t.space[2] }}>
           <Text style={[t.font.micro, t.tabular, { color: t.color.textMuted, width: 18 }]}>{i + 1}</Text>
@@ -56,13 +59,12 @@ function SlotList() {
           />
           <SquareIconButton
             glyph="−"
-            label={`${s.name} entfernen`}
+            label={txt.removeNamed(s.name)}
             onPress={() => {
-              if (list.length <= 1) return; // letzter Slot bleibt
+              if (list.length <= 1) return; // the last slot stays
               setSlotError(null);
               slotOps.remove.mutate(s.id, {
-                onError: (e) =>
-                  setSlotError(e instanceof ApiError && e.type === problems.slotNotEmpty ? 'Dieser Slot enthält noch Einträge' : null),
+                onError: (e) => setSlotError(e instanceof ApiError && e.type === problems.slotNotEmpty ? txt.settingsSlotNotEmpty : null),
               });
             }}
           />
@@ -70,8 +72,12 @@ function SlotList() {
       ))}
       {slotError ? <Text style={[t.font.micro, { color: t.color.accent, marginTop: t.space[2] }]}>{slotError}</Text> : null}
       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', gap: t.space[3], marginTop: t.space[4] }}>
-        <Text style={[t.font.body, { color: t.color.textMuted }]}>Slot hinzufügen</Text>
-        <SquareIconButton glyph="+" label="Slot hinzufügen" onPress={() => slotOps.add.mutate({ id: newId(), name: 'Neue Mahlzeit' })} />
+        <Text style={[t.font.body, { color: t.color.textMuted }]}>{txt.settingsAddSlot}</Text>
+        <SquareIconButton
+          glyph="+"
+          label={txt.settingsAddSlot}
+          onPress={() => slotOps.add.mutate({ id: newId(), name: txt.settingsNewSlotName })}
+        />
       </View>
     </>
   );
@@ -79,11 +85,12 @@ function SlotList() {
 
 function DailyGoal() {
   const t = useTheme();
+  const txt = useTexts();
   const { data: goals } = useGoals();
   const saveGoals = useSaveGoals();
   const dailyKcal = goals?.dailyKcal;
 
-  /** Lokale Verteilung; das Tagesziel friert ein, solange die Summe ≠ 100 ist. */
+  /** The local split; the daily goal freezes while the sum is ≠ 100. */
   const [dist, setDist] = useState<Record<MacroKey, { percent: number; grams: number }> | null>(null);
   const [kcalDraft, setKcalDraft] = useState<string | null>(null);
 
@@ -117,11 +124,11 @@ function DailyGoal() {
 
   return (
     <>
-      <SectionHeading>Tagesziel</SectionHeading>
+      <SectionHeading>{txt.settingsDailyGoal}</SectionHeading>
       <ValueField value={kcalDraft ?? String(dailyKcal ?? '')} onChangeText={setKcalDraft} unit="kcal" large />
       {kcalDraft !== null && Number(kcalDraft) !== dailyKcal ? (
         <View style={{ marginTop: t.space[4] }}>
-          <OutlineButton label="Tagesziel übernehmen" onPress={() => saveGoals.mutate({ dailyKcal: Number(kcalDraft) || 0 })} />
+          <OutlineButton label={txt.settingsApplyDailyGoal} onPress={() => saveGoals.mutate({ dailyKcal: Number(kcalDraft) || 0 })} />
         </View>
       ) : null}
 
@@ -131,7 +138,7 @@ function DailyGoal() {
         return (
           <View key={m} style={{ marginTop: t.space[6] }}>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-              <Text style={[t.font.body, { color: t.color.text }]}>{macroLabel[m]}</Text>
+              <Text style={[t.font.body, { color: t.color.text }]}>{macroLabel(txt)[m]}</Text>
               <Text style={[t.font.body, t.tabular, { color: t.color.textMuted }]}>{kcal} kcal</Text>
             </View>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: t.space[3], marginTop: t.space[2] }}>
@@ -160,7 +167,7 @@ function DailyGoal() {
                   setDist((d) => {
                     if (!d || !goals) return d;
                     const grams = Number(v.replace(',', '.')) || 0;
-                    // Gramm-Eingabe zieht den Prozentwert sofort nach.
+                    // Typing grams drags the percentage along at once.
                     const percent = goals.dailyKcal > 0 ? (grams * kcalPerGram(m) * 100) / goals.dailyKcal : 0;
                     const next = { ...d, [m]: { percent, grams } };
                     commitIfBalanced(next);
@@ -176,42 +183,41 @@ function DailyGoal() {
         );
       })}
       {frozen ? (
-        <Text style={[t.font.micro, { color: t.color.textMuted, marginTop: t.space[4] }]}>
-          Verteilung ergibt {Math.round(sum)} % — Tagesziel aktualisiert sich bei 100 %.
-        </Text>
+        <Text style={[t.font.micro, { color: t.color.textMuted, marginTop: t.space[4] }]}>{txt.settingsDistribution(Math.round(sum))}</Text>
       ) : null}
     </>
   );
 }
 
 function MacroCalc() {
+  const txt = useTexts();
   const { data: goals } = useGoals();
   const saveGoals = useSaveGoals();
 
   return (
     <>
-      <SectionHeading>Makro-Berechnung</SectionHeading>
+      <SectionHeading>{txt.settingsMacroCalc}</SectionHeading>
       <Toggle
-        label="Physiologisch"
-        hint="4,1 / 4,1 / 9,3 kcal je g · Atwater"
+        label={txt.settingsPhysiological}
+        hint={txt.settingsPhysiologicalHint}
         value={goals?.energyStandard === 'Physiological'}
         onChange={() => saveGoals.mutate({ energyStandard: 'Physiological' })}
       />
       <Toggle
-        label="Deklaration"
-        hint="4 / 4 / 9 kcal je g · EU 1169/2011"
+        label={txt.settingsDeclaration}
+        hint={txt.settingsDeclarationHint}
         value={goals?.energyStandard === 'Declaration'}
         onChange={() => saveGoals.mutate({ energyStandard: 'Declaration' })}
       />
       <Toggle
-        label="Aufrunden"
-        hint="nie zu wenig gezählt"
+        label={txt.settingsRoundUp}
+        hint={txt.settingsRoundUpHint}
         value={goals?.rounding === 'Up'}
         onChange={() => saveGoals.mutate({ rounding: 'Up' })}
       />
       <Toggle
-        label="Abrunden"
-        hint="nie zu viel gezählt"
+        label={txt.settingsRoundDown}
+        hint={txt.settingsRoundDownHint}
         value={goals?.rounding === 'Down'}
         onChange={() => saveGoals.mutate({ rounding: 'Down' })}
       />
@@ -221,6 +227,7 @@ function MacroCalc() {
 
 function HealthSection() {
   const t = useTheme();
+  const txt = useTexts();
   const { data: health } = useHealthConsent();
   const { data: goals } = useGoals();
   const saveGoals = useSaveGoals();
@@ -228,39 +235,47 @@ function HealthSection() {
 
   return (
     <>
-      <SectionHeading>Apple Health</SectionHeading>
+      <SectionHeading>{txt.settingsHealth}</SectionHeading>
       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', minHeight: t.hit }}>
-        <Text style={[t.font.body, { color: t.color.textMuted }]}>{connected ? 'Verbunden' : 'Nicht verbunden'}</Text>
+        <Text style={[t.font.body, { color: t.color.textMuted }]}>{connected ? txt.settingsConnected : txt.settingsNotConnected}</Text>
         <View style={{ minWidth: 130 }}>
-          <OutlineButton label={connected ? 'Trennen' : 'Verbinden'} variant={connected ? 'muted' : 'primary'} />
+          <OutlineButton label={connected ? txt.settingsDisconnect : txt.settingsConnect} variant={connected ? 'muted' : 'primary'} />
         </View>
       </View>
-      <Toggle label="Aktivität & Verbrauch importieren" value={!!health?.importActivity} onChange={() => {}} />
-      <Toggle label="Ernährung exportieren" value={!!health?.exportNutrition} onChange={() => {}} />
+      <Toggle label={txt.settingsImportActivity} value={!!health?.importActivity} onChange={() => {}} />
+      <Toggle label={txt.settingsExportNutrition} value={!!health?.exportNutrition} onChange={() => {}} />
       <Toggle
-        label="Aktivkalorien aufs Ziel addieren"
+        label={txt.settingsActivityInGoal}
         value={!!goals?.includeActivityInGoal}
         onChange={(v) => saveGoals.mutate({ includeActivityInGoal: v })}
       />
-      <Text style={[t.font.micro, { color: t.color.textMuted, marginTop: t.space[3] }]}>
-        Android nutzt Health Connect mit denselben Datentypen.
-      </Text>
+      <Text style={[t.font.micro, { color: t.color.textMuted, marginTop: t.space[3] }]}>{txt.settingsHealthConnectNote}</Text>
     </>
   );
 }
 
+/**
+ * Appearance and language take effect at once and are written at the same time:
+ * the language goes to the seam before the response is there, so the user does
+ * not wait a round trip to see that their tap did something.
+ *
+ * `usePreferences()` stands here without a reader — the query is the way the
+ * stored preference gets into the seam at all.
+ */
 function Appearance() {
+  const txt = useTexts();
+  const language = useLanguage();
   const { mode, setMode } = useThemeMode();
-  const { data: prefs } = usePreferences();
   const savePrefs = useSavePreferences();
+  usePreferences();
 
   return (
     <>
-      <SectionHeading>Darstellung</SectionHeading>
+      <SectionHeading>{txt.settingsAppearance}</SectionHeading>
       <Segmented
         options={[
-          { value: 'dark', label: 'Dunkel' },
-          { value: 'light', label: 'Hell' },
+          { value: 'dark', label: txt.settingsDark },
+          { value: 'light', label: txt.settingsLight },
         ]}
         value={mode}
         onChange={(v) => {
@@ -269,104 +284,92 @@ function Appearance() {
         }}
       />
 
-      <SectionHeading>Sprache</SectionHeading>
+      <SectionHeading>{txt.settingsLanguage}</SectionHeading>
       <Segmented
         options={[
-          { value: 'de', label: 'Deutsch' },
-          { value: 'en', label: 'English' },
+          { value: 'de', label: txt.languageDe },
+          { value: 'en', label: txt.languageEn },
         ]}
-        value={prefs?.language ?? 'de'}
-        onChange={(language) => savePrefs.mutate({ language })}
+        value={language}
+        onChange={(chosen) => {
+          preferLanguage(chosen);
+          savePrefs.mutate({ language: chosen });
+        }}
       />
     </>
   );
 }
 
 /**
- * Das Wort, das getippt sein muss, damit die Löschung hinausgeht.
- *
- * Ohne Umlaut, obwohl deutsch: auf einer Tastatur ohne Ö kostet das Bestätigen
- * sonst eine Fingerübung, und der Weg soll bedacht sein, nicht schwierig. Der
- * Sinn ist ein anderer — ein Wort tippt niemand versehentlich, ein Knopf lässt
- * sich streifen.
- *
- * Verglichen wird ohne Rücksicht auf Groß- und Kleinschreibung und ohne
- * Leerraum am Rand: `autoCapitalize` ist ein Wink an die Bildschirmtastatur und
- * sonst nichts — an einer Hardwaretastatur, im Web oder beim Einfügen bliebe
- * der Knopf aus, ohne dass irgendwo stünde, warum.
+ * The sentence for a failed deletion attempt. The server speaks first: `detail`
+ * is its sentence about exactly this incident, in the language it was asked in.
+ * The app has sentences of its own only where none arrives.
  */
-const LOESCHWORT = 'LOESCHEN';
-
-/**
- * Der Satz zu einem gescheiterten Löschversuch. Der Server redet zuerst:
- * `detail` ist sein Satz zu genau diesem Vorfall, in der Sprache, in der
- * gefragt wurde. Eigene Sätze hat die App nur, wo keiner kommt.
- */
-function loeschHinweis(e: unknown): string {
-  if (e instanceof OfflineError) return 'Keine Verbindung';
+function deletionHint(e: unknown, txt: Texts): string {
+  if (e instanceof OfflineError) return txt.noConnection;
   if (e instanceof ApiError) return e.detail ?? e.message;
-  return 'Löschen derzeit nicht möglich';
+  return txt.settingsDeleteFailed;
 }
 
 /**
- * Der Satz zur angenommenen Löschung, mit der Frist als Tag und Uhrzeit des
- * Geräts.
+ * The sentence for the accepted deletion, with the deadline as day and time of
+ * the device.
  *
- * `new Date(iso)` ist hier kein Griff an die Uhr und geht deshalb an
- * `src/time.ts` vorbei — gelesen wird ein Zeitpunkt, den der Server genannt hat,
- * nicht der aktuelle. Numerisch und ohne Monatsnamen, damit kein zweiter
- * Sprachweg neben `Accept-Language` entsteht.
+ * `new Date(iso)` is no reach for the clock here and therefore goes past
+ * `src/time.ts` — what is read is a point in time the server named, not the
+ * current one.
  *
- * Der Vertrag sagt den Zeitpunkt zu. Bleibt er trotzdem aus oder ist er keiner,
- * sagt die App genau das: `format` würde werfen und den Screen mitnehmen, und
- * „am  Uhr gelöscht" wäre eine Lücke, die niemand als Fehler liest. Angenommen
- * ist die Löschung in jedem Fall — verschwiegen wird sie deshalb nicht.
+ * The contract assures the instant. Should it stay away anyway or be none, the
+ * app says exactly that: `format` would throw and take the screen with it, and
+ * "deleted at  o'clock" would be a gap nobody reads as an error. Accepted the
+ * deletion is either way — so it is not kept quiet.
  */
-function fristSatz(iso: string | undefined): string {
+function deadlineSentence(iso: string | undefined, txt: Texts): string {
   const d = iso ? new Date(iso) : null;
-  if (!d || Number.isNaN(d.getTime())) return 'Dein Konto wird gelöscht. Den Zeitpunkt hat der Server nicht genannt.';
-  return `Dein Konto wird am ${format(d, 'dd.MM.yyyy, HH:mm')} Uhr gelöscht. Bis dahin sind deine Daten noch da.`;
+  if (!d || Number.isNaN(d.getTime())) return txt.settingsDeleteNoDeadline;
+  return txt.settingsDeletedAt(format(d, txt.instantFormat, { locale: txt.dateLocale }));
 }
 
 /**
- * Der einzige Weg in dieser App, der sich nicht zurücknehmen lässt.
+ * The only path in this app that cannot be taken back.
  *
- * Drei Zustände, in dieser Reihenfolge: zu, offen mit Eingabe, angenommen. Das
- * Backend löscht **nicht sofort** — es antwortet mit 202 und einer Frist, und
- * genau die steht danach hier. Ein „erledigt" wäre falsch: die Daten sind noch
- * da. Die Sitzung endet erst auf ein zweites Tippen, denn bis zur Frist besteht
- * das Konto weiter; siehe
+ * Three states, in this order: closed, open with input, accepted. The backend
+ * does **not** delete right away — it answers with 202 and a deadline, and
+ * exactly that stands here afterwards. A "done" would be wrong: the data is
+ * still there. The session ends only on a second tap, because the account lives
+ * on until the deadline; see
  * `docs/decisions/2026-08-21-1329-die-kontoloeschung-nennt-ihre-frist.md`.
  */
-function KontoLoeschung() {
+function AccountDeletionSection() {
   const t = useTheme();
+  const txt = useTexts();
   const del = useDeleteAccount();
-  /** `null` heißt: der Abschnitt ist zu und es steht nur der Knopf da. */
-  const [wort, setWort] = useState<string | null>(null);
-  // Zumachen heißt auch: den letzten Fehlschlag vergessen. Sonst stünde beim
-  // nächsten Öffnen „Keine Verbindung" rot unter einem leeren Feld, zu einem
-  // Versuch, den es in dieser Runde nie gab.
-  const zumachen = () => {
-    setWort(null);
+  /** `null` means: the section is closed and only the button stands there. */
+  const [word, setWord] = useState<string | null>(null);
+  // Closing also means: forget the last failure. Otherwise "No connection"
+  // would stand red under an empty field on the next opening, about an attempt
+  // that never happened in this round.
+  const close = () => {
+    setWord(null);
     del.reset();
   };
 
-  // `isSuccess` und nicht `data`: angenommen ist angenommen. Ein Rumpf mit
-  // `data: null` ließe den Nutzer sonst vor derselben Eingabemaske stehen, als
-  // wäre nichts geschehen — während sein Konto zur Löschung vorgemerkt ist.
+  // `isSuccess` and not `data`: accepted is accepted. A body with `data: null`
+  // would otherwise leave the user in front of the same form as if nothing had
+  // happened — while their account is marked for deletion.
   if (del.isSuccess) {
     return (
       <View style={{ gap: t.space[4], marginTop: t.space[6] }}>
-        <Text style={[t.font.body, { color: t.color.text }]}>{fristSatz(del.data?.deletionEffectiveUtc)}</Text>
-        <OutlineButton label="Abmelden" onPress={() => void signOut()} />
+        <Text style={[t.font.body, { color: t.color.text }]}>{deadlineSentence(del.data?.deletionEffectiveUtc, txt)}</Text>
+        <OutlineButton label={txt.settingsSignOut} onPress={() => void signOut()} />
       </View>
     );
   }
 
-  if (wort === null) {
+  if (word === null) {
     return (
       <View style={{ marginTop: t.space[6] }}>
-        <OutlineButton label="Konto löschen" variant="muted" onPress={() => setWort('')} />
+        <OutlineButton label={txt.settingsDeleteAccount} variant="muted" onPress={() => setWord('')} />
       </View>
     );
   }
@@ -374,53 +377,54 @@ function KontoLoeschung() {
   return (
     <View style={{ gap: t.space[4], marginTop: t.space[6] }}>
       <FormField
-        label={`Zum Bestätigen ${LOESCHWORT} eingeben`}
-        note={del.error ? loeschHinweis(del.error) : 'Gelöscht wird nicht sofort — die Frist steht danach hier.'}
+        label={txt.settingsDeleteConfirm(txt.settingsDeleteWord)}
+        note={del.error ? deletionHint(del.error, txt) : txt.settingsDeleteHint}
         noteInvalid={!!del.error}
-        value={wort}
-        onChangeText={setWort}
+        value={word}
+        onChangeText={setWord}
+        // A hint to the on-screen keyboard and nothing else — hence the
+        // comparison below ignores case and surrounding whitespace: on a
+        // hardware keyboard, in the web or when pasting the button would
+        // otherwise stay off without anything saying why.
         autoCapitalize="characters"
         autoCorrect={false}
       />
       <OutlineButton
-        label={del.isPending ? 'Wird gelöscht …' : 'Konto endgültig löschen'}
+        label={del.isPending ? txt.settingsDeleteBusy : txt.settingsDeleteSubmit}
         onPress={() => del.mutate()}
-        disabled={wort.trim().toUpperCase() !== LOESCHWORT || del.isPending}
+        disabled={word.trim().toUpperCase() !== txt.settingsDeleteWord.toUpperCase() || del.isPending}
       />
-      <OutlineButton label="Abbrechen" variant="muted" onPress={zumachen} />
+      <OutlineButton label={txt.settingsCancel} variant="muted" onPress={close} />
     </View>
   );
 }
 
-/**
- * Wer hier angemeldet ist. Ohne diese Zeile stand nirgends in der App, auf
- * welches Konto man gerade schaut — die Sitzung liegt im Gerät und schweigt.
- * Sie ist zugleich der Aufrufer, ohne den `GET /identity/me` eine Zusage ohne
- * Bedarf wäre (Regel 6).
- */
-function Konto() {
+/** The only place that says whose account you are looking at — and the caller for `GET /identity/me`. */
+function Account() {
   const t = useTheme();
+  const txt = useTexts();
   const { data: me } = useMe();
 
   return (
     <>
-      <SectionHeading>Konto</SectionHeading>
+      <SectionHeading>{txt.settingsAccount}</SectionHeading>
       <View style={{ minHeight: t.hit, justifyContent: 'center' }}>
         <Text style={[t.font.body, { color: t.color.text }]}>{me?.displayName ?? '—'}</Text>
         <Text style={[t.font.micro, { color: t.color.textMuted }]}>{me?.email ?? ''}</Text>
       </View>
-      <KontoLoeschung />
+      <AccountDeletionSection />
     </>
   );
 }
 
 export default function SettingsScreen() {
   const t = useTheme();
+  const txt = useTexts();
 
   return (
     <Screen>
-      <Text style={[t.font.title, { color: t.color.text }]}>Mehr</Text>
-      <Konto />
+      <Text style={[t.font.title, { color: t.color.text }]}>{txt.tabMore}</Text>
+      <Account />
       <SlotList />
       <DailyGoal />
       <MacroCalc />

@@ -1,11 +1,9 @@
 import React from 'react';
 import { Text, View } from 'react-native';
 import { useTheme } from '../theme/ThemeProvider';
+import { useTexts } from '../i18n';
 
-/**
- * Balken mit Bezeichnung, Ist- und Zielwert. Werte kommen ganzzahlig vom Server;
- * hier wird nicht gerundet und nichts umgerechnet.
- */
+/** Values come from the server as integers; nothing is rounded or converted here. */
 export function MacroBar({
   label,
   value,
@@ -20,6 +18,7 @@ export function MacroBar({
   height?: number;
 }) {
   const t = useTheme();
+  const txt = useTexts();
   const ratio = target > 0 ? Math.min(value / target, 1) : 0;
   return (
     <View style={{ flex: 1 }}>
@@ -30,9 +29,7 @@ export function MacroBar({
       <View style={{ height, backgroundColor: t.color.divider, marginTop: t.space[2] }}>
         <View style={{ width: `${ratio * 100}%`, height, backgroundColor: t.color.accent }} />
       </View>
-      <Text style={[t.font.micro, t.tabular, { color: t.color.textMuted, marginTop: t.space[2] }]}>
-        von {target} {unit}
-      </Text>
+      <Text style={[t.font.micro, t.tabular, { color: t.color.textMuted, marginTop: t.space[2] }]}>{txt.macroOfTarget(target, unit)}</Text>
     </View>
   );
 }

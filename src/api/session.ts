@@ -6,82 +6,62 @@ import type { SignIn } from './types';
 export { hasSession, signOut } from './client';
 
 /**
- * Anmeldung. Die Antwort trägt zwei benannte Teile: das Konto unter `user` und
- * die Sitzung unter `session` — beide Token samt ihrer Laufzeit in Sekunden.
- * Abgelegt wird nur die Sitzung, über denselben Weg, den die Erneuerung in
- * `client.ts` nimmt. Kommt sie unvollständig, wirft `storeSession` — dann
- * bleibt gar keine Sitzung zurück statt einer halben.
+ * Sign-in. Only the session is stored, over the same path the renewal in
+ * `client.ts` takes; arriving incomplete, it leaves no session at all rather
+ * than half a one.
  */
 export async function login(email: string, password: string): Promise<SignIn> {
-  const angemeldet = await api<SignIn>('/identity/login', { method: 'POST', body: { email, password } });
-  await storeSession(angemeldet.session);
-  return angemeldet;
+  const signedIn = await api<SignIn>('/identity/login', { method: 'POST', body: { email, password } });
+  await storeSession(signedIn.session);
+  return signedIn;
 }
 
 /**
- * Die eine Regel, die die Maske selbst kennt: Sie hält den offensichtlichen
- * Fall vom Netz fern, ohne zu behaupten, sie kenne alle Regeln. Was sonst noch
- * gilt — Zeichenklassen, gesperrte Passwörter, die Form der E-Mail —, weiß der
- * Server und sagt es feldweise in `problem+json` (`validation-failed`).
+ * The one rule the form knows itself. Everything else — character classes,
+ * blocked passwords, the shape of the email — the server knows and says per
+ * field in `problem+json`.
  */
 export const minPasswordLength = 10;
 
-/** Obergrenze des Anzeigenamens. Die Maske hält sie ein, der Server prüft erneut. */
+/** Upper bound of the display name. The form observes it, the server checks again. */
 export const maxDisplayNameLength = 60;
 
-/**
- * Was beim Anlegen eines Kontos vom Nutzer kommt. Sprache und Zeitzone stehen
- * nicht hier: die fragt niemand ab, die weiß das Gerät.
- */
+/** What comes from the user; language and time zone come from the device. */
 export type Registration = { email: string; password: string; displayName: string };
 
 /**
- * Der Rumpf, der wirklich hinausgeht: die getippten Felder und dazu, was das
- * Gerät weiß. Er entsteht an genau einer Stelle — `registrationRequest()` —,
- * weil der `Idempotency-Key` an ihm hängt: leitete die Maske ihn aus den
- * getippten Feldern allein ab und die Sprache oder die Zone wechselte zwischen
- * zwei Versuchen, ginge ein anderer Rumpf unter demselben Schlüssel hinaus.
- * Das ist kein Wiederholen, sondern `idempotency-key-reused`.
+ * The body that really goes out, assembled in exactly one place: the
+ * `Idempotency-Key` hangs on the whole of it, language and zone included
+ * (`docs/decisions/2026-08-21-1104-der-schluessel-haengt-am-ganzen-rumpf.md`).
  */
 export type RegistrationRequest = Registration & { locale: string; timeZoneId: string };
 
 /**
- * `locale` und `timeZoneId` reisen als Felder mit und nicht als Kopfzeile:
- * `Accept-Language` verhandelt diese eine Antwort, hier entsteht dagegen ein
- * Merkmal, das am Konto bleibt — daran hängen später Erinnerungen und E-Mails,
- * die niemand aus dieser App heraus anfordert.
- *
- * Beide kommen aus einer Naht und aus keinem Literal: die Sprache aus
- * `src/language.ts`, dieselbe, die als `Accept-Language` an dieser Anfrage
- * steht; die Zone aus `src/time.ts`. Ist die Zone nicht zu ermitteln, wirft
- * sie — dann entsteht gar keine Anfrage, denn ein Konto mit einer
- * stillschweigend gesetzten Zone wäre schlechter als keines.
+ * `locale` and `timeZoneId` are fields and not headers: `Accept-Language`
+ * negotiates one response, these two stay with the account. Both come from a
+ * seam — the language from `src/language.ts`, the same one that fills
+ * `Accept-Language` here, the zone from `src/time.ts`, which throws rather than
+ * let an account arise with a tacitly set zone.
  */
 export function registrationRequest(r: Registration): RegistrationRequest {
   return { ...r, locale: language.tag(), timeZoneId: time.timeZoneId() };
 }
 
 /**
- * Registrierung. Sie liefert dieselbe Antwort wie die Anmeldung und legt
- * dieselbe Sitzung an — wer ein Konto anlegt, ist damit angemeldet. Ein
- * zweiter Aufruf zum Anmelden danach würde einen Zustand schaffen, in dem ein
- * Konto existiert, aber niemand darin ist; genau der soll nicht entstehen.
+ * Registration. It delivers the same response as sign-in and creates the same
+ * session — whoever creates an account is thereby signed in
+ * (`docs/decisions/2026-08-20-0843-registrierung-legt-konto-und-sitzung-in-einem-aufruf-an.md`).
  *
- * Der `idempotencyKey` kommt von außen und wird hier nicht erzeugt: er muss
- * über wiederholte Versuche mit **denselben** Daten derselbe bleiben, und das
- * weiß nur die Maske. Ohne ihn liest ein Nutzer, dessen Antwort auf dem Rückweg
- * verlorenging, beim zweiten Tippen „E-Mail bereits registriert" — vergeben von
- * ihm selbst, eine Sekunde zuvor. Er hätte ein Konto und käme nicht hinein.
- *
- * Was hinausgeht, steht in `RegistrationRequest` und entsteht in
- * `registrationRequest()`; hier wird es nur noch abgeschickt.
+ * The `idempotencyKey` comes from outside: only the form knows whether a second
+ * attempt carries the same data. Without it a user whose response got lost on
+ * the way back reads "email already registered" — taken by themselves.
  */
-export async function register(anfrage: RegistrationRequest, idempotencyKey: string): Promise<SignIn> {
-  const angemeldet = await api<SignIn>('/identity/register', {
+export async function register(request: RegistrationRequest, idempotencyKey: string): Promise<SignIn> {
+  const signedIn = await api<SignIn>('/identity/register', {
     method: 'POST',
     idempotencyKey,
-    body: anfrage,
+    body: request,
   });
-  await storeSession(angemeldet.session);
-  return angemeldet;
+  await storeSession(signedIn.session);
+  return signedIn;
 }

@@ -2,11 +2,12 @@ import React from 'react';
 import { Tabs } from 'expo-router';
 import { Text, View } from 'react-native';
 import { useTheme } from '../../src/theme/ThemeProvider';
+import { useTexts } from '../../src/i18n';
 
 /**
- * Vier Ziele, auf jedem Screen sichtbar. Bewusst keine Zurück-Pfeile:
- * Navigation läuft über diese Leiste und über Aktionen im Inhalt.
- * Detailscreens liegen als Stack darüber und markieren ihren Tab weiterhin aktiv.
+ * Four destinations, visible on every screen, without back arrows
+ * (`docs/regeln.md`, Prüfliste). Detail screens lie above as a stack and leave
+ * their tab active.
  */
 function TabLabel({ children, focused }: { children: string; focused: boolean }) {
   const t = useTheme();
@@ -20,6 +21,7 @@ function TabLabel({ children, focused }: { children: string; focused: boolean })
 
 export default function TabsLayout() {
   const t = useTheme();
+  const txt = useTexts();
   return (
     <Tabs
       screenOptions={{
@@ -33,10 +35,10 @@ export default function TabsLayout() {
         },
       }}
     >
-      <Tabs.Screen name="diary" options={{ tabBarIcon: ({ focused }) => <TabLabel focused={focused}>Tagebuch</TabLabel> }} />
-      <Tabs.Screen name="scan" options={{ tabBarIcon: ({ focused }) => <TabLabel focused={focused}>Scan</TabLabel> }} />
-      <Tabs.Screen name="recipes" options={{ tabBarIcon: ({ focused }) => <TabLabel focused={focused}>Rezepte</TabLabel> }} />
-      <Tabs.Screen name="settings" options={{ tabBarIcon: ({ focused }) => <TabLabel focused={focused}>Mehr</TabLabel> }} />
+      <Tabs.Screen name="diary" options={{ tabBarIcon: ({ focused }) => <TabLabel focused={focused}>{txt.tabDiary}</TabLabel> }} />
+      <Tabs.Screen name="scan" options={{ tabBarIcon: ({ focused }) => <TabLabel focused={focused}>{txt.tabScan}</TabLabel> }} />
+      <Tabs.Screen name="recipes" options={{ tabBarIcon: ({ focused }) => <TabLabel focused={focused}>{txt.tabRecipes}</TabLabel> }} />
+      <Tabs.Screen name="settings" options={{ tabBarIcon: ({ focused }) => <TabLabel focused={focused}>{txt.tabMore}</TabLabel> }} />
     </Tabs>
   );
 }
