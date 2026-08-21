@@ -157,7 +157,6 @@ export const de = {
   settingsDeleteBusy: 'Wird gelöscht …',
   settingsDeleteSubmit: 'Konto endgültig löschen',
   settingsDeleteFailed: 'Löschen derzeit nicht möglich',
-  settingsDeleteNoDeadline: 'Dein Konto wird gelöscht. Den Zeitpunkt hat der Server nicht genannt.',
   settingsDeletedAt: (when: string) => `Dein Konto wird am ${when} Uhr gelöscht. Bis dahin sind deine Daten noch da.`,
   settingsCancel: 'Abbrechen',
   settingsSignOut: 'Abmelden',

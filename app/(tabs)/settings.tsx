@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Text, TextInput, View } from 'react-native';
 import Slider from '@react-native-community/slider';
+import { useMutationState } from '@tanstack/react-query';
 import { format } from 'date-fns';
 import { Screen, SectionHeading, ValueField, FormField, Segmented, Toggle, OutlineButton, SquareIconButton } from '../../src/components';
 import { useTheme, useThemeMode } from '../../src/theme/ThemeProvider';
@@ -18,7 +19,10 @@ import {
   useHealthConsent,
 } from '../../src/api/hooks';
 import { newId } from '../../src/api/ids';
-import { ApiError, OfflineError, signOut } from '../../src/api/client';
+import { qk } from '../../src/api/queryKeys';
+import type { AccountDeletion } from '../../src/api/types';
+import { ApiError, OfflineError } from '../../src/api/client';
+import { signOut } from '../../src/api/session';
 import { problems } from '../../src/api/problems';
 
 type MacroKey = 'carbs' | 'protein' | 'fat';
@@ -312,55 +316,42 @@ function deletionHint(e: unknown, txt: Texts): string {
 }
 
 /**
- * The sentence for the accepted deletion, with the deadline as day and time of
- * the device.
- *
- * `new Date(iso)` is no reach for the clock here and therefore goes past
- * `src/time.ts` — what is read is a point in time the server named, not the
- * current one.
- *
- * The contract assures the instant. Should it stay away anyway or be none, the
- * app says exactly that: `format` would throw and take the screen with it, and
- * "deleted at  o'clock" would be a gap nobody reads as an error. Accepted the
- * deletion is either way — so it is not kept quiet.
+ * The sentence for the accepted deletion, with the deadline as day and time of the device. `new Date(iso)` reads a named instant and not
+ * the clock, so it goes past `src/time.ts`; the contract assures it as `M.datetime`, so there is no branch for its absence
+ * (`docs/decisions/2026-08-21-1329-die-kontoloeschung-nennt-ihre-frist.md`).
  */
-function deadlineSentence(iso: string | undefined, txt: Texts): string {
-  const d = iso ? new Date(iso) : null;
-  if (!d || Number.isNaN(d.getTime())) return txt.settingsDeleteNoDeadline;
-  return txt.settingsDeletedAt(format(d, txt.instantFormat, { locale: txt.dateLocale }));
+function deadlineSentence(iso: string, txt: Texts): string {
+  return txt.settingsDeletedAt(format(new Date(iso), txt.instantFormat, { locale: txt.dateLocale }));
 }
 
 /**
- * The only path in this app that cannot be taken back.
- *
- * Three states, in this order: closed, open with input, accepted. The backend
- * does **not** delete right away — it answers with 202 and a deadline, and
- * exactly that stands here afterwards. A "done" would be wrong: the data is
- * still there. The session ends only on a second tap, because the account lives
- * on until the deadline; see
- * `docs/decisions/2026-08-21-1329-die-kontoloeschung-nennt-ihre-frist.md`.
+ * The only path in this app that cannot be taken back: closed, open with input, accepted — the deadline and the second tap
+ * (`docs/decisions/2026-08-21-1329-die-kontoloeschung-nennt-ihre-frist.md`), the fourth button and the guard on the body
+ * (`docs/decisions/2026-08-21-2200-die-frist-lebt-im-cache-und-haengt-am-rumpf.md`).
  */
 function AccountDeletionSection() {
   const t = useTheme();
   const txt = useTexts();
   const del = useDeleteAccount();
+  // Read through the key, not through this observer
+  // (`docs/decisions/2026-08-21-2200-die-frist-lebt-im-cache-und-haengt-am-rumpf.md`).
+  const accepted = useMutationState({
+    filters: { mutationKey: qk.accountDeletion(), status: 'success' },
+    select: (m) => m.state.data as AccountDeletion,
+  }).at(-1);
   /** `null` means: the section is closed and only the button stands there. */
   const [word, setWord] = useState<string | null>(null);
-  // Closing also means: forget the last failure. Otherwise "No connection"
-  // would stand red under an empty field on the next opening, about an attempt
-  // that never happened in this round.
+  // Closing also means: forget the last failure
+  // (`docs/decisions/2026-08-21-2200-die-frist-lebt-im-cache-und-haengt-am-rumpf.md`).
   const close = () => {
     setWord(null);
     del.reset();
   };
 
-  // `isSuccess` and not `data`: accepted is accepted. A body with `data: null`
-  // would otherwise leave the user in front of the same form as if nothing had
-  // happened — while their account is marked for deletion.
-  if (del.isSuccess) {
+  if (accepted) {
     return (
       <View style={{ gap: t.space[4], marginTop: t.space[6] }}>
-        <Text style={[t.font.body, { color: t.color.text }]}>{deadlineSentence(del.data?.deletionEffectiveUtc, txt)}</Text>
+        <Text style={[t.font.body, { color: t.color.text }]}>{deadlineSentence(accepted.deletionEffectiveUtc, txt)}</Text>
         <OutlineButton label={txt.settingsSignOut} onPress={() => void signOut()} />
       </View>
     );

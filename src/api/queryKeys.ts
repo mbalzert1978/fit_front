@@ -13,4 +13,5 @@ export const qk = {
   goals: () => ['goals'] as const,
   preferences: () => ['preferences'] as const,
   activity: (date: DiaryDate) => ['activity', date] as const,
+  accountDeletion: () => ['accountDeletion'] as const,
 };

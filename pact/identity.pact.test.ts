@@ -414,15 +414,12 @@ describe('Identity', () => {
     const p = provider();
     p.given('Nutzer a@b.de ist angemeldet')
       .uponReceiving('Eigenes Konto löschen')
-      // No `Idempotency-Key`: the server answers a `DELETE` the same way
-      // twice, and exactly for that reason may the shell repeat it after a
-      // renewal (`IDEMPOTENT` in `src/api/client.ts`).
+      // No `Idempotency-Key`
+      // (`docs/decisions/2026-08-21-1329-die-kontoloeschung-nennt-ihre-frist.md`).
       .withRequest({ method: 'DELETE', path: '/api/v1/identity/me', headers: authHeadersIn('de') })
       .willRespondWith({
-        // **202 and not 204.** The account is still there after this response.
-        // Assuring 204 here would claim a deletion that only happens later —
-        // and the user would think their data gone while it is not. That is why
-        // the response carries a body, and in it the point in time.
+        // **202 and not 204**, with the instant in the body
+        // (`docs/decisions/2026-08-21-1329-die-kontoloeschung-nennt-ihre-frist.md`).
         status: 202,
         headers: privateHeaders,
         body: enveloped({ deletionEffectiveUtc: anyInstant }),

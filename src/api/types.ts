@@ -39,10 +39,9 @@ export type AccountUser = {
 export type SignIn = { user: AccountUser; session: Session };
 
 /**
- * What comes back from `DELETE /identity/me`. The server does not delete right
- * away: it accepts (202) and names the point in time from which it takes
- * effect — an ISO-8601 instant in UTC, as the field name says. That is why this
- * response carries a body at all; a 204 would claim it had already happened.
+ * What comes back from `DELETE /identity/me`: 202 and the instant the deletion
+ * takes effect
+ * (`docs/decisions/2026-08-21-1329-die-kontoloeschung-nennt-ihre-frist.md`).
  */
 export type AccountDeletion = { deletionEffectiveUtc: string };
 

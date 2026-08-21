@@ -204,18 +204,16 @@ export function useRecipeToDiary(recipeId: string) {
 }
 
 /**
- * Delete one's own account. `DELETE` and no `Idempotency-Key`: the server
- * answers the call the same way twice, and only for that reason may the shell
- * repeat it after a renewal.
- *
- * No `invalidateQueries` and no sign-out here: the account lives on until the
- * deadline, and who ends the session is the user's decision in the account
- * section — see
- * `docs/decisions/2026-08-21-1329-die-kontoloeschung-nennt-ihre-frist.md`.
- * The response is the only thing carrying the point in time; it therefore goes
- * back to the caller and not into the cache.
+ * Delete one's own account: no `Idempotency-Key`, no cache reset, no sign-out
+ * (`docs/decisions/2026-08-21-1329-die-kontoloeschung-nennt-ihre-frist.md`); key and `gcTime` keep the deadline past an unmount
+ * (`docs/decisions/2026-08-21-2200-die-frist-lebt-im-cache-und-haengt-am-rumpf.md`).
  */
-export const useDeleteAccount = () => useMutation({ mutationFn: () => api<AccountDeletion>('/identity/me', { method: 'DELETE' }) });
+export const useDeleteAccount = () =>
+  useMutation({
+    mutationKey: qk.accountDeletion(),
+    gcTime: Infinity,
+    mutationFn: () => api<AccountDeletion>('/identity/me', { method: 'DELETE' }),
+  });
 
 export function useCreateProduct() {
   const qc = useQueryClient();

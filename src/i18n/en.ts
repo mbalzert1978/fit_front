@@ -139,7 +139,6 @@ export const en: Partial<Texts> = {
   settingsDeleteBusy: 'Deleting …',
   settingsDeleteSubmit: 'Delete account for good',
   settingsDeleteFailed: 'Deletion not possible right now',
-  settingsDeleteNoDeadline: 'Your account will be deleted. The server did not name the point in time.',
   settingsDeletedAt: (when: string) => `Your account will be deleted on ${when}. Until then your data is still there.`,
   settingsCancel: 'Cancel',
   settingsSignOut: 'Sign out',
