@@ -11,7 +11,7 @@ import {
   problems,
 } from './setup';
 import { api, apiWithMeta, signOut, ApiError } from '../src/api/client';
-import { register, login } from '../src/api/session';
+import { register, registrationRequest, login } from '../src/api/session';
 import { setTimeProvider, resetTimeProvider } from '../src/time';
 import { setLanguageProvider, resetLanguageProvider } from '../src/language';
 import { __seedSession, __readSession } from './stubs/expoSecureStore';
@@ -161,7 +161,7 @@ describe('Identity', () => {
       });
 
     await p.executeTest(async () => {
-      const s = await register(daten, versuchsKey);
+      const s = await register(registrationRequest(daten), versuchsKey);
       expect(s.session.accessToken).toBeTruthy();
       expect(s.session.refreshToken).toBeTruthy();
       expect(s.session.tokenType).toBe('Bearer');
@@ -202,7 +202,7 @@ describe('Identity', () => {
       // von Hand in den Rumpf geschrieben wäre es eine Zusage über nichts.
       setTimeProvider({ now: () => new Date(), timeZoneId: () => 'GMT+01:00' });
       try {
-        const s = await register(daten, versuchsKey);
+        const s = await register(registrationRequest(daten), versuchsKey);
         // Genau dafür ist die Rückgabe da: die Anfrage war ein Wunsch, die
         // Antwort ist die Wahrheit über das Konto.
         expect(s.user.timeZoneId).toBe('+01:00');
@@ -234,7 +234,7 @@ describe('Identity', () => {
       );
 
     await p.executeTest(async () => {
-      const e = await register(daten, versuchsKey).catch((err: unknown) => err);
+      const e = await register(registrationRequest(daten), versuchsKey).catch((err: unknown) => err);
       expect(e).toBeInstanceOf(ApiError);
       const fehler = e as ApiError;
       expect(fehler.type).toBe(problems.emailAlreadyRegistered);
@@ -289,9 +289,10 @@ describe('Identity', () => {
       // Die Maske hält ihre eine eigene Regel ein (`minPasswordLength`), aber
       // sie ist nicht der einzige Prüfer: hier geht bewusst vorbei, was sie
       // nicht abfangen kann.
-      const e = await register({ email: 'kein-at-zeichen', password: 'kurz', displayName: 'Markus' }, versuchsKey).catch(
-        (err: unknown) => err,
-      );
+      const e = await register(
+        registrationRequest({ email: 'kein-at-zeichen', password: 'kurz', displayName: 'Markus' }),
+        versuchsKey,
+      ).catch((err: unknown) => err);
       expect(e).toBeInstanceOf(ApiError);
       const fehler = e as ApiError;
       expect(fehler.status).toBe(422);
@@ -345,9 +346,10 @@ describe('Identity', () => {
       // denselben Weg wie auf dem Gerät eines englischsprachigen Nutzers.
       setLanguageProvider({ tag: () => 'en' });
       try {
-        const e = await register({ email: 'kein-at-zeichen', password: 'kurz', displayName: 'Markus' }, versuchsKey).catch(
-          (err: unknown) => err,
-        );
+        const e = await register(
+          registrationRequest({ email: 'kein-at-zeichen', password: 'kurz', displayName: 'Markus' }),
+          versuchsKey,
+        ).catch((err: unknown) => err);
         expect(e).toBeInstanceOf(ApiError);
         const fehler = e as ApiError;
         expect(fehler.type).toBe(problems.validationFailed);

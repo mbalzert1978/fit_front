@@ -36,17 +36,16 @@ export const maxDisplayNameLength = 60;
 export type Registration = { email: string; password: string; displayName: string };
 
 /**
- * Registrierung. Sie liefert dieselbe Antwort wie die Anmeldung und legt
- * dieselbe Sitzung an — wer ein Konto anlegt, ist damit angemeldet. Ein
- * zweiter Aufruf zum Anmelden danach würde einen Zustand schaffen, in dem ein
- * Konto existiert, aber niemand darin ist; genau der soll nicht entstehen.
- *
- * Der `idempotencyKey` kommt von außen und wird hier nicht erzeugt: er muss
- * über wiederholte Versuche mit **denselben** Daten derselbe bleiben, und das
- * weiß nur die Maske. Ohne ihn liest ein Nutzer, dessen Antwort auf dem Rückweg
- * verlorenging, beim zweiten Tippen „E-Mail bereits registriert" — vergeben von
- * ihm selbst, eine Sekunde zuvor. Er hätte ein Konto und käme nicht hinein.
- *
+ * Der Rumpf, der wirklich hinausgeht: die getippten Felder und dazu, was das
+ * Gerät weiß. Er entsteht an genau einer Stelle — `registrationRequest()` —,
+ * weil der `Idempotency-Key` an ihm hängt: leitete die Maske ihn aus den
+ * getippten Feldern allein ab und die Sprache oder die Zone wechselte zwischen
+ * zwei Versuchen, ginge ein anderer Rumpf unter demselben Schlüssel hinaus.
+ * Das ist kein Wiederholen, sondern `idempotency-key-reused`.
+ */
+export type RegistrationRequest = Registration & { locale: string; timeZoneId: string };
+
+/**
  * `locale` und `timeZoneId` reisen als Felder mit und nicht als Kopfzeile:
  * `Accept-Language` verhandelt diese eine Antwort, hier entsteht dagegen ein
  * Merkmal, das am Konto bleibt — daran hängen später Erinnerungen und E-Mails,
@@ -58,17 +57,30 @@ export type Registration = { email: string; password: string; displayName: strin
  * sie — dann entsteht gar keine Anfrage, denn ein Konto mit einer
  * stillschweigend gesetzten Zone wäre schlechter als keines.
  */
-export async function register(r: Registration, idempotencyKey: string): Promise<SignIn> {
+export function registrationRequest(r: Registration): RegistrationRequest {
+  return { ...r, locale: language.tag(), timeZoneId: time.timeZoneId() };
+}
+
+/**
+ * Registrierung. Sie liefert dieselbe Antwort wie die Anmeldung und legt
+ * dieselbe Sitzung an — wer ein Konto anlegt, ist damit angemeldet. Ein
+ * zweiter Aufruf zum Anmelden danach würde einen Zustand schaffen, in dem ein
+ * Konto existiert, aber niemand darin ist; genau der soll nicht entstehen.
+ *
+ * Der `idempotencyKey` kommt von außen und wird hier nicht erzeugt: er muss
+ * über wiederholte Versuche mit **denselben** Daten derselbe bleiben, und das
+ * weiß nur die Maske. Ohne ihn liest ein Nutzer, dessen Antwort auf dem Rückweg
+ * verlorenging, beim zweiten Tippen „E-Mail bereits registriert" — vergeben von
+ * ihm selbst, eine Sekunde zuvor. Er hätte ein Konto und käme nicht hinein.
+ *
+ * Was hinausgeht, steht in `RegistrationRequest` und entsteht in
+ * `registrationRequest()`; hier wird es nur noch abgeschickt.
+ */
+export async function register(anfrage: RegistrationRequest, idempotencyKey: string): Promise<SignIn> {
   const angemeldet = await api<SignIn>('/identity/register', {
     method: 'POST',
     idempotencyKey,
-    body: {
-      email: r.email,
-      password: r.password,
-      displayName: r.displayName,
-      locale: language.tag(),
-      timeZoneId: time.timeZoneId(),
-    },
+    body: anfrage,
   });
   await storeSession(angemeldet.session);
   return angemeldet;

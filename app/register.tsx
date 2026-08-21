@@ -3,7 +3,7 @@ import { Text, View } from 'react-native';
 import { router } from 'expo-router';
 import { Screen, OutlineButton, FormField } from '../src/components';
 import { useTheme } from '../src/theme/ThemeProvider';
-import { register, minPasswordLength, maxDisplayNameLength, type Registration } from '../src/api/session';
+import { register, registrationRequest, minPasswordLength, maxDisplayNameLength, type RegistrationRequest } from '../src/api/session';
 import { ApiError, OfflineError } from '../src/api/client';
 import { problems } from '../src/api/problems';
 import { newId } from '../src/api/ids';
@@ -62,11 +62,13 @@ function generalHintFor(e: unknown, ohneFeld: string[]): string | null {
  *
  * Ändert sich ein Feld, ist es ein anderer Versuch und braucht einen anderen
  * Schlüssel: derselbe an einem anderen Rumpf ist ein Fehler und keine
- * Wiederholung (`idempotency-key-reused`).
+ * Wiederholung (`idempotency-key-reused`). Deshalb hängt er am **ganzen**
+ * Rumpf, so wie er hinausgeht — samt Sprache und Zone, die kein Feld der Maske
+ * sind und sich zwischen zwei Versuchen trotzdem ändern können.
  */
 function useIdempotencyKey() {
   const versuch = useRef<{ daten: string; key: string } | null>(null);
-  return (r: Registration) => {
+  return (r: RegistrationRequest) => {
     const daten = JSON.stringify(r);
     if (versuch.current?.daten !== daten) versuch.current = { daten, key: newId() };
     return versuch.current.key;
@@ -96,9 +98,9 @@ export default function RegisterScreen() {
     setFields({});
     setConflict(false);
     setHint(null);
-    const daten = { email: email.trim(), password, displayName: name.trim() };
     try {
-      await register(daten, keyFor(daten));
+      const anfrage = registrationRequest({ email: email.trim(), password, displayName: name.trim() });
+      await register(anfrage, keyFor(anfrage));
       router.replace('/(tabs)/diary');
     } catch (e) {
       const { fields: benannt, ohneFeld } = splitHints(errorsOf(e));
