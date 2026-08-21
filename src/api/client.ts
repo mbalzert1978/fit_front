@@ -96,8 +96,18 @@ type StoredSession = {
 
 const SESSION_KEY = 'session';
 
-/** Die getrennten Schlüssel der früheren Fassung; werden beim Abmelden mit entfernt. */
+/** Die getrennten Schlüssel der früheren Fassung. */
 const LEGACY_KEYS = ['accessToken', 'refreshToken'] as const;
+
+/**
+ * Räumt die Schlüssel der früheren Fassung ab — bei **jedem** Schreiben einer
+ * Sitzung, nicht nur beim Abmelden. Wer von der alten Fassung kommt, findet
+ * keine Sitzung, meldet sich einmal neu an und meldet sich danach nie ab: der
+ * alte Refresh-Token bliebe sonst liegen, bis er von selbst abläuft — gültig,
+ * nie entwertet und der App unbekannt, also auch von ihr nicht abzumelden. Ein
+ * Löschen ins Leere kostet nichts.
+ */
+const clearLegacy = () => Promise.all(LEGACY_KEYS.map((k) => SecureStore.deleteItemAsync(k)));
 
 /**
  * `WHEN_UNLOCKED_THIS_DEVICE_ONLY` hält die Sitzung aus iCloud- und
@@ -123,7 +133,7 @@ async function readSession(): Promise<StoredSession | null> {
 /** Löscht die Sitzung im Gerät, ohne das Backend zu behelligen. */
 async function clearSession() {
   await SecureStore.deleteItemAsync(SESSION_KEY);
-  for (const k of LEGACY_KEYS) await SecureStore.deleteItemAsync(k);
+  await clearLegacy();
 }
 
 const secondsFromNow = (s: unknown) => (typeof s === 'number' && s > 0 ? Date.now() + s * 1000 : 0);
@@ -146,6 +156,7 @@ export async function storeSession(t: Session) {
     refreshTokenExpiresAt: secondsFromNow(t.refreshExpiresIn),
   };
   await SecureStore.setItemAsync(SESSION_KEY, JSON.stringify(session), KEYCHAIN);
+  await clearLegacy();
 }
 
 /**
