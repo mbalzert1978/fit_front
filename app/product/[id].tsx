@@ -23,11 +23,11 @@ export default function ProductScreen() {
   const add = useAddEntry(date);
   const [grams, setGrams] = useState('100');
 
-  // Anzeige ganzzahlig; die verbindliche Rechnung macht das Backend beim Speichern.
+  // Shown as integers; the binding arithmetic happens in the backend on save.
   const scaled = useMemo(() => {
     const g = Number(grams.replace(',', '.')) || 0;
     const n = product?.nutrientsPer100g;
-    // Fehlender Nährwert zählt als 0 — so stand es auch vorher in der Anzeige.
+    // A missing nutrient counts as 0.
     const at = (v: number | null | undefined) => (v == null ? 0 : Math.round((v * g) / 100));
     return { kcal: at(n?.kcal), fatG: at(n?.fatG), carbsG: at(n?.carbsG), proteinG: at(n?.proteinG) };
   }, [grams, product]);

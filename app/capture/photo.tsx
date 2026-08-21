@@ -32,8 +32,8 @@ export default function PhotoScreen() {
       const photoId = await uploadNutritionPhoto(small.uri, params.barcode);
       router.replace({ pathname: '/capture/processing', params: { ...params, photoId } });
     } catch {
-      // Drei Schritte, jeder kann für sich scheitern. Ohne diesen Zweig stünde
-      // der Nutzer vor einer wieder freigegebenen Kamera, die nichts dazu sagt.
+      // Three steps, each can fail on its own. Without this branch the user
+      // would face a camera that is free again and says nothing about it.
       setFailed(txt.photoUploadFailed);
     } finally {
       setBusy(false);

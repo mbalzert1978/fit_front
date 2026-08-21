@@ -5,7 +5,7 @@ import { useTexts, type Texts } from '../i18n';
 
 export type Confidence = 'sure' | 'check' | 'unsure' | 'missing';
 
-/** Ableitung aus dem confidence-Wert der API. Fehlender Wert → 'fehlt'. */
+/** Derived from the API's confidence value. A missing value → 'missing'. */
 export function confidenceOf(confidence: number | null | undefined, hasValue: boolean): Confidence {
   if (!hasValue || confidence == null) return 'missing';
   if (confidence >= 0.9) return 'sure';

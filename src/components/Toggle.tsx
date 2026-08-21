@@ -2,7 +2,7 @@ import React from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { useTheme } from '../theme/ThemeProvider';
 
-/** Pillenschalter, 46 × 24, Knopf 18 px rund. */
+/** Pill switch, 46 × 24, with an 18 px round knob. */
 export function Toggle({
   value,
   onChange,
@@ -64,8 +64,8 @@ export function Toggle({
 }
 
 /**
- * Zwei Schalter, die sich gegenseitig ausschließen. „Beide aus" gibt es nicht:
- * jeder Tipp kippt das Paar.
+ * Two switches that exclude one another. "Both off" does not exist: every tap
+ * flips the pair.
  */
 export function useExclusivePair(firstActive: boolean, set: (firstActive: boolean) => void) {
   return {

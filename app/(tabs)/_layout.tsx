@@ -5,8 +5,9 @@ import { useTheme } from '../../src/theme/ThemeProvider';
 import { useTexts } from '../../src/i18n';
 
 /**
- * Vier Ziele, auf jedem Screen sichtbar, ohne Zurück-Pfeile (`docs/regeln.md`,
- * Prüfliste). Detailscreens liegen als Stack darüber und lassen ihren Tab aktiv.
+ * Four destinations, visible on every screen, without back arrows
+ * (`docs/regeln.md`, Prüfliste). Detail screens lie above as a stack and leave
+ * their tab active.
  */
 function TabLabel({ children, focused }: { children: string; focused: boolean }) {
   const t = useTheme();

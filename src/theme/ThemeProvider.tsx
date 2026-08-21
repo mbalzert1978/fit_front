@@ -6,8 +6,8 @@ type Ctx = { theme: Theme; mode: ThemeMode; setMode: (m: ThemeMode) => void };
 const ThemeContext = createContext<Ctx>({ theme: themes[defaultMode], mode: defaultMode, setMode: () => {} });
 
 /**
- * Hält nur den aktiven Wert; gespeichert wird der Modus serverseitig über
- * `/preferences`, und die Mutation in den Einstellungen ruft danach `setMode`.
+ * Holds the active value only; the mode is stored server-side through
+ * `/preferences`, and the mutation in the settings calls `setMode` afterwards.
  */
 export function ThemeProvider({ children, initialMode = defaultMode }: { children: React.ReactNode; initialMode?: ThemeMode }) {
   const [mode, setModeState] = useState<ThemeMode>(initialMode);

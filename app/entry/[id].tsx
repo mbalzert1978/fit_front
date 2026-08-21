@@ -11,14 +11,14 @@ import type { DiaryEntry, MealSlotDay } from '../../src/api/types';
 
 type Found = { entry: DiaryEntry; slot: MealSlotDay } | null;
 
-/** Gramm aus Eingabe oder Eintrag, daraus der Energiewert je 100 g und für die Menge. */
+/** Grams from the input or the entry, and from those the energy per 100 g and for the amount. */
 function amountOf(found: Found, grams: string | null) {
   const g = Number((grams ?? String(found?.entry.grams ?? 0)).replace(',', '.')) || 0;
   const per100 = found && found.entry.grams > 0 ? found.entry.kcal / found.entry.grams : 0;
   return { g, per100, kcal: Math.round(per100 * g) };
 }
 
-/** Beschriftungen; solange der Eintrag nicht geladen ist, bleiben die Felder leer. */
+/** Labels; while the entry is not loaded, the fields stay empty. */
 function labelsOf(found: Found, grams: string | null) {
   return {
     slotName: found?.slot.name ?? '',

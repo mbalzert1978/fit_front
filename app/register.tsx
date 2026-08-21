@@ -9,17 +9,17 @@ import { ApiError, OfflineError } from '../src/api/client';
 import { problems } from '../src/api/problems';
 import { newId } from '../src/api/ids';
 
-/** Die Felder, die diese Maske zeigt. Wozu sie keines hat, kann sie nicht anstreichen. */
+/** The fields this form shows. What it has none for, it cannot mark up. */
 const visibleFields = ['displayName', 'email', 'password'] as const;
 type VisibleField = (typeof visibleFields)[number];
 
-/** Die Sätze aus `problem+json`, nach den Feldnamen des Anfrage-Rumpfes geordnet. */
+/** The sentences from `problem+json`, keyed by the field names of the request body. */
 type FieldHints = Partial<Record<VisibleField, string[]>>;
 
 /**
- * Trennt, was an ein Feld gehört, von dem, was hier kein Feld hat. Der Server
- * prüft mehr, als die Maske abfragt; fienge niemand das auf, scheiterte die
- * Registrierung **stumm** — nur ein Knopf, der wieder angeht.
+ * Splits what belongs to a field from what has no field here. The server checks
+ * more than the form asks for; if nobody caught that, registration would fail
+ * **silently** — only a button switching back on.
  */
 function splitHints(errors: Record<string, string[]>) {
   const fields: FieldHints = {};
@@ -31,14 +31,14 @@ function splitHints(errors: Record<string, string[]>) {
   return { fields, general };
 }
 
-/** Die feldweisen Begründungen, wenn welche kamen. */
+/** The per-field reasoning, where any arrived. */
 function errorsOf(e: unknown): Record<string, string[]> {
   return e instanceof ApiError ? (e.errors ?? {}) : {};
 }
 
 /**
- * Die Zeile unter den Feldern. Der Server redet zuerst, die Maske reicht durch
- * und übersetzt nichts
+ * The line below the fields. The server speaks first, the form passes it through
+ * and translates nothing
  * (`docs/decisions/2026-08-20-1209-der-satz-zum-vorfall-steht-in-detail.md`).
  */
 function generalHintFor(e: unknown, general: string[], txt: Texts): string | null {
@@ -49,10 +49,10 @@ function generalHintFor(e: unknown, general: string[], txt: Texts): string | nul
 }
 
 /**
- * Der Idempotency-Key hängt an den **Daten**, nicht am Tastendruck: zweimal
- * dasselbe getippt ist derselbe Versuch. Und er hängt am **ganzen** Rumpf, samt
- * Sprache und Zone, die kein Feld der Maske sind und sich trotzdem ändern
- * können — derselbe Schlüssel an einem anderen Rumpf ist ein Fehler
+ * The idempotency key hangs on the **data**, not on the keypress: typing the
+ * same thing twice is the same attempt. And it hangs on the **whole** body,
+ * language and zone included — they are no field of the form and can change
+ * between attempts anyway, and the same key on another body is an error
  * (`docs/decisions/2026-08-21-1104-der-schluessel-haengt-am-ganzen-rumpf.md`).
  */
 function useIdempotencyKey() {
@@ -71,14 +71,14 @@ export default function RegisterScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [fields, setFields] = useState<FieldHints>({});
-  // Die vergebene E-Mail steht in keinem `errors`-Eintrag: sie verstößt gegen
-  // keine Feldregel. Rot wird das Feld trotzdem — gemeint ist genau dieses.
+  // A taken email stands in no `errors` entry: it violates no field rule. The
+  // field turns red regardless — this one is exactly what is meant.
   const [conflict, setConflict] = useState(false);
   const [hint, setHint] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const keyFor = useIdempotencyKey();
 
-  /** Ein Aufruf, ein Ausgang — deshalb führt der Erfolg direkt ins Tagebuch und nicht zur Anmeldung. */
+  /** One call, one outcome — hence success leads straight to the diary and not back to sign-in. */
   async function submit() {
     setBusy(true);
     setFields({});
@@ -98,7 +98,7 @@ export default function RegisterScreen() {
     }
   }
 
-  // Die eine eigene Regel steht vor dem Aufruf; alles Weitere prüft der Server.
+  // The one own rule stands before the call; everything else the server checks.
   const tooShort = password.length > 0 && password.length < minPasswordLength;
   const nameOk = name.trim().length > 0;
 
@@ -143,7 +143,7 @@ export default function RegisterScreen() {
           onPress={submit}
           disabled={busy || !nameOk || !email || password.length < minPasswordLength}
         />
-        {/* Zurück und nicht ersetzen: sonst stünde die Anmeldemaske zweimal im Stapel. */}
+        {/* Back and not replace: otherwise the sign-in form would stand twice in the stack. */}
         <OutlineButton
           label={txt.registerToLogin}
           variant="muted"

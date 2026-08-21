@@ -3,8 +3,8 @@ import { Animated, Easing, Text, View, type ViewStyle } from 'react-native';
 import { useTheme } from '../theme/ThemeProvider';
 
 /**
- * Ausrichtungsrahmen, optional mit Scanlinie. Die Kamera kommt als `children`,
- * damit derselbe Rahmen für Barcode-Scan und Tabellen-Aufnahme dient.
+ * Alignment frame, optionally with a scan line. The camera comes as `children`,
+ * so the same frame serves the barcode scan and the table shot.
  */
 export function CameraFrame({
   children,

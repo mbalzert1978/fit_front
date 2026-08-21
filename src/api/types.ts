@@ -1,18 +1,18 @@
 import type { DiaryDate } from './diaryDate';
 import type { Language } from '../language';
 
-/** Für Support und Fehlersuche; kein Screen liest sie. `requestId` spiegelt `X-Request-Id`. */
+/** For support and diagnosis; no screen reads it. `requestId` mirrors `X-Request-Id`. */
 export type Meta = { requestId: string; timestamp: string; apiVersion: string };
 
-/** Ausgepackt genau einmal, in `client.ts` — deshalb steht er in keiner weiteren Signatur. */
+/** Unwrapped exactly once, in `client.ts` — hence it stands in no other signature. */
 export type Envelope<T> = { data: T; meta: Meta };
 
 /**
- * Nach OAuth 2 benannt (RFC 6749 §5.1), in camelCase; `refreshExpiresIn` ist
- * eine Erweiterung, für die der RFC kein Feld hat.
+ * Named after OAuth 2 (RFC 6749 §5.1), in camelCase; `refreshExpiresIn` is an
+ * extension the RFC has no field for.
  *
- * Die Laufzeiten sind **relativ in Sekunden** und keine Zeitstempel: die Uhr des
- * Clients geht falsch, und erst `client.ts` macht daran einen Zeitpunkt daraus.
+ * The lifetimes are **relative, in seconds**, and no timestamps: the client's
+ * clock runs wrong, and only `client.ts` makes a point in time of them.
  */
 export type Session = {
   tokenType: 'Bearer';
@@ -23,8 +23,8 @@ export type Session = {
 };
 
 /**
- * `locale` und `timeZoneId` sind die **wirksamen** Werte, nicht die gefragten:
- * die Anfrage ist ein Wunsch, die Antwort die Wahrheit über die Ressource
+ * `locale` and `timeZoneId` are the **effective** values, not the ones asked
+ * for: the request is a wish, the response the truth about the resource
  * (`docs/decisions/2026-08-20-1230-die-zone-wird-normalisiert-und-kommt-zurueck.md`).
  */
 export type AccountUser = {
@@ -35,10 +35,10 @@ export type AccountUser = {
   timeZoneId: string;
 };
 
-/** Konto **und** Sitzung; die Erneuerung liefert nur `Session` und fasst den User-Store nicht an. */
+/** Account **and** session; the renewal delivers only `Session` and leaves the user store alone. */
 export type SignIn = { user: AccountUser; session: Session };
 
-/** Nährwerte je 100 g. Optionale Felder dürfen fehlen — dann sind sie nicht gesetzt. */
+/** Nutrients per 100 g. Optional fields may be missing — then they are not set. */
 export type Nutrients = {
   kcal: number;
   fatG: number;
@@ -75,7 +75,7 @@ export type MealSlotDay = { id: string; name: string; kcal: number; entries: Dia
 export type ActivityEntry = { externalId: string; name: string; detail: string; kcal: number };
 
 /**
- * Ohne `isFuture`, siehe
+ * Without `isFuture`, see
  * `docs/decisions/2026-08-20-0925-kalendertag-ist-reine-client-sache.md`.
  */
 export type DiaryDay = {
@@ -128,7 +128,7 @@ export type Recipe = {
   kcalPerPortion: number;
   macrosPerPortion: { carbsG: number; proteinG: number; fatG: number };
   ingredients: RecipeIngredient[];
-  /** Aus dem Antwort-Header `ETag`, nicht aus dem Rumpf; geht unverändert als `If-Match` zurück. */
+  /** From the `ETag` response header, not from the body; goes back unchanged as `If-Match`. */
   etag?: string;
 };
 
@@ -141,8 +141,8 @@ export type Goals = {
 };
 
 /**
- * Jedes Feld für sich — der Screen speichert in kleinen Teilnutzlasten.
- * Abgeleitete Werte (`grams`, `kcal`) gehören nicht in eine Anfrage.
+ * Every field on its own — the screen saves in small part-payloads. Derived
+ * values (`grams`, `kcal`) do not belong in a request.
  */
 export type GoalsUpdate = {
   dailyKcal?: number;
@@ -153,8 +153,8 @@ export type GoalsUpdate = {
 };
 
 /**
- * `source` und `verifiedByUser` setzt der Bestätigungs-Screen; welchen Wert der
- * Server davon übernimmt, ist seine Sache.
+ * The confirmation screen sets `source` and `verifiedByUser`; which of them the
+ * server adopts is his business.
  */
 export type ProductCreate = {
   id: string;
@@ -168,7 +168,7 @@ export type ProductCreate = {
   nutrientsPer100g: Record<keyof Nutrients, number | null>;
 };
 
-/** Was ein Rezept beim Speichern trägt. `etag` geht als `If-Match` hinaus, nicht in den Rumpf. */
+/** What a recipe carries when saved. `etag` goes out as `If-Match`, not into the body. */
 export type RecipeSave = {
   id: string;
   name: string;
@@ -177,20 +177,20 @@ export type RecipeSave = {
   etag?: string;
 };
 
-/** `language` ist dieselbe Menge wie in `src/language.ts` — keine zweite Aufzählung. */
+/** `language` is the same set as in `src/language.ts` — no second enumeration. */
 export type Preferences = { theme: 'Dark' | 'Light'; language: Language };
 
 export type HealthConsent = { connected: boolean; importActivity: boolean; exportNutrition: boolean };
 
 /**
- * Schritt 1 des Foto-Uploads. `uploadHeaders` hat der Server **mitsigniert** —
- * eine Abbildung von ihm und keine Liste des Clients: weicht ein Header ab,
- * weist der Objektspeicher die Bytes zurück.
+ * Step 1 of the photo upload. The server **co-signed** `uploadHeaders` — a map
+ * from him and no list of the client's: if one header deviates, the object store
+ * rejects the bytes.
  */
 export type PhotoUploadTarget = {
   photoId: string;
   uploadUrl: string;
   uploadHeaders: Record<string, string>;
-  /** Laufzeit der Signatur in Sekunden, gerechnet ab der Antwort. */
+  /** Lifetime of the signature in seconds, counted from the response. */
   expiresIn: number;
 };

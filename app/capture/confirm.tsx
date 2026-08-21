@@ -156,7 +156,7 @@ export default function ConfirmScreen() {
         })}
       </View>
 
-      {/* Kein erklärender Hinweissatz: der Rand und der deaktivierte Knopf sagen genug. */}
+      {/* No explaining sentence: the border and the disabled button say enough. */}
       <View style={{ marginTop: t.space[8] }}>
         <OutlineButton label={txt.confirmSubmit} onPress={submit} disabled={missing.length > 0 || create.isPending} />
       </View>

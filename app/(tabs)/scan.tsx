@@ -89,7 +89,7 @@ export default function ScanScreen() {
   async function onBarcode(ean: string) {
     if (lock.current) return;
     lock.current = true;
-    setPaused(true); // verhindert Mehrfachauslösung, bis der Nutzer zurückkehrt
+    setPaused(true); // prevents a second trigger until the user comes back
     try {
       const product = await api<Product>(endpoints.productByBarcode(ean));
       router.push({ pathname: '/product/[id]', params: { id: product.id, ...ctxParams(ctx) } });

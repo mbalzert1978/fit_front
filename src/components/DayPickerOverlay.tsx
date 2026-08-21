@@ -7,9 +7,9 @@ import { toDiaryDate, type DiaryDate } from '../api/diaryDate';
 import { time } from '../time';
 
 /**
- * 30 Tage zurück bis 14 vorwärts. Die Spanne setzt der Client; der Server misst
- * dieselben vierzehn Tage gegen UTC mit einem Tag Spielraum, damit keine
- * Zeitzone an den Rand stößt.
+ * 30 days back to 14 forward. The client sets the span; the server measures the
+ * same fourteen days against UTC with a day of leeway, so that no time zone hits
+ * the edge.
  */
 export function DayPickerOverlay({
   visible,

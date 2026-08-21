@@ -91,17 +91,17 @@ describe('Identity', () => {
         body: { email: 'a@b.de', password: 'geheim123' },
       });
       const s = r.data;
-      // session.ts legt beide Token ab; ohne sie ist keine weitere Anfrage möglich.
+      // session.ts stores both tokens; without them no further request is possible.
       expect(s.session.accessToken).toBeTruthy();
       expect(s.session.refreshToken).toBeTruthy();
-      // Der Tokentyp steht in der Antwort, statt im Client fest verdrahtet zu sein.
+      // The token type stands in the response instead of being wired into the client.
       expect(s.session.tokenType).toBe('Bearer');
       expect(s.user.id).toBeTruthy();
-      // Die Request-Id darf sich zwischen Header und Rumpf nicht verschieben:
-      // beide bezeichnen denselben Aufruf, sonst führt der Faden ins Leere.
+      // The request id must not shift between header and body: both name the same
+      // call, or the thread leads nowhere.
       expect(r.headers.get('X-Request-Id')).toBeTruthy();
       expect(r.headers.get('X-Request-Id')).toBe(r.meta?.requestId);
-      // Token gehören in keinen Zwischenspeicher.
+      // Tokens belong in no cache.
       expect(r.headers.get('Cache-Control')).toBe('no-store');
     });
   });

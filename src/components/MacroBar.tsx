@@ -3,7 +3,7 @@ import { Text, View } from 'react-native';
 import { useTheme } from '../theme/ThemeProvider';
 import { useTexts } from '../i18n';
 
-/** Werte kommen ganzzahlig vom Server; hier wird nicht gerundet und nichts umgerechnet. */
+/** Values come from the server as integers; nothing is rounded or converted here. */
 export function MacroBar({
   label,
   value,

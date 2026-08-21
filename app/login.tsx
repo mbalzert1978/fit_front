@@ -18,14 +18,13 @@ export default function LoginScreen() {
   const [busy, setBusy] = useState(false);
 
   /**
-   * Jeder Ausgang außer „angemeldet" wird sichtbar; stumm zu scheitern hieße,
-   * den Knopf wieder anzuschalten und nichts zu sagen.
+   * Every outcome but "signed in" becomes visible; failing silently would mean
+   * switching the button back on and saying nothing.
    *
-   * Beide Felder werden rot, nicht eines: welches gemeint ist, sagt der Server
-   * bei falschen Anmeldedaten nicht — und soll es nicht. Der Satz darunter ist
-   * seiner
+   * Both fields turn red, not one: on wrong credentials the server does not say
+   * which is meant — and should not. The sentence below is his
    * (`docs/decisions/2026-08-20-1209-der-satz-zum-vorfall-steht-in-detail.md`);
-   * eigene Sätze bleiben, wo keiner kommt.
+   * our own sentences stay where none arrives.
    */
   async function submit() {
     setBusy(true);

@@ -17,7 +17,7 @@ import type { DiaryDate } from '../../src/api/diaryDate';
 type Draft = { name: string; portions: string; ingredients: RecipeIngredient[] };
 type Totals = { grams: number; kcal: number; perPortionG: number; perPortionKcal: number; portions: number };
 
-/** Makros je Portion stehen nur, solange der Entwurf dem Serverstand entspricht. */
+/** Macros per portion stand only while the draft matches the server's state. */
 function ComputedTotals({ totals, server, changed }: { totals: Totals; server?: Recipe; changed: boolean }) {
   const txt = useTexts();
   return (
@@ -39,9 +39,9 @@ function ComputedTotals({ totals, server, changed }: { totals: Totals; server?: 
 }
 
 /**
- * Ohne ETag wird gar nicht erst geschrieben — ein `PUT` ohne `If-Match`
- * überschriebe lautlos eine zwischenzeitlich gespeicherte Fassung. Kommt der
- * Konflikt vom Server, bleibt der Entwurf stehen und der Serverstand kommt nach.
+ * Without an ETag nothing is written at all — a `PUT` without `If-Match` would
+ * silently overwrite a version saved in the meantime. If the conflict comes from
+ * the server, the draft stays and the server's state is reloaded.
  */
 function SaveRecipe({
   id,
@@ -170,7 +170,7 @@ export default function RecipeScreen() {
     }
   }, [server, loaded]);
 
-  // Aus dem Scan zurückgekehrt: das erfasste Produkt wird Zutat des offenen Rezepts.
+  // Back from the scan: the captured product becomes an ingredient of the open recipe.
   useEffect(() => {
     if (!addedProduct) return;
     setDraft((d) =>
@@ -199,7 +199,7 @@ export default function RecipeScreen() {
     return { grams, kcal, perPortionG: Math.round(grams / portions), perPortionKcal: Math.round(kcal / portions), portions };
   }, [draft]);
 
-  // Vergleich gegen den zuletzt geladenen Serverstand: Name, Portionen, (Zutat, Gramm).
+  // Compared against the last loaded server state: name, portions, (ingredient, grams).
   const changed = useMemo(() => {
     if (isNew) return true;
     if (!server) return false;

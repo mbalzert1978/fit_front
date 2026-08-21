@@ -1,13 +1,13 @@
 import type { DiaryDate } from './api/diaryDate';
 
 /**
- * Wandert vom Start des Scans durch den ganzen Ablauf — deshalb stellt
- * `/product/[id]` Mahlzeit und Datum nicht noch einmal zur Auswahl.
+ * Travels from the start of the scan through the whole flow — which is why
+ * `/product/[id]` does not offer meal and date for choosing again.
  */
 export type CaptureContext = {
   date: DiaryDate;
   slotId?: string;
-  /** diary: Eintrag ins Tagebuch · recipe: Zutat ins offene Rezept */
+  /** diary: an entry in the diary · recipe: an ingredient in the open recipe */
   target: 'diary' | 'recipe';
   recipeId?: string;
   barcode?: string;

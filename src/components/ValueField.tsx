@@ -2,7 +2,7 @@ import React from 'react';
 import { Text, TextInput, View } from 'react-native';
 import { useTheme } from '../theme/ThemeProvider';
 
-/** Numerisches Feld, rechtsbündig. `missing` streicht einen fehlenden Pflichtwert an. */
+/** Numeric field, right-aligned. `missing` marks up a required value that is not there. */
 export function ValueField({
   value,
   onChangeText,

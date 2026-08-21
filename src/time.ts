@@ -1,23 +1,23 @@
 import { getCalendars } from 'expo-localization';
 
 /**
- * Die Naht zur Uhr und zur Zeitzone des Geräts. Kein Aufrufer fasst
- * `new Date()` oder `expo-localization` selbst an: die Zeit ist die eine
- * Eingabe, die sich nicht wiederholen lässt, und die Herkunft der Zonenkennung
- * ist eine Plattformfrage, von der kein Screen wissen soll.
+ * The seam to the device's clock and time zone. No caller touches `new Date()`
+ * or `expo-localization` itself: time is the one input that cannot be repeated,
+ * and where the zone identifier comes from is a platform question no screen
+ * should know about.
  */
 export type TimeProvider = {
-  /** Jetzt. Der einzige Weg zur aktuellen Zeit im ganzen Code. */
+  /** Now. The only way to the current time in the whole code. */
   now(): Date;
-  /** IANA-Kennung der Gerätezone. Wirft, wenn keine zu ermitteln ist. */
+  /** IANA identifier of the device zone. Throws where none can be determined. */
   timeZoneId(): string;
 };
 
 /**
- * `expo-localization` ist die verlässliche Quelle, `Intl` der Rückfall für
- * Umgebungen ohne native Seite (Web, Tests, Node). Schweigt beides, kommt kein
- * erfundenes `UTC`, sondern ein Fehler: ein Konto mit stillschweigend falscher
- * Zone wäre schlimmer als ein kaputter Build
+ * `expo-localization` is the reliable source, `Intl` the fallback for
+ * environments without the native side (web, tests, Node). If both stay silent,
+ * no invented `UTC` comes out but an error: an account with a tacitly wrong
+ * zone would be worse than a broken build
  * (`docs/decisions/2026-08-20-0936-zeitzone-scheitert-schnell-und-reist-wie-das-geraet-sie-nennt.md`).
  */
 const deviceTime: TimeProvider = {
@@ -33,17 +33,17 @@ const deviceTime: TimeProvider = {
 
 let current: TimeProvider = deviceTime;
 
-/** Nur für Tests und Prototypen: die Naht von außen besetzen. */
+/** For tests and prototypes only: occupy the seam from outside. */
 export function setTimeProvider(p: TimeProvider) {
   current = p;
 }
 
-/** Zurück zur Gerätezeit. */
+/** Back to the device's clock. */
 export function resetTimeProvider() {
   current = deviceTime;
 }
 
-/** Der eine Zugang für allen übrigen Code. */
+/** The one way in for all remaining code. */
 export const time: TimeProvider = {
   now: () => current.now(),
   timeZoneId: () => current.timeZoneId(),

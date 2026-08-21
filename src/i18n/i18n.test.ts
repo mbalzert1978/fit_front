@@ -3,7 +3,7 @@ import { texts } from '.';
 import { de } from './de';
 import { en } from './en';
 
-/** Der Rückfall ist die eine Regel dieser Schicht, die man nicht sieht — deshalb steht sie hier. */
+/** The fallback is the one rule of this layer that cannot be seen — hence it stands here. */
 afterEach(resetLanguageProvider);
 
 test('die Wahl schlägt die Gerätesprache', () => {
@@ -13,7 +13,7 @@ test('die Wahl schlägt die Gerätesprache', () => {
 
 test('fehlt der englische Satz, kommt der deutsche', () => {
   preferLanguage('en');
-  // `settingsHealth` ist absichtlich nicht übersetzt — ein Markenname.
+  // `settingsHealth` is deliberately untranslated — a brand name.
   expect(en.settingsHealth).toBeUndefined();
   expect(texts().settingsHealth).toBe(de.settingsHealth);
 });

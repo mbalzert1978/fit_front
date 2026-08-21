@@ -59,7 +59,7 @@ function SlotList() {
             glyph="−"
             label={txt.removeNamed(s.name)}
             onPress={() => {
-              if (list.length <= 1) return; // letzter Slot bleibt
+              if (list.length <= 1) return; // the last slot stays
               setSlotError(null);
               slotOps.remove.mutate(s.id, {
                 onError: (e) => setSlotError(e instanceof ApiError && e.type === problems.slotNotEmpty ? txt.settingsSlotNotEmpty : null),
@@ -88,7 +88,7 @@ function DailyGoal() {
   const saveGoals = useSaveGoals();
   const dailyKcal = goals?.dailyKcal;
 
-  /** Lokale Verteilung; das Tagesziel friert ein, solange die Summe ≠ 100 ist. */
+  /** The local split; the daily goal freezes while the sum is ≠ 100. */
   const [dist, setDist] = useState<Record<MacroKey, { percent: number; grams: number }> | null>(null);
   const [kcalDraft, setKcalDraft] = useState<string | null>(null);
 
@@ -165,7 +165,7 @@ function DailyGoal() {
                   setDist((d) => {
                     if (!d || !goals) return d;
                     const grams = Number(v.replace(',', '.')) || 0;
-                    // Gramm-Eingabe zieht den Prozentwert sofort nach.
+                    // Typing grams drags the percentage along at once.
                     const percent = goals.dailyKcal > 0 ? (grams * kcalPerGram(m) * 100) / goals.dailyKcal : 0;
                     const next = { ...d, [m]: { percent, grams } };
                     commitIfBalanced(next);
@@ -253,12 +253,12 @@ function HealthSection() {
 }
 
 /**
- * Darstellung und Sprache wirken sofort und werden zugleich geschrieben: die
- * Sprache geht an die Naht, bevor die Antwort da ist, damit der Nutzer nicht auf
- * eine Runde zum Server wartet.
+ * Appearance and language take effect at once and are written at the same time:
+ * the language goes to the seam before the response is there, so the user does
+ * not wait a round trip to see that their tap did something.
  *
- * `usePreferences()` steht hier ohne Leser — die Abfrage ist der Weg, auf dem
- * die gespeicherte Vorliebe überhaupt in die Naht kommt.
+ * `usePreferences()` stands here without a reader — the query is the way the
+ * stored preference gets into the seam at all.
  */
 function Appearance() {
   const txt = useTexts();
@@ -298,7 +298,7 @@ function Appearance() {
   );
 }
 
-/** Der einzige Ort, an dem steht, auf wessen Konto man schaut — und der Aufrufer für `GET /identity/me`. */
+/** The only place that says whose account you are looking at — and the caller for `GET /identity/me`. */
 function Account() {
   const t = useTheme();
   const txt = useTexts();

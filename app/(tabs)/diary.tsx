@@ -9,7 +9,7 @@ import { today, type DiaryDate } from '../../src/api/diaryDate';
 import { useDiaryDay } from '../../src/api/hooks';
 import type { DiaryDay, MealSlotDay } from '../../src/api/types';
 
-/** Steht für den noch nicht geladenen Tag: alles null, kein Datum. */
+/** Stands for the day not yet loaded: everything zero, no date. */
 const EMPTY_DAY = {
   totals: { kcal: 0, carbsG: 0, proteinG: 0, fatG: 0 },
   goal: { dailyKcal: 0, carbsG: 0, proteinG: 0, fatG: 0 },
@@ -73,7 +73,7 @@ function SlotBlock({ slot, date }: { slot: MealSlotDay; date: DiaryDate }) {
         />
       </View>
       <View style={{ height: 1, backgroundColor: t.color.divider, marginTop: t.space[2] }} />
-      {/* Leerer Slot zeigt bewusst keinen Hinweistext. */}
+      {/* An empty slot deliberately shows no hint. */}
       {slot.entries.map((e) => (
         <ListRow
           key={e.id}
@@ -114,7 +114,7 @@ export default function DiaryScreen() {
   const { data: day } = useDiaryDay(date);
   const d = day ?? EMPTY_DAY;
   const activity = d.activity;
-  // Reine Client-Sache: der Tag des Servers wäre ein anderer als der gezeigte
+  // Purely a client matter: the server's day would be another than the one shown
   // (docs/decisions/2026-08-20-0925-kalendertag-ist-reine-client-sache.md).
   const isFuture = date > today();
 

@@ -4,23 +4,23 @@ import { de, type Texts } from './de';
 import { en } from './en';
 
 /**
- * Die Schicht vor den Ressourcendateien; welche Sprache gilt, entscheidet die
- * Naht in `src/language.ts` (`docs/regeln.md`, Beschriftungen).
+ * The layer in front of the resource files; which language applies is decided by
+ * the seam in `src/language.ts` (`docs/regeln.md`, Beschriftungen).
  *
- * Der Rückfall ist ein Spread und keine Suche: die deutsche Fassung ist
- * vollständig, ein fehlender Satz ist damit deutsch und nie ein Schlüssel.
+ * The fallback is a spread and no lookup: the German version is complete, so a
+ * missing sentence is German and never a key.
  */
 const bundles: Record<Language, Texts> = { de, en: { ...de, ...en } };
 
-/** Die Sätze der geltenden Sprache, außerhalb von React. */
+/** The sentences of the applying language, outside React. */
 export const texts = (): Texts => bundles[language.tag()];
 
-/** Wie `texts()`, innerhalb von React — samt Neuzeichnen, sobald die Sprache wechselt. */
+/** Like `texts()`, inside React — including a redraw as soon as the language changes. */
 export function useTexts(): Texts {
   return useSyncExternalStore(subscribeLanguage, texts);
 }
 
-/** Die geltende Sprache selbst; der Schalter zeigt damit, was gerade gilt. */
+/** The applying language itself; the switch shows with it what currently holds. */
 export function useLanguage(): Language {
   return useSyncExternalStore(subscribeLanguage, language.tag);
 }
