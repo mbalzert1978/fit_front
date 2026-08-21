@@ -245,7 +245,7 @@ describe('Identity', () => {
   it('sagt feldweise, was an den Angaben nicht stimmt', async () => {
     const p = provider();
     p.given('Keine Registrierung mit a@b.de vorhanden')
-      .uponReceiving('Registrierung mit ungültiger E-Mail und zu kurzem Passwort')
+      .uponReceiving('Registrierung mit ungültiger E-Mail, zu kurzem Passwort und zu kurzem Namen')
       .withRequest({
         method: 'POST',
         path: '/api/v1/identity/register',
@@ -253,7 +253,9 @@ describe('Identity', () => {
         body: {
           email: 'kein-at-zeichen',
           password: 'kurz',
-          displayName: 'Markus',
+          // Ein Name, den die Maske nicht beurteilen kann: zu kurz ist eine
+          // Regel des Servers, keine der Oberfläche.
+          displayName: 'a',
           locale: 'de',
           timeZoneId: anyTimeZoneId,
         },
@@ -281,6 +283,11 @@ describe('Identity', () => {
             // sie zeigen, welchen Platz die Maske einplanen muss.
             email: M.eachLike('Die E-Mail-Adresse benötigt genau ein @-Zeichen (gefunden: 0)'),
             password: M.eachLike('Das Passwort muss mindestens 10 Zeichen lang sein (aktuell: 4)'),
+            // Der dritte Schlüssel steht mit im Vertrag, weil die Maske drei
+            // Felder anstreicht. Bliebe er offen, dürfte die Gegenseite ihn
+            // `name` nennen — die Verifikation bliebe grün und das Namensfeld
+            // stumm.
+            displayName: M.eachLike('Der Name muss mindestens 2 Zeichen lang sein (aktuell: 1)'),
           },
         }),
       );
@@ -289,10 +296,9 @@ describe('Identity', () => {
       // Die Maske hält ihre eine eigene Regel ein (`minPasswordLength`), aber
       // sie ist nicht der einzige Prüfer: hier geht bewusst vorbei, was sie
       // nicht abfangen kann.
-      const e = await register(
-        registrationRequest({ email: 'kein-at-zeichen', password: 'kurz', displayName: 'Markus' }),
-        versuchsKey,
-      ).catch((err: unknown) => err);
+      const e = await register(registrationRequest({ email: 'kein-at-zeichen', password: 'kurz', displayName: 'a' }), versuchsKey).catch(
+        (err: unknown) => err,
+      );
       expect(e).toBeInstanceOf(ApiError);
       const fehler = e as ApiError;
       expect(fehler.status).toBe(422);
@@ -300,13 +306,14 @@ describe('Identity', () => {
       // Genau das liest `app/register.tsx`: Feldname → mindestens ein Satz.
       expect(fehler.errors?.email?.[0]).toEqual(expect.any(String));
       expect(fehler.errors?.password?.[0]).toEqual(expect.any(String));
+      expect(fehler.errors?.displayName?.[0]).toEqual(expect.any(String));
     });
   });
 
   it('antwortet in der Sprache, in der gefragt wurde', async () => {
     const p = provider();
     p.given('Keine Registrierung mit a@b.de vorhanden')
-      .uponReceiving('Registrierung mit ungültiger E-Mail, auf Englisch gefragt')
+      .uponReceiving('Registrierung mit ungültigen Angaben, auf Englisch gefragt')
       .withRequest({
         method: 'POST',
         path: '/api/v1/identity/register',
@@ -318,7 +325,9 @@ describe('Identity', () => {
         body: {
           email: 'kein-at-zeichen',
           password: 'kurz',
-          displayName: 'Markus',
+          // Ein Name, den die Maske nicht beurteilen kann: zu kurz ist eine
+          // Regel des Servers, keine der Oberfläche.
+          displayName: 'a',
           // `locale` geht mit: es ist dieselbe Naht, die auch `Accept-Language`
           // füllt. Ein Konto, dessen Sprache eine andere wäre als die, in der
           // der Nutzer gerade liest, entsteht so gar nicht erst.
@@ -337,6 +346,7 @@ describe('Identity', () => {
           errors: {
             email: M.eachLike('The email address requires exactly one @ sign (found: 0)'),
             password: M.eachLike('The password must be at least 10 characters long (current: 4)'),
+            displayName: M.eachLike('The name must be at least 2 characters long (current: 1)'),
           },
         }),
       );
@@ -346,10 +356,9 @@ describe('Identity', () => {
       // denselben Weg wie auf dem Gerät eines englischsprachigen Nutzers.
       setLanguageProvider({ tag: () => 'en' });
       try {
-        const e = await register(
-          registrationRequest({ email: 'kein-at-zeichen', password: 'kurz', displayName: 'Markus' }),
-          versuchsKey,
-        ).catch((err: unknown) => err);
+        const e = await register(registrationRequest({ email: 'kein-at-zeichen', password: 'kurz', displayName: 'a' }), versuchsKey).catch(
+          (err: unknown) => err,
+        );
         expect(e).toBeInstanceOf(ApiError);
         const fehler = e as ApiError;
         expect(fehler.type).toBe(problems.validationFailed);
