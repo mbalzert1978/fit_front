@@ -6,7 +6,7 @@ import { Screen, SectionHeading, ValueField, Segmented, ListRow, OutlineButton, 
 import { useTheme } from '../../src/theme/ThemeProvider';
 import { useTexts } from '../../src/i18n';
 import { useRecipe, useSaveRecipe, useRecipeToDiary, useSlots, useProduct } from '../../src/api/hooks';
-import { newId } from '../../src/api/ids';
+import { newId, NEW_RECIPE_ID } from '../../src/api/ids';
 import { ApiError } from '../../src/api/client';
 import { problems } from '../../src/api/problems';
 import { qk } from '../../src/api/queryKeys';
@@ -154,7 +154,7 @@ export default function RecipeScreen() {
   const t = useTheme();
   const txt = useTexts();
   const params = useLocalSearchParams<{ id: string; addProductId?: string; date?: string }>();
-  const isNew = params.id === 'neu';
+  const isNew = params.id === NEW_RECIPE_ID;
   const date = params.date ? parseDiaryDate(params.date) : today();
 
   const { data: server } = useRecipe(params.id);

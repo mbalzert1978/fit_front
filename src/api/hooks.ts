@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api, apiWithMeta, ApiError, endpoints, pathSegment, type ApiResponse } from './client';
 import { qk } from './queryKeys';
-import { newId } from './ids';
+import { newId, NEW_RECIPE_ID } from './ids';
 import { clientProblems } from './problems';
 import { preferLanguage } from '../language';
 import { texts } from '../i18n';
@@ -59,7 +59,7 @@ export const useRecipe = (id: string) =>
   useQuery({
     queryKey: qk.recipe(id),
     queryFn: () => apiWithMeta<Recipe>(`/recipes/${pathSegment(id)}`).then(withEtag),
-    enabled: id !== 'neu',
+    enabled: id !== NEW_RECIPE_ID,
   });
 
 /**
@@ -177,7 +177,7 @@ export function useSaveRecipe(id: string) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (body: RecipeSave) => {
-      if (id === 'neu') {
+      if (id === NEW_RECIPE_ID) {
         return apiWithMeta<Recipe>('/recipes', { method: 'POST', body, idempotencyKey: body.id }).then(withEtag);
       }
       // No ETag, no save: a `PUT` without `If-Match` silently overwrites a

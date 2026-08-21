@@ -5,6 +5,7 @@ import { Screen, ListRow, OutlineButton } from '../../src/components';
 import { useTheme } from '../../src/theme/ThemeProvider';
 import { useTexts } from '../../src/i18n';
 import { useRecipes } from '../../src/api/hooks';
+import { NEW_RECIPE_ID } from '../../src/api/ids';
 
 export default function RecipesScreen() {
   const t = useTheme();
@@ -32,7 +33,7 @@ export default function RecipesScreen() {
       )}
 
       <View style={{ marginTop: t.space[8] }}>
-        <OutlineButton label={txt.recipesNew} onPress={() => router.push({ pathname: '/recipe/[id]', params: { id: 'neu' } })} />
+        <OutlineButton label={txt.recipesNew} onPress={() => router.push({ pathname: '/recipe/[id]', params: { id: NEW_RECIPE_ID } })} />
       </View>
     </Screen>
   );
