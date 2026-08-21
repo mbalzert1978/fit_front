@@ -29,9 +29,10 @@ git switch -c feat/sprache-fr origin/main
 Nie auf `main` committen. Prüfe vor dem ersten Commit mit `git branch --show-current`, worauf du
 stehst.
 
-## 2. Die vier Stellen im Code
+## 2. Die vier Schritte im Code
 
-Mehr sind es nicht. Halte dich an die Reihenfolge — der Typcheck führt dich.
+Halte dich an die Reihenfolge — der Typcheck führt dich. Vier Schritte, aber fünf Dateien: der
+letzte fasst zwei an. Die sechste kommt weiter unten dazu, unter „4. Prüfen".
 
 1. **Kennung eintragen:** `fr` in `supportedLanguages` ([`../src/language.ts`](../src/language.ts)).
    Ab hier bricht `npx tsc --noEmit`, bis Schritt 3 steht. Das ist gewollt.
@@ -54,10 +55,19 @@ Mehr sind es nicht. Halte dich an die Reihenfolge — der Typcheck führt dich.
 3. **Bündel registrieren:** in [`../src/i18n/index.ts`](../src/i18n/index.ts)
    `fr: { ...de, ...fr }` zu `bundles` hinzufügen. `Record<Language, Texts>` erzwingt genau das —
    fehlt der Eintrag, bleibt der Typcheck rot.
-4. **Schalter erweitern:** in [`../app/(tabs)/settings.tsx`](../app/\(tabs\)/settings.tsx) eine
-   Option in `Segmented` und den Sprachnamen als Schlüssel in
-   [`../src/i18n/de.ts`](../src/i18n/de.ts) (`languageFr: 'Français'`). Sprachnamen stehen in
-   ihrer eigenen Sprache und werden **nicht** übersetzt.
+4. **Schalter erweitern — zwei Dateien:** in
+   [`../app/(tabs)/settings.tsx`](../app/\(tabs\)/settings.tsx) eine Option in `Segmented`, und
+   den Sprachnamen als Schlüssel in [`../src/i18n/de.ts`](../src/i18n/de.ts)
+   (`languageFr: 'Français'`). Sprachnamen stehen in ihrer eigenen Sprache und werden **nicht**
+   übersetzt.
+
+   Der Name gehört dort hin und **nicht** als Literal in den Screen:
+   `{ value: 'fr', label: 'Français' }` bricht den Lint mit „Beschriftungen gehoeren nach src/i18n
+   und kommen ueber useTexts() in den Screen." Die Regel liegt in
+   [`../eslint.config.js`](../eslint.config.js) und verbietet in `app/**/*.tsx` sichtbaren Text
+   zwischen Tags ebenso wie eine Beschriftung als Attribut (`label`, `hint`, `note`,
+   `placeholder`, `title`, `subtitle`, `accessibilityLabel`). Richtig ist
+   `{ value: 'fr', label: txt.languageFr }` — `txt` kommt aus `useTexts()`.
 
 ## 3. Was du nicht anfasst
 
@@ -75,6 +85,8 @@ Mehr sind es nicht. Halte dich an die Reihenfolge — der Typcheck führt dich.
   Sprachbeitrags.
 
 ## 4. Prüfen
+
+Hier kommt die sechste Datei dazu.
 
 ```sh
 ./make.ps1 ci        # lint, format-check, typecheck, complexity, test
