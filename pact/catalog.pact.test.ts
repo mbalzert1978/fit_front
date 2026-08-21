@@ -247,6 +247,11 @@ describe('Catalog — Foto-Auftrag', () => {
         'image/jpeg',
         tableImage,
         'file',
+        // Die Boundary steht fest, statt bei jedem Lauf gewürfelt zu werden: sie
+        // trennt die Teile und trägt keine Aussage — der Vertrag matcht sie
+        // ohnehin nur als `boundary=.*`. Ohne festen Wert schriebe jeder Testlauf
+        // eine neue in `pacts/` und machte den Arbeitsbaum grundlos schmutzig.
+        'naehrwerttabelle',
       )
       .willRespondWith({
         status: 202,

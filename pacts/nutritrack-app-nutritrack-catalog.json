@@ -750,11 +750,11 @@
         }
       ],
       "request": {
-        "body": "LS1hUlY5bk5hSmR6ZXhJU0M3DQpDb250ZW50LURpc3Bvc2l0aW9uOiBmb3JtLWRhdGE7IG5hbWU9ImZpbGUiOyBmaWxlbmFtZT0ibmFlaHJ3ZXJ0dGFiZWxsZS5qcGciDQpDb250ZW50LVR5cGU6IGltYWdlL2pwZWcNCg0K/9j/4AAQSkZJRgABAQEAYABgAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/wAALCAABAAEBAREA/8QAFAABAAAAAAAAAAAAAAAAAAAACf/EABQQAQAAAAAAAAAAAAAAAAAAAAD/2gAIAQEAAD8AKp//2Q0KLS1hUlY5bk5hSmR6ZXhJU0M3LS0NCg==",
+        "body": "LS1uYWVocndlcnR0YWJlbGxlDQpDb250ZW50LURpc3Bvc2l0aW9uOiBmb3JtLWRhdGE7IG5hbWU9ImZpbGUiOyBmaWxlbmFtZT0ibmFlaHJ3ZXJ0dGFiZWxsZS5qcGciDQpDb250ZW50LVR5cGU6IGltYWdlL2pwZWcNCg0K/9j/4AAQSkZJRgABAQEAYABgAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/wAALCAABAAEBAREA/8QAFAABAAAAAAAAAAAAAAAAAAAACf/EABQQAQAAAAAAAAAAAAAAAAAAAAD/2gAIAQEAAD8AKp//2Q0KLS1uYWVocndlcnR0YWJlbGxlLS0NCg==",
         "headers": {
           "Accept-Language": "de",
           "Authorization": "Bearer eyJ...",
-          "Content-Type": "multipart/form-data; boundary=aRV9nNaJdzexISC7"
+          "Content-Type": "multipart/form-data; boundary=naehrwerttabelle"
         },
         "matchingRules": {
           "body": {
