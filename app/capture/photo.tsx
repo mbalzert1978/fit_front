@@ -5,12 +5,13 @@ import * as ImageManipulator from 'expo-image-manipulator';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Screen, CameraFrame, OutlineButton } from '../../src/components';
 import { useTheme } from '../../src/theme/ThemeProvider';
+import { useTexts } from '../../src/i18n';
 import { uploadNutritionPhoto } from '../../src/api/photoUpload';
-
-const hints = ['Ganze Tabelle inklusive Kopfzeile erfassen', 'Gerade halten, Reflexionen vermeiden', 'Angaben pro 100 g bevorzugen'];
 
 export default function PhotoScreen() {
   const t = useTheme();
+  const txt = useTexts();
+  const hints = [txt.photoHint1, txt.photoHint2, txt.photoHint3];
   const params = useLocalSearchParams<Record<string, string>>();
   const [permission, requestPermission] = useCameraPermissions();
   const [busy, setBusy] = useState(false);
@@ -31,10 +32,9 @@ export default function PhotoScreen() {
       const photoId = await uploadNutritionPhoto(small.uri, params.barcode);
       router.replace({ pathname: '/capture/processing', params: { ...params, photoId } });
     } catch {
-      // Der Upload sind jetzt drei Schritte statt einem, und jeder kann für sich
-      // scheitern. Ohne diesen Zweig bliebe der Nutzer vor einer Kamera stehen,
-      // die wieder freigegeben ist und nichts dazu sagt.
-      setFailed('Hochladen fehlgeschlagen — bitte erneut versuchen');
+      // Three steps, each can fail on its own. Without this branch the user
+      // would face a camera that is free again and says nothing about it.
+      setFailed(txt.photoUploadFailed);
     } finally {
       setBusy(false);
     }
@@ -44,7 +44,7 @@ export default function PhotoScreen() {
 
   return (
     <Screen scroll={false}>
-      <Text style={[t.font.title, { color: t.color.text }]}>Nährwerttabelle</Text>
+      <Text style={[t.font.title, { color: t.color.text }]}>{txt.photoTitle}</Text>
       <CameraFrame height={360} style={{ marginTop: t.space[4] }}>
         {permission?.granted ? <CameraView ref={cam} style={{ flex: 1 }} /> : null}
       </CameraFrame>
@@ -58,9 +58,9 @@ export default function PhotoScreen() {
       </View>
       <View style={{ marginTop: t.space[8] }}>
         {permission?.granted ? (
-          <OutlineButton label={busy ? 'Wird gesendet …' : 'Foto aufnehmen'} onPress={shoot} disabled={busy} />
+          <OutlineButton label={busy ? txt.photoBusy : txt.photoShoot} onPress={shoot} disabled={busy} />
         ) : (
-          <OutlineButton label="Kamera freigeben" onPress={requestPermission} />
+          <OutlineButton label={txt.cameraPermission} onPress={requestPermission} />
         )}
       </View>
     </Screen>

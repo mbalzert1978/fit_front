@@ -1,7 +1,8 @@
 module.exports = {
   preset: 'ts-jest',
   testEnvironment: 'node',
-  testMatch: ['**/pact/**/*.pact.test.ts'],
+  // Verträge und die wenigen Tests neben dem Code, den sie prüfen.
+  testMatch: ['**/pact/**/*.pact.test.ts', '**/src/**/*.test.ts'],
   setupFiles: ['<rootDir>/pact/env.ts'],
   setupFilesAfterEnv: ['<rootDir>/pact/reset.ts'],
   moduleNameMapper: {

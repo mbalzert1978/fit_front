@@ -1,17 +1,12 @@
-import { pact, M, enveloped, authHeadersIn, privateHeaders, unauthorized, problems } from './setup';
+import { pact, against, M, enveloped, authHeadersIn, privateHeaders, unauthorized, problems } from './setup';
 import { api } from '../src/api/client';
 
 /**
- * Bedarf: `app/(tabs)/settings.tsx`, Abschnitt „Apple Health".
+ * Needed by: `app/(tabs)/settings.tsx`, section "Apple Health".
  *
- * Gelesen wird heute nur die Freigabe-Auskunft: sie beschriftet die Zeile
- * (Verbunden/Nicht verbunden) und stellt die beiden Schalter. Das Herstellen
- * der Verbindung und `PUT /health/activity/{date}` fehlen bewusst — sie sind
- * noch nicht gebaut (Issue #21), und ein Vertrag ohne
- * Aufrufer wäre eine Zusage, die niemand einlöst.
- *
- * Die Freigaben gehören zu einem Nutzer: die Anfrage weist sich aus, und die
- * Antwort ist `no-store`.
+ * Only the consent statement is read today. Establishing the connection and
+ * `PUT /health/activity/{date}` are missing deliberately — not built yet
+ * (Issue #21), and a contract without a caller assures what nobody redeems.
  */
 const provider = () => pact('nutritrack-health');
 
@@ -31,7 +26,7 @@ describe('HealthSync', () => {
         }),
       });
 
-    await p.executeTest(async () => {
+    await against(p, async () => {
       const consent = await api<{ connected: boolean }>('/health/consent');
       expect(typeof consent.connected).toBe('boolean');
     });
@@ -44,7 +39,7 @@ describe('HealthSync', () => {
       .withRequest({ method: 'GET', path: '/api/v1/health/consent', headers: authHeadersIn('de') })
       .willRespondWith(unauthorized());
 
-    await p.executeTest(async () => {
+    await against(p, async () => {
       await expect(api('/health/consent')).rejects.toMatchObject({ type: problems.tokenExpired, status: 401 });
     });
   });

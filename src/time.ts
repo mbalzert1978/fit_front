@@ -1,37 +1,24 @@
 import { getCalendars } from 'expo-localization';
 
 /**
- * Die Naht zur Uhr und zur Zeitzone des Geräts.
- *
- * Kein Aufrufer fasst `new Date()` oder `expo-localization` selbst an. Das hat
- * zwei Gründe: die Zeit ist die eine Eingabe, die sich nicht wiederholen lässt —
- * ein Test, der sie nicht setzen kann, prüft an jedem Tag etwas anderes —, und
- * die Herkunft der Zonenkennung ist eine Plattformfrage, die sich ändern darf,
- * ohne dass ein Screen davon weiß.
- *
- * Wächst hier etwas hinzu (Uhrzeit des Geräts gegen Serverzeit, eine zweite
- * Quelle für die Zone), wächst es in dieser Datei und nicht daneben.
+ * The seam to the device's clock and time zone. No caller touches `new Date()`
+ * or `expo-localization` itself: time is the one input that cannot be repeated,
+ * and where the zone identifier comes from is a platform question no screen
+ * should know about.
  */
 export type TimeProvider = {
-  /** Jetzt. Der einzige Weg zur aktuellen Zeit im ganzen Code. */
+  /** Now. The only way to the current time in the whole code. */
   now(): Date;
-  /**
-   * IANA-Kennung der Gerätezone, etwa `Europe/Berlin`. Wirft, wenn sie nicht zu
-   * ermitteln ist — dieser Fall ist kein Nutzerfall, sondern ein kaputter Build.
-   */
+  /** IANA identifier of the device zone. Throws where none can be determined. */
   timeZoneId(): string;
 };
 
 /**
- * Die Umsetzung für das Gerät. `expo-localization` ist die verlässliche Quelle:
- * iOS gibt `Locale.current.calendar.timeZone.identifier`, Android
- * `Calendar.getInstance().timeZone.id`. `Intl` ist der Rückfall für Umgebungen
- * ohne die native Seite (Web, Tests, Node).
- *
- * Schweigt beides, kommt weder `null` noch ein erfundenes `UTC` heraus, sondern
- * ein Fehler. Dafür müssten das native Modul **und** `Intl` ausfallen — das ist
- * kein Nutzerfall, sondern ein kaputter Build, und der soll auffallen, statt
- * ein Konto mit einer stillschweigend falschen Zone entstehen zu lassen.
+ * `expo-localization` is the reliable source, `Intl` the fallback for
+ * environments without the native side (web, tests, Node). If both stay silent,
+ * no invented `UTC` comes out but an error: an account with a tacitly wrong
+ * zone would be worse than a broken build
+ * (`docs/decisions/2026-08-20-0936-zeitzone-scheitert-schnell-und-reist-wie-das-geraet-sie-nennt.md`).
  */
 const deviceTime: TimeProvider = {
   now: () => new Date(),
@@ -46,17 +33,17 @@ const deviceTime: TimeProvider = {
 
 let current: TimeProvider = deviceTime;
 
-/** Nur für Tests und Prototypen: die Naht von außen besetzen. */
+/** For tests and prototypes only: occupy the seam from outside. */
 export function setTimeProvider(p: TimeProvider) {
   current = p;
 }
 
-/** Zurück zur Gerätezeit. */
+/** Back to the device's clock. */
 export function resetTimeProvider() {
   current = deviceTime;
 }
 
-/** Der eine Zugang für allen übrigen Code. */
+/** The one way in for all remaining code. */
 export const time: TimeProvider = {
   now: () => current.now(),
   timeZoneId: () => current.timeZoneId(),

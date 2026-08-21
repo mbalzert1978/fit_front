@@ -2,7 +2,7 @@ import React from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { useTheme } from '../theme/ThemeProvider';
 
-/** Reihe gleich breiter Felder, Trennung durch 1-px-Linien. Kein Radius auf den Feldern. */
+/** A row of equally wide fields, separated by 1 px lines. No radius on the fields. */
 export function Segmented<T extends string>({
   options,
   value,

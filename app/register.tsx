@@ -3,126 +3,111 @@ import { Text, View } from 'react-native';
 import { router } from 'expo-router';
 import { Screen, OutlineButton, FormField } from '../src/components';
 import { useTheme } from '../src/theme/ThemeProvider';
+import { useTexts, type Texts } from '../src/i18n';
 import { register, registrationRequest, minPasswordLength, maxDisplayNameLength, type RegistrationRequest } from '../src/api/session';
 import { ApiError, OfflineError } from '../src/api/client';
 import { problems } from '../src/api/problems';
 import { newId } from '../src/api/ids';
 
-/** Die Felder, die diese Maske zeigt. Wozu sie keines hat, kann sie nicht anstreichen. */
-const sichtbareFelder = ['displayName', 'email', 'password'] as const;
-type SichtbaresFeld = (typeof sichtbareFelder)[number];
+/** The fields this form shows. What it has none for, it cannot mark up. */
+const visibleFields = ['displayName', 'email', 'password'] as const;
+type VisibleField = (typeof visibleFields)[number];
 
-/** Die Sätze aus `problem+json`, nach den Feldnamen des Anfrage-Rumpfes geordnet. */
-type FieldHints = Partial<Record<SichtbaresFeld, string[]>>;
+/** The sentences from `problem+json`, keyed by the field names of the request body. */
+type FieldHints = Partial<Record<VisibleField, string[]>>;
 
 /**
- * Trennt, was an ein Feld gehört, von dem, was hier kein Feld hat.
- *
- * Der Server prüft mehr, als diese Maske abfragt — `locale` und `timeZoneId`
- * kommen aus dem Gerät und stehen in keiner Zeile. Käme dazu eine Begründung
- * und niemand finge sie auf, scheiterte die Registrierung **stumm**: kein roter
- * Rand, kein Satz, nur ein Knopf, der wieder angeht.
+ * Splits what belongs to a field from what has no field here. The server checks
+ * more than the form asks for; if nobody caught that, registration would fail
+ * **silently** — only a button switching back on.
  */
 function splitHints(errors: Record<string, string[]>) {
   const fields: FieldHints = {};
   const general: string[] = [];
-  for (const [feld, saetze] of Object.entries(errors)) {
-    if ((sichtbareFelder as readonly string[]).includes(feld)) fields[feld as SichtbaresFeld] = saetze;
-    else general.push(...saetze);
+  for (const [field, messages] of Object.entries(errors)) {
+    if ((visibleFields as readonly string[]).includes(field)) fields[field as VisibleField] = messages;
+    else general.push(...messages);
   }
   return { fields, general };
 }
 
-/** Die feldweisen Begründungen, wenn welche kamen. */
+/** The per-field reasoning, where any arrived. */
 function errorsOf(e: unknown): Record<string, string[]> {
   return e instanceof ApiError ? (e.errors ?? {}) : {};
 }
 
 /**
- * Die Zeile unter den Feldern. Der Server redet zuerst: `detail` ist sein Satz
- * zu genau diesem Vorfall, und er kommt in der Sprache, in der gefragt wurde —
- * die Maske reicht ihn unverändert durch und übersetzt nichts. Eigene Sätze hat
- * sie nur, wo keiner kommt: beim Netzfehler, und als letzter Rückfall.
+ * The line below the fields. The server speaks first, the form passes it through
+ * and translates nothing
+ * (`docs/decisions/2026-08-20-1209-der-satz-zum-vorfall-steht-in-detail.md`).
  */
-function generalHintFor(e: unknown, general: string[]): string | null {
+function generalHintFor(e: unknown, general: string[], txt: Texts): string | null {
   if (general.length > 0) return general.join(' ');
-  if (e instanceof OfflineError) return 'Keine Verbindung';
-  if (e instanceof ApiError) return e.detail ?? 'Registrierung derzeit nicht möglich';
-  return 'Registrierung derzeit nicht möglich';
+  if (e instanceof OfflineError) return txt.noConnection;
+  if (e instanceof ApiError) return e.detail ?? txt.registerFailed;
+  return txt.registerFailed;
 }
 
 /**
- * Der Idempotency-Key eines Registrierungsversuchs.
- *
- * Er hängt an den **Daten**, nicht am Tastendruck: zweimal dasselbe getippt ist
- * derselbe Versuch, und der Server spielt die erste Antwort noch einmal ab,
- * statt eine zweite Registrierung zu prüfen. Genau dafür ist er da — die
- * Antwort geht auf dem Rückweg verloren, der Nutzer tippt erneut, und ohne
- * Schlüssel läse er, seine E-Mail sei bereits vergeben. Von ihm selbst.
- *
- * Ändert sich ein Feld, ist es ein anderer Versuch und braucht einen anderen
- * Schlüssel: derselbe an einem anderen Rumpf ist ein Fehler und keine
- * Wiederholung (`idempotency-key-reused`). Deshalb hängt er am **ganzen**
- * Rumpf, so wie er hinausgeht — samt Sprache und Zone, die kein Feld der Maske
- * sind und sich zwischen zwei Versuchen trotzdem ändern können.
+ * The idempotency key hangs on the **data**, not on the keypress: typing the
+ * same thing twice is the same attempt. And it hangs on the **whole** body,
+ * language and zone included — they are no field of the form and can change
+ * between attempts anyway, and the same key on another body is an error
+ * (`docs/decisions/2026-08-21-1104-der-schluessel-haengt-am-ganzen-rumpf.md`).
  */
 function useIdempotencyKey() {
-  const versuch = useRef<{ daten: string; key: string } | null>(null);
+  const attempt = useRef<{ payload: string; key: string } | null>(null);
   return (r: RegistrationRequest) => {
-    const daten = JSON.stringify(r);
-    if (versuch.current?.daten !== daten) versuch.current = { daten, key: newId() };
-    return versuch.current.key;
+    const payload = JSON.stringify(r);
+    if (attempt.current?.payload !== payload) attempt.current = { payload, key: newId() };
+    return attempt.current.key;
   };
 }
 
 export default function RegisterScreen() {
   const t = useTheme();
+  const txt = useTexts();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [fields, setFields] = useState<FieldHints>({});
-  // Die vergebene E-Mail steht in keinem `errors`-Eintrag: sie verstößt gegen
-  // keine Feldregel. Rot wird das Feld trotzdem — gemeint ist genau dieses.
+  // A taken email stands in no `errors` entry: it violates no field rule. The
+  // field turns red regardless — this one is exactly what is meant.
   const [conflict, setConflict] = useState(false);
   const [hint, setHint] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const keyFor = useIdempotencyKey();
 
-  /**
-   * Ein Aufruf, ein Ausgang: die Registrierung legt das Konto an und liefert
-   * dieselbe Sitzung wie die Anmeldung. Deshalb führt der Erfolg direkt ins
-   * Tagebuch und nicht zurück auf die Anmeldemaske.
-   */
+  /** One call, one outcome — hence success leads straight to the diary and not back to sign-in. */
   async function submit() {
     setBusy(true);
     setFields({});
     setConflict(false);
     setHint(null);
     try {
-      const anfrage = registrationRequest({ email: email.trim(), password, displayName: name.trim() });
-      await register(anfrage, keyFor(anfrage));
+      const request = registrationRequest({ email: email.trim(), password, displayName: name.trim() });
+      await register(request, keyFor(request));
       router.replace('/(tabs)/diary');
     } catch (e) {
-      const { fields: benannt, general } = splitHints(errorsOf(e));
-      setFields(benannt);
+      const { fields: named, general } = splitHints(errorsOf(e));
+      setFields(named);
       setConflict(e instanceof ApiError && e.type === problems.emailAlreadyRegistered);
-      setHint(generalHintFor(e, general));
+      setHint(generalHintFor(e, general, txt));
     } finally {
       setBusy(false);
     }
   }
 
-  // Die eigene Regel steht vor dem Aufruf, nicht erst in seiner Antwort. Alles
-  // Weitere prüft der Server; er kennt seine Regeln, die Maske nicht.
+  // The one own rule stands before the call; everything else the server checks.
   const tooShort = password.length > 0 && password.length < minPasswordLength;
   const nameOk = name.trim().length > 0;
 
   return (
     <Screen>
-      <Text style={[t.font.title, { color: t.color.text }]}>Konto anlegen</Text>
+      <Text style={[t.font.title, { color: t.color.text }]}>{txt.registerTitle}</Text>
       <View style={{ gap: t.space[6], marginTop: t.space[8] }}>
         <FormField
-          label="Name"
+          label={txt.registerName}
           hints={fields.displayName}
           value={name}
           onChangeText={setName}
@@ -131,7 +116,7 @@ export default function RegisterScreen() {
           textContentType="name"
         />
         <FormField
-          label="E-Mail"
+          label={txt.loginEmail}
           hints={fields.email}
           invalid={conflict}
           value={email}
@@ -141,9 +126,9 @@ export default function RegisterScreen() {
           textContentType="username"
         />
         <FormField
-          label="Passwort"
+          label={txt.loginPassword}
           hints={fields.password}
-          note={`Mindestens ${minPasswordLength} Zeichen`}
+          note={txt.registerPasswordNote(minPasswordLength)}
           noteInvalid={tooShort}
           value={password}
           onChangeText={setPassword}
@@ -154,13 +139,13 @@ export default function RegisterScreen() {
       {hint ? <Text style={[t.font.micro, { color: t.color.accent, marginTop: t.space[4] }]}>{hint}</Text> : null}
       <View style={{ gap: t.space[4], marginTop: t.space[8] }}>
         <OutlineButton
-          label={busy ? 'Konto wird angelegt …' : 'Konto anlegen'}
+          label={busy ? txt.registerBusy : txt.registerTitle}
           onPress={submit}
           disabled={busy || !nameOk || !email || password.length < minPasswordLength}
         />
-        {/* Zurück und nicht ersetzen: sonst stünde die Anmeldemaske zweimal im Stapel. */}
+        {/* Back and not replace: otherwise the sign-in form would stand twice in the stack. */}
         <OutlineButton
-          label="Ich habe schon ein Konto"
+          label={txt.registerToLogin}
           variant="muted"
           onPress={() => (router.canGoBack() ? router.back() : router.replace('/login'))}
         />

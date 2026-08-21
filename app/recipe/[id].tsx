@@ -4,8 +4,9 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { useQueryClient } from '@tanstack/react-query';
 import { Screen, SectionHeading, ValueField, Segmented, ListRow, OutlineButton, SquareIconButton } from '../../src/components';
 import { useTheme } from '../../src/theme/ThemeProvider';
+import { useTexts } from '../../src/i18n';
 import { useRecipe, useSaveRecipe, useRecipeToDiary, useSlots, useProduct } from '../../src/api/hooks';
-import { newId } from '../../src/api/ids';
+import { newId, NEW_RECIPE_ID } from '../../src/api/ids';
 import { ApiError } from '../../src/api/client';
 import { problems } from '../../src/api/problems';
 import { qk } from '../../src/api/queryKeys';
@@ -16,20 +17,21 @@ import type { DiaryDate } from '../../src/api/diaryDate';
 type Draft = { name: string; portions: string; ingredients: RecipeIngredient[] };
 type Totals = { grams: number; kcal: number; perPortionG: number; perPortionKcal: number; portions: number };
 
-/** Makros je Portion stehen nur, solange der Entwurf dem Serverstand entspricht. */
+/** Macros per portion stand only while the draft matches the server's state. */
 function ComputedTotals({ totals, server, changed }: { totals: Totals; server?: Recipe; changed: boolean }) {
+  const txt = useTexts();
   return (
     <>
-      <SectionHeading>Berechnet</SectionHeading>
-      <ListRow title="Gesamtmenge" value={`${totals.grams} g`} />
-      <ListRow title="Gesamt" value={`${totals.kcal} kcal`} />
-      <ListRow title="Pro Portion" value={`${totals.perPortionG} g`} />
-      <ListRow title="Pro Portion" value={`${totals.perPortionKcal} kcal`} />
+      <SectionHeading>{txt.recipeComputed}</SectionHeading>
+      <ListRow title={txt.recipeTotalGrams} value={`${totals.grams} g`} />
+      <ListRow title={txt.recipeTotalKcal} value={`${totals.kcal} kcal`} />
+      <ListRow title={txt.recipePerPortion} value={`${totals.perPortionG} g`} />
+      <ListRow title={txt.recipePerPortion} value={`${totals.perPortionKcal} kcal`} />
       {server && !changed ? (
         <>
-          <ListRow title="Kohlenhydrate je Portion" value={`${server.macrosPerPortion.carbsG} g`} />
-          <ListRow title="Eiweiß je Portion" value={`${server.macrosPerPortion.proteinG} g`} />
-          <ListRow title="Fett je Portion" value={`${server.macrosPerPortion.fatG} g`} />
+          <ListRow title={txt.recipeCarbsPerPortion} value={`${server.macrosPerPortion.carbsG} g`} />
+          <ListRow title={txt.recipeProteinPerPortion} value={`${server.macrosPerPortion.proteinG} g`} />
+          <ListRow title={txt.recipeFatPerPortion} value={`${server.macrosPerPortion.fatG} g`} />
         </>
       ) : null}
     </>
@@ -37,12 +39,9 @@ function ComputedTotals({ totals, server, changed }: { totals: Totals; server?: 
 }
 
 /**
- * Speichern samt den beiden Ausgängen, die kein Erfolg sind.
- *
- * Ohne ETag wird gar nicht erst geschrieben: ein `PUT` ohne `If-Match`
- * überschriebe eine fremde, zwischenzeitlich gespeicherte Fassung lautlos.
- * Kommt der Konflikt vom Server, bleibt der Entwurf stehen und der Serverstand
- * wird nachgeladen — verloren geht nichts.
+ * Without an ETag nothing is written at all — a `PUT` without `If-Match` would
+ * silently overwrite a version saved in the meantime. If the conflict comes from
+ * the server, the draft stays and the server's state is reloaded.
  */
 function SaveRecipe({
   id,
@@ -60,6 +59,7 @@ function SaveRecipe({
   onReload: () => void;
 }) {
   const t = useTheme();
+  const txt = useTexts();
   const qc = useQueryClient();
   const save = useSaveRecipe(id);
   const [hint, setHint] = useState<string | null>(null);
@@ -79,7 +79,7 @@ function SaveRecipe({
       router.replace({ pathname: '/recipe/[id]', params: { id: saved.id } });
     } catch (e) {
       const conflict = e instanceof ApiError && e.type === problems.concurrencyConflict;
-      setHint(conflict ? 'Zwischenzeitlich anderswo geändert — Stand wird neu geladen' : 'Speichern nicht möglich');
+      setHint(conflict ? txt.recipeConflict : txt.recipeSaveFailed);
       if (conflict) {
         onReload();
         qc.invalidateQueries({ queryKey: qk.recipe(id) });
@@ -91,8 +91,8 @@ function SaveRecipe({
 
   return (
     <View style={{ marginTop: t.space[8] }}>
-      <OutlineButton label="Rezept speichern" disabled={!canSave || save.isPending || missingEtag} onPress={submit} />
-      {missingEtag ? <Text style={[t.font.micro, note]}>Stand nicht überprüfbar — Rezept neu laden</Text> : null}
+      <OutlineButton label={txt.recipeSave} disabled={!canSave || save.isPending || missingEtag} onPress={submit} />
+      {missingEtag ? <Text style={[t.font.micro, note]}>{txt.recipeNoEtag}</Text> : null}
       {hint ? <Text style={[t.font.micro, note]}>{hint}</Text> : null}
     </View>
   );
@@ -100,6 +100,7 @@ function SaveRecipe({
 
 function AddToDiary({ recipeId, date, totals }: { recipeId: string; date: DiaryDate; totals: Totals }) {
   const t = useTheme();
+  const txt = useTexts();
   const { data: slots } = useSlots();
   const toDiary = useRecipeToDiary(recipeId);
   const [unit, setUnit] = useState<'Portion' | 'Gram'>('Portion');
@@ -113,11 +114,11 @@ function AddToDiary({ recipeId, date, totals }: { recipeId: string; date: DiaryD
 
   return (
     <>
-      <SectionHeading>Zum Tagebuch hinzufügen</SectionHeading>
+      <SectionHeading>{txt.recipeToDiary}</SectionHeading>
       <Segmented
         options={[
-          { value: 'Portion', label: 'Portionen' },
-          { value: 'Gram', label: 'Gramm' },
+          { value: 'Portion', label: txt.recipePortions },
+          { value: 'Gram', label: txt.recipeGrams },
         ]}
         value={unit}
         onChange={setUnit}
@@ -137,7 +138,7 @@ function AddToDiary({ recipeId, date, totals }: { recipeId: string; date: DiaryD
       </View>
       <View style={{ marginTop: t.space[6] }}>
         <OutlineButton
-          label="Zum Tagebuch hinzufügen"
+          label={txt.recipeToDiary}
           disabled={!slotId || toDiary.isPending}
           onPress={async () => {
             await toDiary.mutateAsync({ date, mealSlotId: slotId!, amount: n, unit });
@@ -151,8 +152,9 @@ function AddToDiary({ recipeId, date, totals }: { recipeId: string; date: DiaryD
 
 export default function RecipeScreen() {
   const t = useTheme();
+  const txt = useTexts();
   const params = useLocalSearchParams<{ id: string; addProductId?: string; date?: string }>();
-  const isNew = params.id === 'neu';
+  const isNew = params.id === NEW_RECIPE_ID;
   const date = params.date ? parseDiaryDate(params.date) : today();
 
   const { data: server } = useRecipe(params.id);
@@ -168,7 +170,7 @@ export default function RecipeScreen() {
     }
   }, [server, loaded]);
 
-  // Aus dem Scan zurückgekehrt: das erfasste Produkt wird Zutat des offenen Rezepts.
+  // Back from the scan: the captured product becomes an ingredient of the open recipe.
   useEffect(() => {
     if (!addedProduct) return;
     setDraft((d) =>
@@ -197,7 +199,7 @@ export default function RecipeScreen() {
     return { grams, kcal, perPortionG: Math.round(grams / portions), perPortionKcal: Math.round(kcal / portions), portions };
   }, [draft]);
 
-  // Vergleich gegen den zuletzt geladenen Serverstand: Name, Portionen, (Zutat, Gramm).
+  // Compared against the last loaded server state: name, portions, (ingredient, grams).
   const changed = useMemo(() => {
     if (isNew) return true;
     if (!server) return false;
@@ -221,16 +223,16 @@ export default function RecipeScreen() {
 
   return (
     <Screen>
-      <Text style={[t.font.label, { color: t.color.textMuted }]}>Rezept</Text>
+      <Text style={[t.font.label, { color: t.color.textMuted }]}>{txt.sourceRecipe}</Text>
       <TextInput
         value={draft.name}
         onChangeText={(name) => setDraft((d) => ({ ...d, name }))}
-        placeholder="Name"
+        placeholder={txt.recipeName}
         placeholderTextColor={t.color.textMuted}
         style={[t.font.body, nameField, { marginTop: t.space[3] }]}
       />
 
-      <SectionHeading>Zutaten</SectionHeading>
+      <SectionHeading>{txt.recipeIngredients}</SectionHeading>
       {draft.ingredients.map((i) => (
         <View
           key={i.id}
@@ -259,24 +261,24 @@ export default function RecipeScreen() {
           />
           <SquareIconButton
             glyph="−"
-            label={`${i.displayName} entfernen`}
+            label={txt.removeNamed(i.displayName)}
             onPress={() => setDraft((d) => ({ ...d, ingredients: d.ingredients.filter((x) => x.id !== i.id) }))}
           />
         </View>
       ))}
       <View style={{ marginTop: t.space[6], gap: t.space[3] }}>
         <OutlineButton
-          label="Zutat scannen"
+          label={txt.recipeScanIngredient}
           onPress={() => router.push({ pathname: '/(tabs)/scan', params: { target: 'recipe', recipeId: params.id, date } })}
         />
-        <Text style={[t.font.micro, { color: t.color.textMuted }]}>Zutaten kommen ausschließlich per Barcode oder OCR in die App.</Text>
+        <Text style={[t.font.micro, { color: t.color.textMuted }]}>{txt.recipeIngredientsOnlyScanned}</Text>
       </View>
 
-      <SectionHeading>Portionierung</SectionHeading>
+      <SectionHeading>{txt.recipePortioning}</SectionHeading>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: t.space[4] }}>
         <ValueField value={draft.portions} onChangeText={(portions) => setDraft((d) => ({ ...d, portions }))} />
         {hasIngredients ? (
-          <Text style={[t.font.body, t.tabular, { color: t.color.textMuted }]}>ergibt {totals.perPortionG} g pro Portion</Text>
+          <Text style={[t.font.body, t.tabular, { color: t.color.textMuted }]}>{txt.recipePerPortionHint(totals.perPortionG)}</Text>
         ) : null}
       </View>
 

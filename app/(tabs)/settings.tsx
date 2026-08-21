@@ -3,6 +3,8 @@ import { Text, TextInput, View } from 'react-native';
 import Slider from '@react-native-community/slider';
 import { Screen, SectionHeading, ValueField, Segmented, Toggle, OutlineButton, SquareIconButton } from '../../src/components';
 import { useTheme, useThemeMode } from '../../src/theme/ThemeProvider';
+import { useLanguage, useTexts, type Texts } from '../../src/i18n';
+import { preferLanguage } from '../../src/language';
 import {
   useMe,
   useGoals,
@@ -18,10 +20,11 @@ import { ApiError } from '../../src/api/client';
 import { problems } from '../../src/api/problems';
 
 type MacroKey = 'carbs' | 'protein' | 'fat';
-const macroLabel: Record<MacroKey, string> = { carbs: 'Kohlenhydrate', protein: 'Eiweiß', fat: 'Fett' };
+const macroLabel = (txt: Texts): Record<MacroKey, string> => ({ carbs: txt.macroCarbs, protein: txt.macroProtein, fat: txt.macroFat });
 
 function SlotList() {
   const t = useTheme();
+  const txt = useTexts();
   const { data: slots } = useSlots();
   const slotOps = useSlotMutations();
   const [slotError, setSlotError] = useState<string | null>(null);
@@ -30,7 +33,7 @@ function SlotList() {
 
   return (
     <>
-      <SectionHeading>Mahlzeiten-Slots</SectionHeading>
+      <SectionHeading>{txt.settingsSlots}</SectionHeading>
       {list.map((s, i) => (
         <View key={s.id} style={{ flexDirection: 'row', alignItems: 'center', gap: t.space[3], paddingVertical: t.space[2] }}>
           <Text style={[t.font.micro, t.tabular, { color: t.color.textMuted, width: 18 }]}>{i + 1}</Text>
@@ -54,13 +57,12 @@ function SlotList() {
           />
           <SquareIconButton
             glyph="−"
-            label={`${s.name} entfernen`}
+            label={txt.removeNamed(s.name)}
             onPress={() => {
-              if (list.length <= 1) return; // letzter Slot bleibt
+              if (list.length <= 1) return; // the last slot stays
               setSlotError(null);
               slotOps.remove.mutate(s.id, {
-                onError: (e) =>
-                  setSlotError(e instanceof ApiError && e.type === problems.slotNotEmpty ? 'Dieser Slot enthält noch Einträge' : null),
+                onError: (e) => setSlotError(e instanceof ApiError && e.type === problems.slotNotEmpty ? txt.settingsSlotNotEmpty : null),
               });
             }}
           />
@@ -68,8 +70,12 @@ function SlotList() {
       ))}
       {slotError ? <Text style={[t.font.micro, { color: t.color.accent, marginTop: t.space[2] }]}>{slotError}</Text> : null}
       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', gap: t.space[3], marginTop: t.space[4] }}>
-        <Text style={[t.font.body, { color: t.color.textMuted }]}>Slot hinzufügen</Text>
-        <SquareIconButton glyph="+" label="Slot hinzufügen" onPress={() => slotOps.add.mutate({ id: newId(), name: 'Neue Mahlzeit' })} />
+        <Text style={[t.font.body, { color: t.color.textMuted }]}>{txt.settingsAddSlot}</Text>
+        <SquareIconButton
+          glyph="+"
+          label={txt.settingsAddSlot}
+          onPress={() => slotOps.add.mutate({ id: newId(), name: txt.settingsNewSlotName })}
+        />
       </View>
     </>
   );
@@ -77,11 +83,12 @@ function SlotList() {
 
 function DailyGoal() {
   const t = useTheme();
+  const txt = useTexts();
   const { data: goals } = useGoals();
   const saveGoals = useSaveGoals();
   const dailyKcal = goals?.dailyKcal;
 
-  /** Lokale Verteilung; das Tagesziel friert ein, solange die Summe ≠ 100 ist. */
+  /** The local split; the daily goal freezes while the sum is ≠ 100. */
   const [dist, setDist] = useState<Record<MacroKey, { percent: number; grams: number }> | null>(null);
   const [kcalDraft, setKcalDraft] = useState<string | null>(null);
 
@@ -115,11 +122,11 @@ function DailyGoal() {
 
   return (
     <>
-      <SectionHeading>Tagesziel</SectionHeading>
+      <SectionHeading>{txt.settingsDailyGoal}</SectionHeading>
       <ValueField value={kcalDraft ?? String(dailyKcal ?? '')} onChangeText={setKcalDraft} unit="kcal" large />
       {kcalDraft !== null && Number(kcalDraft) !== dailyKcal ? (
         <View style={{ marginTop: t.space[4] }}>
-          <OutlineButton label="Tagesziel übernehmen" onPress={() => saveGoals.mutate({ dailyKcal: Number(kcalDraft) || 0 })} />
+          <OutlineButton label={txt.settingsApplyDailyGoal} onPress={() => saveGoals.mutate({ dailyKcal: Number(kcalDraft) || 0 })} />
         </View>
       ) : null}
 
@@ -129,7 +136,7 @@ function DailyGoal() {
         return (
           <View key={m} style={{ marginTop: t.space[6] }}>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-              <Text style={[t.font.body, { color: t.color.text }]}>{macroLabel[m]}</Text>
+              <Text style={[t.font.body, { color: t.color.text }]}>{macroLabel(txt)[m]}</Text>
               <Text style={[t.font.body, t.tabular, { color: t.color.textMuted }]}>{kcal} kcal</Text>
             </View>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: t.space[3], marginTop: t.space[2] }}>
@@ -158,7 +165,7 @@ function DailyGoal() {
                   setDist((d) => {
                     if (!d || !goals) return d;
                     const grams = Number(v.replace(',', '.')) || 0;
-                    // Gramm-Eingabe zieht den Prozentwert sofort nach.
+                    // Typing grams drags the percentage along at once.
                     const percent = goals.dailyKcal > 0 ? (grams * kcalPerGram(m) * 100) / goals.dailyKcal : 0;
                     const next = { ...d, [m]: { percent, grams } };
                     commitIfBalanced(next);
@@ -174,42 +181,41 @@ function DailyGoal() {
         );
       })}
       {frozen ? (
-        <Text style={[t.font.micro, { color: t.color.textMuted, marginTop: t.space[4] }]}>
-          Verteilung ergibt {Math.round(sum)} % — Tagesziel aktualisiert sich bei 100 %.
-        </Text>
+        <Text style={[t.font.micro, { color: t.color.textMuted, marginTop: t.space[4] }]}>{txt.settingsDistribution(Math.round(sum))}</Text>
       ) : null}
     </>
   );
 }
 
 function MacroCalc() {
+  const txt = useTexts();
   const { data: goals } = useGoals();
   const saveGoals = useSaveGoals();
 
   return (
     <>
-      <SectionHeading>Makro-Berechnung</SectionHeading>
+      <SectionHeading>{txt.settingsMacroCalc}</SectionHeading>
       <Toggle
-        label="Physiologisch"
-        hint="4,1 / 4,1 / 9,3 kcal je g · Atwater"
+        label={txt.settingsPhysiological}
+        hint={txt.settingsPhysiologicalHint}
         value={goals?.energyStandard === 'Physiological'}
         onChange={() => saveGoals.mutate({ energyStandard: 'Physiological' })}
       />
       <Toggle
-        label="Deklaration"
-        hint="4 / 4 / 9 kcal je g · EU 1169/2011"
+        label={txt.settingsDeclaration}
+        hint={txt.settingsDeclarationHint}
         value={goals?.energyStandard === 'Declaration'}
         onChange={() => saveGoals.mutate({ energyStandard: 'Declaration' })}
       />
       <Toggle
-        label="Aufrunden"
-        hint="nie zu wenig gezählt"
+        label={txt.settingsRoundUp}
+        hint={txt.settingsRoundUpHint}
         value={goals?.rounding === 'Up'}
         onChange={() => saveGoals.mutate({ rounding: 'Up' })}
       />
       <Toggle
-        label="Abrunden"
-        hint="nie zu viel gezählt"
+        label={txt.settingsRoundDown}
+        hint={txt.settingsRoundDownHint}
         value={goals?.rounding === 'Down'}
         onChange={() => saveGoals.mutate({ rounding: 'Down' })}
       />
@@ -219,6 +225,7 @@ function MacroCalc() {
 
 function HealthSection() {
   const t = useTheme();
+  const txt = useTexts();
   const { data: health } = useHealthConsent();
   const { data: goals } = useGoals();
   const saveGoals = useSaveGoals();
@@ -226,39 +233,47 @@ function HealthSection() {
 
   return (
     <>
-      <SectionHeading>Apple Health</SectionHeading>
+      <SectionHeading>{txt.settingsHealth}</SectionHeading>
       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', minHeight: t.hit }}>
-        <Text style={[t.font.body, { color: t.color.textMuted }]}>{connected ? 'Verbunden' : 'Nicht verbunden'}</Text>
+        <Text style={[t.font.body, { color: t.color.textMuted }]}>{connected ? txt.settingsConnected : txt.settingsNotConnected}</Text>
         <View style={{ minWidth: 130 }}>
-          <OutlineButton label={connected ? 'Trennen' : 'Verbinden'} variant={connected ? 'muted' : 'primary'} />
+          <OutlineButton label={connected ? txt.settingsDisconnect : txt.settingsConnect} variant={connected ? 'muted' : 'primary'} />
         </View>
       </View>
-      <Toggle label="Aktivität & Verbrauch importieren" value={!!health?.importActivity} onChange={() => {}} />
-      <Toggle label="Ernährung exportieren" value={!!health?.exportNutrition} onChange={() => {}} />
+      <Toggle label={txt.settingsImportActivity} value={!!health?.importActivity} onChange={() => {}} />
+      <Toggle label={txt.settingsExportNutrition} value={!!health?.exportNutrition} onChange={() => {}} />
       <Toggle
-        label="Aktivkalorien aufs Ziel addieren"
+        label={txt.settingsActivityInGoal}
         value={!!goals?.includeActivityInGoal}
         onChange={(v) => saveGoals.mutate({ includeActivityInGoal: v })}
       />
-      <Text style={[t.font.micro, { color: t.color.textMuted, marginTop: t.space[3] }]}>
-        Android nutzt Health Connect mit denselben Datentypen.
-      </Text>
+      <Text style={[t.font.micro, { color: t.color.textMuted, marginTop: t.space[3] }]}>{txt.settingsHealthConnectNote}</Text>
     </>
   );
 }
 
+/**
+ * Appearance and language take effect at once and are written at the same time:
+ * the language goes to the seam before the response is there, so the user does
+ * not wait a round trip to see that their tap did something.
+ *
+ * `usePreferences()` stands here without a reader — the query is the way the
+ * stored preference gets into the seam at all.
+ */
 function Appearance() {
+  const txt = useTexts();
+  const language = useLanguage();
   const { mode, setMode } = useThemeMode();
-  const { data: prefs } = usePreferences();
   const savePrefs = useSavePreferences();
+  usePreferences();
 
   return (
     <>
-      <SectionHeading>Darstellung</SectionHeading>
+      <SectionHeading>{txt.settingsAppearance}</SectionHeading>
       <Segmented
         options={[
-          { value: 'dark', label: 'Dunkel' },
-          { value: 'light', label: 'Hell' },
+          { value: 'dark', label: txt.settingsDark },
+          { value: 'light', label: txt.settingsLight },
         ]}
         value={mode}
         onChange={(v) => {
@@ -267,32 +282,31 @@ function Appearance() {
         }}
       />
 
-      <SectionHeading>Sprache</SectionHeading>
+      <SectionHeading>{txt.settingsLanguage}</SectionHeading>
       <Segmented
         options={[
-          { value: 'de', label: 'Deutsch' },
-          { value: 'en', label: 'English' },
+          { value: 'de', label: txt.languageDe },
+          { value: 'en', label: txt.languageEn },
         ]}
-        value={prefs?.language ?? 'de'}
-        onChange={(language) => savePrefs.mutate({ language })}
+        value={language}
+        onChange={(chosen) => {
+          preferLanguage(chosen);
+          savePrefs.mutate({ language: chosen });
+        }}
       />
     </>
   );
 }
 
-/**
- * Wer hier angemeldet ist. Ohne diese Zeile stand nirgends in der App, auf
- * welches Konto man gerade schaut — die Sitzung liegt im Gerät und schweigt.
- * Sie ist zugleich der Aufrufer, ohne den `GET /identity/me` eine Zusage ohne
- * Bedarf wäre (Regel 6).
- */
-function Konto() {
+/** The only place that says whose account you are looking at — and the caller for `GET /identity/me`. */
+function Account() {
   const t = useTheme();
+  const txt = useTexts();
   const { data: me } = useMe();
 
   return (
     <>
-      <SectionHeading>Konto</SectionHeading>
+      <SectionHeading>{txt.settingsAccount}</SectionHeading>
       <View style={{ minHeight: t.hit, justifyContent: 'center' }}>
         <Text style={[t.font.body, { color: t.color.text }]}>{me?.displayName ?? '—'}</Text>
         <Text style={[t.font.micro, { color: t.color.textMuted }]}>{me?.email ?? ''}</Text>
@@ -303,11 +317,12 @@ function Konto() {
 
 export default function SettingsScreen() {
   const t = useTheme();
+  const txt = useTexts();
 
   return (
     <Screen>
-      <Text style={[t.font.title, { color: t.color.text }]}>Mehr</Text>
-      <Konto />
+      <Text style={[t.font.title, { color: t.color.text }]}>{txt.tabMore}</Text>
+      <Account />
       <SlotList />
       <DailyGoal />
       <MacroCalc />

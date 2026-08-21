@@ -1,9 +1,7 @@
 /**
- * Einzige Quelle für Farben, Typografie und Abstände (Designsystem "Nocturne").
- * Keine Farb-, Größen- oder Abstandsliterale irgendwo sonst im UI-Code.
- *
- * Zwei Paletten, identische Schlüssel. Standard beim ersten Start: dark.
- * Typografie, Radien und Abstände sind modusunabhängig.
+ * The "Nocturne" design system — the only source for colours, typography and
+ * spacing (`docs/regeln.md`, Farb- und Maßliterale). Two palettes with
+ * identical keys; typography, radii and spacing do not depend on the mode.
  */
 
 import type { TextStyle } from 'react-native';
@@ -51,20 +49,20 @@ export type Palette = (typeof palette)[ThemeMode];
 const shared = {
   radius: { sm: 4, md: 8, lg: 14 },
   space: { 1: 2.8, 2: 5.6, 3: 8.4, 4: 11.2, 6: 16.8, 8: 22.4 },
-  /** Seitenrand aller Screens */
+  /** Side margin of every screen */
   gutter: 20,
-  /** Mindestgröße für Tippziele */
+  /** Minimum size of a tap target */
   hit: 44,
   font: {
     family: 'Inter',
-    // Größen sind fix, nicht skalieren: Zahlen müssen in Tabellen bündig bleiben.
+    // Sizes are fixed and must not scale: numbers have to stay flush in tables.
     display: { fontFamily: 'Inter_600SemiBold', fontSize: 40 },
     title: { fontFamily: 'Inter_600SemiBold', fontSize: 22 },
     body: { fontFamily: 'Inter_400Regular', fontSize: 14 },
     label: { fontFamily: 'Inter_600SemiBold', fontSize: 11, letterSpacing: 0.9, textTransform: 'uppercase' as const },
     micro: { fontFamily: 'Inter_400Regular', fontSize: 10 },
   },
-  /** Überall dort setzen, wo Zahlen untereinander stehen. */
+  /** Set wherever numbers stand below one another. */
   tabular: { fontVariant: ['tabular-nums'] } as TextStyle,
 } as const;
 
@@ -75,5 +73,5 @@ export const themes = {
 
 export type Theme = (typeof themes)['dark'];
 
-/** Standardmodus beim ersten Start. */
+/** Default mode on first start. */
 export const defaultMode: ThemeMode = 'dark';

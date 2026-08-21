@@ -14,7 +14,7 @@ const queryClient = new QueryClient({ defaultOptions: { queries: { retry: 1, sta
 export default function RootLayout() {
   const [fontsLoaded] = useFonts({ Inter_400Regular, Inter_500Medium, Inter_600SemiBold });
   const [signedIn, setSignedIn] = useState<boolean | null>(null);
-  // Startmodus: bis /preferences gelesen ist, gilt der Standard (dunkel).
+  // Until /preferences is read, the default applies.
   const [initialMode] = useState<ThemeMode>(defaultMode);
 
   useEffect(() => {
@@ -22,10 +22,9 @@ export default function RootLayout() {
   }, []);
 
   /**
-   * Endet die Sitzung — abgelaufener Refresh-Token, verworfene Sitzung, später
-   * ein Abmelden von Hand —, dann fällt der Cache und der Weg führt zur
-   * Anmeldung. Ohne das bliebe der Nutzer auf den Tabs stehen, sähe die zuletzt
-   * geladenen Werte weiter und käme mangels Zurück-Pfeil nirgends hin.
+   * When the session ends, the cache falls and the way leads to sign-in —
+   * otherwise the user would stand on the tabs with stale values and, lacking a
+   * back arrow, get nowhere.
    */
   useEffect(() => {
     onSignedOut(() => {
@@ -49,7 +48,7 @@ export default function RootLayout() {
             <Stack.Screen name="(tabs)" />
             <Stack.Screen name="login" />
             <Stack.Screen name="register" />
-            {/* Detailscreens liegen über der Tab-Leiste, als Modal ohne Zurück-Pfeil. */}
+            {/* Detail screens lie above the tab bar, as a modal without a back arrow. */}
             <Stack.Screen name="product/[id]" options={{ presentation: 'modal' }} />
             <Stack.Screen name="entry/[id]" options={{ presentation: 'modal' }} />
             <Stack.Screen name="recipe/[id]" options={{ presentation: 'modal' }} />

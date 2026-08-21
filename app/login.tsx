@@ -3,12 +3,14 @@ import { Text, View } from 'react-native';
 import { router } from 'expo-router';
 import { Screen, OutlineButton, FormField } from '../src/components';
 import { useTheme } from '../src/theme/ThemeProvider';
+import { useTexts } from '../src/i18n';
 import { login } from '../src/api/session';
 import { ApiError, OfflineError } from '../src/api/client';
 import { problems } from '../src/api/problems';
 
 export default function LoginScreen() {
   const t = useTheme();
+  const txt = useTexts();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [failed, setFailed] = useState(false);
@@ -16,18 +18,13 @@ export default function LoginScreen() {
   const [busy, setBusy] = useState(false);
 
   /**
-   * Jeder Ausgang außer „angemeldet" wird sichtbar. Zuvor blieb alles stumm,
-   * was kein `ApiError` war — eine unerwartete Antwortform etwa aktivierte den
-   * Knopf einfach wieder, ohne dass irgendetwas auf dem Schirm stand.
+   * Every outcome but "signed in" becomes visible; failing silently would mean
+   * switching the button back on and saying nothing.
    *
-   * Beide Felder werden rot, nicht eines: bei falschen Anmeldedaten sagt der
-   * Server nicht, welches der beiden gemeint ist, und er soll es auch nicht.
-   *
-   * Der Satz darunter ist seiner: `detail` erklärt genau diesen Vorfall, und er
-   * kommt in der Sprache, in der gefragt wurde (`Accept-Language`, aus
-   * `src/language.ts`). Ein eigener Satz stünde sonst deutsch neben einer
-   * englischen Oberfläche — und wüsste dazu weniger. Eigene Sätze bleiben, wo
-   * keiner kommt: beim Netzfehler und als letzter Rückfall.
+   * Both fields turn red, not one: on wrong credentials the server does not say
+   * which is meant — and should not. The sentence below is his
+   * (`docs/decisions/2026-08-20-1209-der-satz-zum-vorfall-steht-in-detail.md`);
+   * our own sentences stay where none arrives.
    */
   async function submit() {
     setBusy(true);
@@ -38,10 +35,9 @@ export default function LoginScreen() {
       router.replace('/(tabs)/diary');
     } catch (e) {
       setFailed(true);
-      if (e instanceof OfflineError) setHint('Keine Verbindung');
-      else if (e instanceof ApiError)
-        setHint(e.detail ?? (e.type === problems.invalidCredentials ? null : 'Anmeldung derzeit nicht möglich'));
-      else setHint('Anmeldung derzeit nicht möglich');
+      if (e instanceof OfflineError) setHint(txt.noConnection);
+      else if (e instanceof ApiError) setHint(e.detail ?? (e.type === problems.invalidCredentials ? null : txt.loginFailed));
+      else setHint(txt.loginFailed);
     } finally {
       setBusy(false);
     }
@@ -49,10 +45,10 @@ export default function LoginScreen() {
 
   return (
     <Screen>
-      <Text style={[t.font.title, { color: t.color.text }]}>Anmelden</Text>
+      <Text style={[t.font.title, { color: t.color.text }]}>{txt.loginTitle}</Text>
       <View style={{ gap: t.space[6], marginTop: t.space[8] }}>
         <FormField
-          label="E-Mail"
+          label={txt.loginEmail}
           invalid={failed}
           value={email}
           onChangeText={setEmail}
@@ -61,7 +57,7 @@ export default function LoginScreen() {
           textContentType="username"
         />
         <FormField
-          label="Passwort"
+          label={txt.loginPassword}
           invalid={failed}
           value={password}
           onChangeText={setPassword}
@@ -71,9 +67,8 @@ export default function LoginScreen() {
       </View>
       {hint ? <Text style={[t.font.micro, { color: t.color.accent, marginTop: t.space[4] }]}>{hint}</Text> : null}
       <View style={{ gap: t.space[4], marginTop: t.space[8] }}>
-        <OutlineButton label={busy ? 'Anmelden …' : 'Anmelden'} onPress={submit} disabled={busy || !email || !password} />
-        {/* Ohne diesen Weg käme niemand in die App, der noch kein Konto hat. */}
-        <OutlineButton label="Konto anlegen" variant="muted" onPress={() => router.push('/register')} />
+        <OutlineButton label={busy ? txt.loginBusy : txt.loginTitle} onPress={submit} disabled={busy || !email || !password} />
+        <OutlineButton label={txt.loginToRegister} variant="muted" onPress={() => router.push('/register')} />
       </View>
     </Screen>
   );

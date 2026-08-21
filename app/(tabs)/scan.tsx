@@ -4,6 +4,7 @@ import { CameraView, useCameraPermissions } from 'expo-camera';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Screen, CameraFrame, SectionHeading, ListRow, SquareIconButton, OutlineButton } from '../../src/components';
 import { useTheme } from '../../src/theme/ThemeProvider';
+import { useTexts } from '../../src/i18n';
 import { api, ApiError, endpoints } from '../../src/api/client';
 import { problems } from '../../src/api/problems';
 import { useRecent, useSearch } from '../../src/api/hooks';
@@ -36,6 +37,7 @@ function SearchResults({ query, ctx }: { query: string; ctx: CaptureContext }) {
 
 function RecentList({ ctx }: { ctx: CaptureContext }) {
   const { data: recent } = useRecent();
+  const txt = useTexts();
 
   return (
     <>
@@ -43,11 +45,11 @@ function RecentList({ ctx }: { ctx: CaptureContext }) {
         <ListRow
           key={`${r.sourceType}-${r.sourceId}`}
           title={r.displayName}
-          subtitle={`${r.sourceType === 'Product' ? 'Produkt' : 'Rezept'} · ${r.lastGrams} g · ${r.kcalPerPortion} kcal`}
+          subtitle={txt.scanRecentLine(r.sourceType === 'Product' ? txt.sourceProduct : txt.sourceRecipe, r.lastGrams, r.kcalPerPortion)}
           right={
             <SquareIconButton
               glyph="+"
-              label={`${r.displayName} hinzufügen`}
+              label={txt.addNamed(r.displayName)}
               onPress={() =>
                 router.push(
                   r.sourceType === 'Product'
@@ -65,6 +67,7 @@ function RecentList({ ctx }: { ctx: CaptureContext }) {
 
 export default function ScanScreen() {
   const t = useTheme();
+  const txt = useTexts();
   const params = useLocalSearchParams<{ date?: string; slotId?: string; target?: 'diary' | 'recipe'; recipeId?: string }>();
   const date: DiaryDate = params.date ? parseDiaryDate(params.date) : today();
   const target = params.target ?? 'diary';
@@ -76,7 +79,6 @@ export default function ScanScreen() {
   const lock = useRef(false);
   const granted = !!permission?.granted;
 
-  // Ergebnisse erst bei Eingabe, mit 300 ms Verzögerung.
   useEffect(() => {
     const id = setTimeout(() => setDebounced(query), 300);
     return () => clearTimeout(id);
@@ -87,7 +89,7 @@ export default function ScanScreen() {
   async function onBarcode(ean: string) {
     if (lock.current) return;
     lock.current = true;
-    setPaused(true); // verhindert Mehrfachauslösung, bis der Nutzer zurückkehrt
+    setPaused(true); // prevents a second trigger until the user comes back
     try {
       const product = await api<Product>(endpoints.productByBarcode(ean));
       router.push({ pathname: '/product/[id]', params: { id: product.id, ...ctxParams(ctx) } });
@@ -105,7 +107,7 @@ export default function ScanScreen() {
 
   return (
     <Screen>
-      <CameraFrame scanline hint={target === 'recipe' ? 'ZUTAT SCANNEN — BARCODE IN DEN RAHMEN HALTEN' : 'BARCODE IN DEN RAHMEN HALTEN'}>
+      <CameraFrame scanline hint={target === 'recipe' ? txt.scanHintIngredient : txt.scanHintBarcode}>
         {granted && !paused ? (
           <CameraView
             style={{ flex: 1 }}
@@ -117,11 +119,11 @@ export default function ScanScreen() {
 
       {!granted ? (
         <View style={{ marginTop: t.space[4] }}>
-          <OutlineButton label="Kamera freigeben" onPress={requestPermission} />
+          <OutlineButton label={txt.cameraPermission} onPress={requestPermission} />
         </View>
       ) : null}
 
-      <SectionHeading>Suche</SectionHeading>
+      <SectionHeading>{txt.scanSearch}</SectionHeading>
       <View
         style={{
           borderWidth: 1,
@@ -136,7 +138,7 @@ export default function ScanScreen() {
         <TextInput
           value={query}
           onChangeText={setQuery}
-          placeholder="Produkt, Marke oder Rezept"
+          placeholder={txt.scanSearchPlaceholder}
           placeholderTextColor={t.color.textMuted}
           style={[t.font.body, { color: t.color.text }]}
         />
@@ -144,7 +146,7 @@ export default function ScanScreen() {
 
       <SearchResults query={debounced} ctx={ctx} />
 
-      <SectionHeading>Letzte Einträge</SectionHeading>
+      <SectionHeading>{txt.scanRecent}</SectionHeading>
       <RecentList ctx={ctx} />
     </Screen>
   );
