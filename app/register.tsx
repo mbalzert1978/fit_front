@@ -3,9 +3,10 @@ import { Text, View } from 'react-native';
 import { router } from 'expo-router';
 import { Screen, OutlineButton, FormField } from '../src/components';
 import { useTheme } from '../src/theme/ThemeProvider';
-import { useTexts, type Texts } from '../src/i18n';
+import { useTexts } from '../src/i18n';
 import { register, registrationRequest, minPasswordLength, maxDisplayNameLength, type RegistrationRequest } from '../src/api/session';
-import { ApiError, OfflineError } from '../src/api/client';
+import { ApiError } from '../src/api/client';
+import { hintFor } from '../src/api/hints';
 import { problems } from '../src/api/problems';
 import { newId } from '../src/api/ids';
 
@@ -34,18 +35,6 @@ function splitHints(errors: Record<string, string[]>) {
 /** The per-field reasoning, where any arrived. */
 function errorsOf(e: unknown): Record<string, string[]> {
   return e instanceof ApiError ? (e.errors ?? {}) : {};
-}
-
-/**
- * The line below the fields. The server speaks first, the form passes it through
- * and translates nothing
- * (`docs/decisions/2026-08-20-1209-der-satz-zum-vorfall-steht-in-detail.md`).
- */
-function generalHintFor(e: unknown, general: string[], txt: Texts): string | null {
-  if (general.length > 0) return general.join(' ');
-  if (e instanceof OfflineError) return txt.noConnection;
-  if (e instanceof ApiError) return e.detail ?? txt.registerFailed;
-  return txt.registerFailed;
 }
 
 /**
@@ -92,7 +81,7 @@ export default function RegisterScreen() {
       const { fields: named, general } = splitHints(errorsOf(e));
       setFields(named);
       setConflict(e instanceof ApiError && e.type === problems.emailAlreadyRegistered);
-      setHint(generalHintFor(e, general, txt));
+      setHint(general.length > 0 ? general.join(' ') : hintFor(e, txt, txt.registerFailed));
     } finally {
       setBusy(false);
     }

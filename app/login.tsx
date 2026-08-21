@@ -5,7 +5,8 @@ import { Screen, OutlineButton, FormField } from '../src/components';
 import { useTheme } from '../src/theme/ThemeProvider';
 import { useTexts } from '../src/i18n';
 import { login } from '../src/api/session';
-import { ApiError, OfflineError } from '../src/api/client';
+import { ApiError } from '../src/api/client';
+import { hintFor } from '../src/api/hints';
 import { problems } from '../src/api/problems';
 
 export default function LoginScreen() {
@@ -35,9 +36,7 @@ export default function LoginScreen() {
       router.replace('/(tabs)/diary');
     } catch (e) {
       setFailed(true);
-      if (e instanceof OfflineError) setHint(txt.noConnection);
-      else if (e instanceof ApiError) setHint(e.detail ?? (e.type === problems.invalidCredentials ? null : txt.loginFailed));
-      else setHint(txt.loginFailed);
+      setHint(hintFor(e, txt, e instanceof ApiError && e.type === problems.invalidCredentials ? null : txt.loginFailed));
     } finally {
       setBusy(false);
     }

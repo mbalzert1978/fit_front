@@ -21,7 +21,8 @@ import {
 import { newId } from '../../src/api/ids';
 import { qk } from '../../src/api/queryKeys';
 import type { AccountDeletion } from '../../src/api/types';
-import { ApiError, OfflineError } from '../../src/api/client';
+import { ApiError } from '../../src/api/client';
+import { hintFor } from '../../src/api/hints';
 import { signOut } from '../../src/api/session';
 import { problems } from '../../src/api/problems';
 
@@ -304,15 +305,9 @@ function Appearance() {
   );
 }
 
-/**
- * The sentence for a failed deletion attempt. The server speaks first: `detail`
- * is its sentence about exactly this incident, in the language it was asked in.
- * The app has sentences of its own only where none arrives.
- */
+/** Where the server sent no `detail`, his `title` still stands — an own sentence only where nothing of his arrives. */
 function deletionHint(e: unknown, txt: Texts): string {
-  if (e instanceof OfflineError) return txt.noConnection;
-  if (e instanceof ApiError) return e.detail ?? e.message;
-  return txt.settingsDeleteFailed;
+  return hintFor(e, txt, e instanceof ApiError ? e.message : txt.settingsDeleteFailed);
 }
 
 /**
@@ -339,12 +334,12 @@ function AccountDeletionSection() {
     filters: { mutationKey: qk.accountDeletion(), status: 'success' },
     select: (m) => m.state.data as AccountDeletion,
   }).at(-1);
-  /** `null` means: the section is closed and only the button stands there. */
-  const [word, setWord] = useState<string | null>(null);
+  const [typedWord, setTypedWord] = useState<string | null>(null);
+  const open = typedWord !== null;
   // Closing also means: forget the last failure
   // (`docs/decisions/2026-08-21-2200-die-frist-lebt-im-cache-und-haengt-am-rumpf.md`).
   const close = () => {
-    setWord(null);
+    setTypedWord(null);
     del.reset();
   };
 
@@ -357,10 +352,10 @@ function AccountDeletionSection() {
     );
   }
 
-  if (word === null) {
+  if (!open) {
     return (
       <View style={{ marginTop: t.space[6] }}>
-        <OutlineButton label={txt.settingsDeleteAccount} variant="muted" onPress={() => setWord('')} />
+        <OutlineButton label={txt.settingsDeleteAccount} variant="muted" onPress={() => setTypedWord('')} />
       </View>
     );
   }
@@ -371,8 +366,8 @@ function AccountDeletionSection() {
         label={txt.settingsDeleteConfirm(txt.settingsDeleteWord)}
         note={del.error ? deletionHint(del.error, txt) : txt.settingsDeleteHint}
         noteInvalid={!!del.error}
-        value={word}
-        onChangeText={setWord}
+        value={typedWord}
+        onChangeText={setTypedWord}
         // A hint to the on-screen keyboard and nothing else — hence the
         // comparison below ignores case and surrounding whitespace: on a
         // hardware keyboard, in the web or when pasting the button would
@@ -383,7 +378,7 @@ function AccountDeletionSection() {
       <OutlineButton
         label={del.isPending ? txt.settingsDeleteBusy : txt.settingsDeleteSubmit}
         onPress={() => del.mutate()}
-        disabled={word.trim().toUpperCase() !== txt.settingsDeleteWord.toUpperCase() || del.isPending}
+        disabled={typedWord.trim().toUpperCase() !== txt.settingsDeleteWord.toUpperCase() || del.isPending}
       />
       <OutlineButton label={txt.settingsCancel} variant="muted" onPress={close} />
     </View>
