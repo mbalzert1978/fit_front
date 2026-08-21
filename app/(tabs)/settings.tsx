@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { Text, TextInput, View } from 'react-native';
 import Slider from '@react-native-community/slider';
-import { Screen, SectionHeading, ValueField, Segmented, Toggle, OutlineButton, SquareIconButton } from '../../src/components';
+import { format } from 'date-fns';
+import { Screen, SectionHeading, ValueField, FormField, Segmented, Toggle, OutlineButton, SquareIconButton } from '../../src/components';
 import { useTheme, useThemeMode } from '../../src/theme/ThemeProvider';
 import {
   useMe,
+  useDeleteAccount,
   useGoals,
   useSaveGoals,
   usePreferences,
@@ -14,7 +16,7 @@ import {
   useHealthConsent,
 } from '../../src/api/hooks';
 import { newId } from '../../src/api/ids';
-import { ApiError } from '../../src/api/client';
+import { ApiError, OfflineError, signOut } from '../../src/api/client';
 import { problems } from '../../src/api/problems';
 
 type MacroKey = 'carbs' | 'protein' | 'fat';
@@ -281,6 +283,116 @@ function Appearance() {
 }
 
 /**
+ * Das Wort, das getippt sein muss, damit die Löschung hinausgeht.
+ *
+ * Ohne Umlaut, obwohl deutsch: auf einer Tastatur ohne Ö kostet das Bestätigen
+ * sonst eine Fingerübung, und der Weg soll bedacht sein, nicht schwierig. Der
+ * Sinn ist ein anderer — ein Wort tippt niemand versehentlich, ein Knopf lässt
+ * sich streifen.
+ *
+ * Verglichen wird ohne Rücksicht auf Groß- und Kleinschreibung und ohne
+ * Leerraum am Rand: `autoCapitalize` ist ein Wink an die Bildschirmtastatur und
+ * sonst nichts — an einer Hardwaretastatur, im Web oder beim Einfügen bliebe
+ * der Knopf aus, ohne dass irgendwo stünde, warum.
+ */
+const LOESCHWORT = 'LOESCHEN';
+
+/**
+ * Der Satz zu einem gescheiterten Löschversuch. Der Server redet zuerst:
+ * `detail` ist sein Satz zu genau diesem Vorfall, in der Sprache, in der
+ * gefragt wurde. Eigene Sätze hat die App nur, wo keiner kommt.
+ */
+function loeschHinweis(e: unknown): string {
+  if (e instanceof OfflineError) return 'Keine Verbindung';
+  if (e instanceof ApiError) return e.detail ?? e.message;
+  return 'Löschen derzeit nicht möglich';
+}
+
+/**
+ * Der Satz zur angenommenen Löschung, mit der Frist als Tag und Uhrzeit des
+ * Geräts.
+ *
+ * `new Date(iso)` ist hier kein Griff an die Uhr und geht deshalb an
+ * `src/time.ts` vorbei — gelesen wird ein Zeitpunkt, den der Server genannt hat,
+ * nicht der aktuelle. Numerisch und ohne Monatsnamen, damit kein zweiter
+ * Sprachweg neben `Accept-Language` entsteht.
+ *
+ * Der Vertrag sagt den Zeitpunkt zu. Bleibt er trotzdem aus oder ist er keiner,
+ * sagt die App genau das: `format` würde werfen und den Screen mitnehmen, und
+ * „am  Uhr gelöscht" wäre eine Lücke, die niemand als Fehler liest. Angenommen
+ * ist die Löschung in jedem Fall — verschwiegen wird sie deshalb nicht.
+ */
+function fristSatz(iso: string | undefined): string {
+  const d = iso ? new Date(iso) : null;
+  if (!d || Number.isNaN(d.getTime())) return 'Dein Konto wird gelöscht. Den Zeitpunkt hat der Server nicht genannt.';
+  return `Dein Konto wird am ${format(d, 'dd.MM.yyyy, HH:mm')} Uhr gelöscht. Bis dahin sind deine Daten noch da.`;
+}
+
+/**
+ * Der einzige Weg in dieser App, der sich nicht zurücknehmen lässt.
+ *
+ * Drei Zustände, in dieser Reihenfolge: zu, offen mit Eingabe, angenommen. Das
+ * Backend löscht **nicht sofort** — es antwortet mit 202 und einer Frist, und
+ * genau die steht danach hier. Ein „erledigt" wäre falsch: die Daten sind noch
+ * da. Die Sitzung endet erst auf ein zweites Tippen, denn bis zur Frist besteht
+ * das Konto weiter; siehe
+ * `docs/decisions/2026-08-21-1329-die-kontoloeschung-nennt-ihre-frist.md`.
+ */
+function KontoLoeschung() {
+  const t = useTheme();
+  const del = useDeleteAccount();
+  /** `null` heißt: der Abschnitt ist zu und es steht nur der Knopf da. */
+  const [wort, setWort] = useState<string | null>(null);
+  // Zumachen heißt auch: den letzten Fehlschlag vergessen. Sonst stünde beim
+  // nächsten Öffnen „Keine Verbindung" rot unter einem leeren Feld, zu einem
+  // Versuch, den es in dieser Runde nie gab.
+  const zumachen = () => {
+    setWort(null);
+    del.reset();
+  };
+
+  // `isSuccess` und nicht `data`: angenommen ist angenommen. Ein Rumpf mit
+  // `data: null` ließe den Nutzer sonst vor derselben Eingabemaske stehen, als
+  // wäre nichts geschehen — während sein Konto zur Löschung vorgemerkt ist.
+  if (del.isSuccess) {
+    return (
+      <View style={{ gap: t.space[4], marginTop: t.space[6] }}>
+        <Text style={[t.font.body, { color: t.color.text }]}>{fristSatz(del.data?.deletionEffectiveUtc)}</Text>
+        <OutlineButton label="Abmelden" onPress={() => void signOut()} />
+      </View>
+    );
+  }
+
+  if (wort === null) {
+    return (
+      <View style={{ marginTop: t.space[6] }}>
+        <OutlineButton label="Konto löschen" variant="muted" onPress={() => setWort('')} />
+      </View>
+    );
+  }
+
+  return (
+    <View style={{ gap: t.space[4], marginTop: t.space[6] }}>
+      <FormField
+        label={`Zum Bestätigen ${LOESCHWORT} eingeben`}
+        note={del.error ? loeschHinweis(del.error) : 'Gelöscht wird nicht sofort — die Frist steht danach hier.'}
+        noteInvalid={!!del.error}
+        value={wort}
+        onChangeText={setWort}
+        autoCapitalize="characters"
+        autoCorrect={false}
+      />
+      <OutlineButton
+        label={del.isPending ? 'Wird gelöscht …' : 'Konto endgültig löschen'}
+        onPress={() => del.mutate()}
+        disabled={wort.trim().toUpperCase() !== LOESCHWORT || del.isPending}
+      />
+      <OutlineButton label="Abbrechen" variant="muted" onPress={zumachen} />
+    </View>
+  );
+}
+
+/**
  * Wer hier angemeldet ist. Ohne diese Zeile stand nirgends in der App, auf
  * welches Konto man gerade schaut — die Sitzung liegt im Gerät und schweigt.
  * Sie ist zugleich der Aufrufer, ohne den `GET /identity/me` eine Zusage ohne
@@ -297,6 +409,7 @@ function Konto() {
         <Text style={[t.font.body, { color: t.color.text }]}>{me?.displayName ?? '—'}</Text>
         <Text style={[t.font.micro, { color: t.color.textMuted }]}>{me?.email ?? ''}</Text>
       </View>
+      <KontoLoeschung />
     </>
   );
 }

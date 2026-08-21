@@ -15,7 +15,7 @@ import { register, registrationRequest, login } from '../src/api/session';
 import { setTimeProvider, resetTimeProvider } from '../src/time';
 import { setLanguageProvider, resetLanguageProvider } from '../src/language';
 import { __seedSession, __readSession } from './stubs/expoSecureStore';
-import type { Session, SignIn, AccountUser } from '../src/api/types';
+import type { Session, SignIn, AccountUser, AccountDeletion } from '../src/api/types';
 
 /**
  * Bedarf: `app/login.tsx` und `app/register.tsx` (beide über
@@ -88,6 +88,15 @@ const user = {
   locale: M.regex('^(de|en)$', 'de'),
   timeZoneId: M.string('Europe/Berlin'),
 };
+
+/**
+ * Der Zeitpunkt, ab dem die Löschung wirksam wird — als Form und nicht als
+ * Wert: welcher Tag es ist, entscheidet der Server. Zugesagt ist, dass ein
+ * Zeitpunkt herauskommt, den `new Date(...)` lesen kann. Ein `M.string()`
+ * nähme auch „bald" an, und die Kontozeile stünde dann auf „Invalid Date" —
+ * ausgerechnet bei dem einen Weg, der sich nicht zurücknehmen lässt.
+ */
+const anyInstant = M.datetime("yyyy-MM-dd'T'HH:mm:ss'Z'", '2026-09-20T09:14:22Z');
 
 const daten = { email: 'a@b.de', password: 'geheim123!', displayName: 'Markus' };
 
@@ -452,6 +461,45 @@ describe('Identity', () => {
       expect(r.data.session.refreshToken).toBeTruthy();
       // Auch hier: derselbe Faden im Header wie im Rumpf.
       expect(r.headers.get('X-Request-Id')).toBe(r.meta?.requestId);
+    });
+  });
+
+  it('nimmt die Kontolöschung an und nennt die Frist', async () => {
+    const p = provider();
+    p.given('Nutzer a@b.de ist angemeldet')
+      .uponReceiving('Eigenes Konto löschen')
+      // Kein `Idempotency-Key`: ein `DELETE` beantwortet der Server zweimal
+      // gleich, und genau deshalb darf die Hülle es nach einer Erneuerung
+      // wiederholen (`IDEMPOTENT` in `src/api/client.ts`).
+      .withRequest({ method: 'DELETE', path: '/api/v1/identity/me', headers: authHeadersIn('de') })
+      .willRespondWith({
+        // **202 und nicht 204.** Das Konto ist nach dieser Antwort noch da. Wer
+        // hier 204 zusagte, behauptete eine Löschung, die erst später geschieht
+        // — und der Nutzer hielte seine Daten für weg, während sie es nicht
+        // sind. Deshalb trägt die Antwort einen Rumpf, und in ihm den Zeitpunkt.
+        status: 202,
+        headers: privateHeaders,
+        body: enveloped({ deletionEffectiveUtc: anyInstant }),
+      });
+
+    await p.executeTest(async () => {
+      // Das liest der Konto-Abschnitt in `app/(tabs)/settings.tsx`: er zeigt
+      // die Frist und beendet die Sitzung erst auf ein zweites Tippen, siehe
+      // `docs/decisions/2026-08-21-1329-die-kontoloeschung-nennt-ihre-frist.md`.
+      const q = await api<AccountDeletion>('/identity/me', { method: 'DELETE' });
+      expect(Number.isNaN(Date.parse(q.deletionEffectiveUtc))).toBe(false);
+    });
+  });
+
+  it('löscht kein Konto ohne gültigen Token', async () => {
+    const p = provider();
+    p.given('Access-Token ist abgelaufen')
+      .uponReceiving('Eigenes Konto mit abgelaufenem Token löschen')
+      .withRequest({ method: 'DELETE', path: '/api/v1/identity/me', headers: authHeadersIn('de') })
+      .willRespondWith(unauthorized());
+
+    await p.executeTest(async () => {
+      await expect(api('/identity/me', { method: 'DELETE' })).rejects.toMatchObject({ type: problems.tokenExpired, status: 401 });
     });
   });
 

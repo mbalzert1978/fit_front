@@ -63,6 +63,14 @@ export type AccountUser = {
  */
 export type SignIn = { user: AccountUser; session: Session };
 
+/**
+ * Was auf `DELETE /identity/me` zurückkommt. Der Server löscht nicht sofort: er
+ * nimmt an (202) und nennt den Zeitpunkt, ab dem es wirksam wird — ein
+ * ISO-8601-Zeitpunkt in UTC, wie der Feldname sagt. Deshalb trägt diese Antwort
+ * überhaupt einen Rumpf; ein 204 wäre die Behauptung, es sei schon geschehen.
+ */
+export type AccountDeletion = { deletionEffectiveUtc: string };
+
 /** Nährwerte je 100 g. Optionale Felder dürfen fehlen — dann sind sie nicht gesetzt. */
 export type Nutrients = {
   kcal: number;

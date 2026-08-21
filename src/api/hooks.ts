@@ -6,6 +6,7 @@ import { clientProblems } from './problems';
 import { preferLanguage } from '../language';
 import type { DiaryDate } from './diaryDate';
 import type {
+  AccountDeletion,
   AccountUser,
   DiaryDay,
   Goals,
@@ -211,6 +212,20 @@ export function useRecipeToDiary(recipeId: string) {
     onSuccess: (_d, b) => qc.invalidateQueries({ queryKey: qk.diary(b.date) }),
   });
 }
+
+/**
+ * Das eigene Konto löschen. `DELETE` und kein `Idempotency-Key`: der Server
+ * beantwortet den Aufruf zweimal gleich, und nur deshalb darf die Hülle ihn
+ * nach einer Erneuerung wiederholen.
+ *
+ * Kein `invalidateQueries` und kein Abmelden hier: das Konto besteht bis zur
+ * Frist weiter, und wer die Sitzung beendet, entscheidet der Nutzer im
+ * Konto-Abschnitt — siehe
+ * `docs/decisions/2026-08-21-1329-die-kontoloeschung-nennt-ihre-frist.md`.
+ * Die Antwort ist das einzige, was den Zeitpunkt trägt; sie geht deshalb an den
+ * Aufrufer zurück und nicht in den Cache.
+ */
+export const useDeleteAccount = () => useMutation({ mutationFn: () => api<AccountDeletion>('/identity/me', { method: 'DELETE' }) });
 
 export function useCreateProduct() {
   const qc = useQueryClient();
