@@ -219,7 +219,7 @@
               "matchers": [
                 {
                   "match": "regex",
-                  "regex": "de|en"
+                  "regex": "^(de|en)$"
                 }
               ]
             },
@@ -356,7 +356,7 @@
               "matchers": [
                 {
                   "match": "regex",
-                  "regex": "de|en"
+                  "regex": "^(de|en)$"
                 }
               ]
             },
@@ -613,7 +613,7 @@
               "matchers": [
                 {
                   "match": "regex",
-                  "regex": "de|en"
+                  "regex": "^(de|en)$"
                 }
               ]
             },
@@ -811,7 +811,7 @@
               "matchers": [
                 {
                   "match": "regex",
-                  "regex": "de|en"
+                  "regex": "^(de|en)$"
                 }
               ]
             },

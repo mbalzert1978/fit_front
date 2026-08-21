@@ -81,7 +81,11 @@ const user = {
   id: M.uuid(),
   email: M.string('a@b.de'),
   displayName: M.string('Markus'),
-  locale: M.regex('de|en', 'de'),
+  // Verankert, wie jeder Regex in diesem Repo: Pact vergleicht Teilstücke, und
+  // ohne Anker bestünde jeder String, der irgendwo ein „de" trägt — `de-DE`,
+  // `sv-SE`, `Dezember`. Zugesichert sind genau die beiden Werte, die der
+  // Server kennt.
+  locale: M.regex('^(de|en)$', 'de'),
   timeZoneId: M.string('Europe/Berlin'),
 };
 
