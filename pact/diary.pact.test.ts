@@ -1,4 +1,4 @@
-import { pact, M, enveloped, authHeadersIn, jsonAuthHeadersIn, privateHeaders, problem, unauthorized, problems } from './setup';
+import { pact, against, M, enveloped, authHeadersIn, jsonAuthHeadersIn, privateHeaders, problem, unauthorized, problems } from './setup';
 import { api, endpoints } from '../src/api/client';
 import { parseDiaryDate } from '../src/api/diaryDate';
 
@@ -58,7 +58,7 @@ describe('Diary — Tagesansicht', () => {
         }),
       });
 
-    await p.executeTest(async () => {
+    await against(p, async () => {
       const day = await api<{ date: string; remainingKcal: number }>(endpoints.diaryDay(date));
       expect(day.date).toBe('2026-08-04');
       expect(typeof day.remainingKcal).toBe('number');
@@ -84,7 +84,7 @@ describe('Diary — Tagesansicht', () => {
         }),
       });
 
-    await p.executeTest(async () => {
+    await against(p, async () => {
       const day = await api<{ activity: unknown }>(endpoints.diaryDay(parseDiaryDate('2026-08-05')));
       expect(day.activity).toBeNull();
     });
@@ -97,7 +97,7 @@ describe('Diary — Tagesansicht', () => {
       .withRequest({ method: 'GET', path: '/api/v1/diary/days/2026-08-04', headers: authHeadersIn('de') })
       .willRespondWith(unauthorized());
 
-    await p.executeTest(async () => {
+    await against(p, async () => {
       // The renewal in `src/api/client.ts` hangs on exactly this response.
       await expect(api(endpoints.diaryDay(date))).rejects.toMatchObject({ type: problems.tokenExpired, status: 401 });
     });
@@ -110,7 +110,7 @@ describe('Diary — Tagesansicht', () => {
       .withRequest({ method: 'GET', path: '/api/v1/diary/days/2026-08-06', headers: authHeadersIn('de') })
       .willRespondWith(problem(problems.forbidden, 'Kein Zugriff auf diese Ressource', 403));
 
-    await p.executeTest(async () => {
+    await against(p, async () => {
       // Without this assurance the backend could answer someone else's day with 200.
       await expect(api(endpoints.diaryDay(parseDiaryDate('2026-08-06')))).rejects.toMatchObject({
         type: problems.forbidden,
@@ -143,7 +143,7 @@ describe('Diary — Einträge', () => {
         body: enveloped({ id: M.uuid(), grams: M.integer(150), kcal: M.integer(97) }),
       });
 
-    await p.executeTest(async () => {
+    await against(p, async () => {
       const created = await api<{ id: string }>(endpoints.entries(date), {
         method: 'POST',
         idempotencyKey: entryId,
@@ -175,7 +175,7 @@ describe('Diary — Einträge', () => {
         body: enveloped({ id: M.uuid(), grams: M.integer(200), kcal: M.integer(129) }),
       });
 
-    await p.executeTest(async () => {
+    await against(p, async () => {
       await api(`${endpoints.entries(date)}/${entryId}`, { method: 'PATCH', body: { grams: 200 } });
     });
   });
@@ -191,7 +191,7 @@ describe('Diary — Einträge', () => {
       })
       .willRespondWith({ status: 204 });
 
-    await p.executeTest(async () => {
+    await against(p, async () => {
       // The screen only goes back afterwards; it reads no payload.
       await expect(api(`${endpoints.entries(date)}/${entryId}`, { method: 'DELETE' })).resolves.toBeUndefined();
     });
@@ -216,7 +216,7 @@ describe('Diary — Einträge', () => {
         ),
       });
 
-    await p.executeTest(async () => {
+    await against(p, async () => {
       const recent = await api<unknown[]>('/diary/recent?take=10');
       expect(Array.isArray(recent)).toBe(true);
     });
@@ -235,7 +235,7 @@ describe('Diary — Mahlzeiten-Slots', () => {
         body: enveloped(M.eachLike({ id: M.uuid(), name: M.string('Frühstück'), position: M.integer(1) })),
       });
 
-    await p.executeTest(async () => {
+    await against(p, async () => {
       const slots = await api<unknown[]>('/diary/slots');
       expect(Array.isArray(slots)).toBe(true);
     });
@@ -259,7 +259,7 @@ describe('Diary — Mahlzeiten-Slots', () => {
         body: enveloped({ id: M.uuid(), name: M.string('Neue Mahlzeit'), position: M.integer(4) }),
       });
 
-    await p.executeTest(async () => {
+    await against(p, async () => {
       await api('/diary/slots', { method: 'POST', body: { id: slotId, name: 'Neue Mahlzeit' }, idempotencyKey: slotId });
     });
   });
@@ -280,7 +280,7 @@ describe('Diary — Mahlzeiten-Slots', () => {
         body: enveloped({ id: M.uuid(), name: M.string('Zweites Frühstück'), position: M.integer(2) }),
       });
 
-    await p.executeTest(async () => {
+    await against(p, async () => {
       await api(`/diary/slots/${slotId}`, { method: 'PATCH', body: { name: 'Zweites Frühstück' } });
     });
   });
@@ -296,7 +296,7 @@ describe('Diary — Mahlzeiten-Slots', () => {
       })
       .willRespondWith({ status: 204 });
 
-    await p.executeTest(async () => {
+    await against(p, async () => {
       await expect(api(`/diary/slots/${slotId}`, { method: 'DELETE' })).resolves.toBeUndefined();
     });
   });
@@ -312,7 +312,7 @@ describe('Diary — Mahlzeiten-Slots', () => {
       })
       .willRespondWith(problem(problems.slotNotEmpty, 'Slot enthält noch Einträge', 409));
 
-    await p.executeTest(async () => {
+    await against(p, async () => {
       // On exactly this `type` the screen shows its "slot not empty" line.
       await expect(api(`/diary/slots/${slotId}`, { method: 'DELETE' })).rejects.toMatchObject({
         type: problems.slotNotEmpty,

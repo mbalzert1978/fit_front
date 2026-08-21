@@ -1,6 +1,7 @@
 import path from 'path';
 import { PactV3, MatchersV3 } from '@pact-foundation/pact';
-import { MOCK_PORT } from './mockPort';
+import type { V3MockServer } from '@pact-foundation/pact';
+import { useBaseUrl } from '../src/api/client';
 import { problems } from '../src/api/problems';
 import type { Language } from '../src/language';
 
@@ -14,9 +15,22 @@ export function pact(provider: string) {
   return new PactV3({
     consumer: 'nutritrack-app',
     provider,
-    port: MOCK_PORT,
     dir: path.resolve(process.cwd(), 'pacts'),
     logLevel: 'warn',
+  });
+}
+
+/**
+ * Runs one interaction against its own mock server and points the client at it.
+ *
+ * No port is asked for, so every run gets a fresh one. A fixed port would make
+ * the connection pool - which lives on `globalThis` and outlives a test file,
+ * unlike the mock server - hand the next file a socket that is already closed.
+ */
+export function against(p: PactV3, run: (mock: V3MockServer) => Promise<unknown>) {
+  return p.executeTest(async (mock) => {
+    useBaseUrl(mock.url);
+    return run(mock);
   });
 }
 

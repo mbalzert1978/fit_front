@@ -1,5 +1,6 @@
 import {
   pact,
+  against,
   M,
   enveloped,
   jsonHeadersIn,
@@ -85,7 +86,7 @@ describe('Identity', () => {
         body: enveloped({ user, session }),
       });
 
-    await p.executeTest(async () => {
+    await against(p, async () => {
       const r = await apiWithMeta<SignIn>('/identity/login', {
         method: 'POST',
         body: { email: 'a@b.de', password: 'geheim123' },
@@ -134,7 +135,7 @@ describe('Identity', () => {
         body: enveloped({ user, session }),
       });
 
-    await p.executeTest(async () => {
+    await against(p, async () => {
       const s = await register(registrationRequest(registration), attemptKey);
       expect(s.session.accessToken).toBeTruthy();
       expect(s.session.refreshToken).toBeTruthy();
@@ -168,7 +169,7 @@ describe('Identity', () => {
         body: enveloped({ user: { ...user, timeZoneId: '+01:00' }, session }),
       });
 
-    await p.executeTest(async () => {
+    await against(p, async () => {
       // Through the seam, so the value takes the same path as on the device —
       // written into the body by hand it would assure nothing.
       setTimeProvider({ now: () => new Date(), timeZoneId: () => 'GMT+01:00' });
@@ -200,7 +201,7 @@ describe('Identity', () => {
         }),
       );
 
-    await p.executeTest(async () => {
+    await against(p, async () => {
       const e = await register(registrationRequest(registration), attemptKey).catch((err: unknown) => err);
       expect(e).toBeInstanceOf(ApiError);
       const error = e as ApiError;
@@ -249,7 +250,7 @@ describe('Identity', () => {
         }),
       );
 
-    await p.executeTest(async () => {
+    await against(p, async () => {
       // The form keeps its one own rule, but it is not the only judge: what it
       // cannot catch deliberately goes past here.
       const e = await register(registrationRequest({ email: 'kein-at-zeichen', password: 'kurz', displayName: 'a' }), attemptKey).catch(
@@ -302,7 +303,7 @@ describe('Identity', () => {
         }),
       );
 
-    await p.executeTest(async () => {
+    await against(p, async () => {
       // Through the seam, so the language takes the same path as on the device
       // of an English-speaking user.
       setLanguageProvider({ tag: () => 'en' });
@@ -336,7 +337,7 @@ describe('Identity', () => {
       // Errors carry no envelope: problem+json stays as it is.
       .willRespondWith(problem(problems.invalidCredentials, 'Anmeldung fehlgeschlagen', 401));
 
-    await p.executeTest(async () => {
+    await against(p, async () => {
       await expect(login('a@b.de', 'falsch')).rejects.toMatchObject({ type: problems.invalidCredentials });
     });
   });
@@ -348,7 +349,7 @@ describe('Identity', () => {
       .withRequest({ method: 'GET', path: '/api/v1/identity/me', headers: authHeadersIn('de') })
       .willRespondWith({ status: 200, headers: privateHeaders, body: enveloped(user) });
 
-    await p.executeTest(async () => {
+    await against(p, async () => {
       // Read by the account line in `app/(tabs)/settings.tsx` — without a
       // reader this endpoint would be an assurance nobody needs.
       const me = await api<AccountUser>('/identity/me');
@@ -364,7 +365,7 @@ describe('Identity', () => {
       .withRequest({ method: 'GET', path: '/api/v1/identity/me', headers: authHeadersIn('de') })
       .willRespondWith(unauthorized());
 
-    await p.executeTest(async () => {
+    await against(p, async () => {
       await expect(api('/identity/me')).rejects.toMatchObject({ type: problems.tokenExpired, status: 401 });
     });
   });
@@ -387,7 +388,7 @@ describe('Identity', () => {
         body: enveloped({ session: { ...session, refreshToken: M.string('rt_neu') } }),
       });
 
-    await p.executeTest(async () => {
+    await against(p, async () => {
       // The fetch wrapper makes this call itself as soon as a response is 401.
       const r = await apiWithMeta<{ session: Session }>('/identity/refresh', {
         method: 'POST',
@@ -412,7 +413,7 @@ describe('Identity', () => {
       })
       .willRespondWith({ status: 204 });
 
-    await p.executeTest(async () => {
+    await against(p, async () => {
       __seedSession('rt_alt');
       // Signing out is not a local matter: without this call the refresh token
       // stays valid for its full lifetime, and a device backup still carries it.

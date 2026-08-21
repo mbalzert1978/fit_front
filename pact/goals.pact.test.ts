@@ -1,4 +1,4 @@
-import { pact, M, enveloped, authHeadersIn, jsonAuthHeadersIn, privateHeaders, unauthorized, problems } from './setup';
+import { pact, against, M, enveloped, authHeadersIn, jsonAuthHeadersIn, privateHeaders, unauthorized, problems } from './setup';
 import { api } from '../src/api/client';
 
 /**
@@ -31,7 +31,7 @@ describe('Goals', () => {
       .withRequest({ method: 'GET', path: '/api/v1/goals', headers: authHeadersIn('de') })
       .willRespondWith({ status: 200, headers: privateHeaders, body: enveloped(goalsBody) });
 
-    await p.executeTest(async () => {
+    await against(p, async () => {
       const g = await api<{ dailyKcal: number }>('/goals');
       expect(g.dailyKcal).toBeGreaterThan(0);
     });
@@ -55,7 +55,7 @@ describe('Goals', () => {
       })
       .willRespondWith({ status: 200, headers: privateHeaders, body: enveloped(goalsBody) });
 
-    await p.executeTest(async () => {
+    await against(p, async () => {
       // The response goes straight into the cache; no reload follows.
       const g = await api<{ macros: unknown }>('/goals', {
         method: 'PUT',
@@ -72,7 +72,7 @@ describe('Goals', () => {
       .withRequest({ method: 'GET', path: '/api/v1/goals', headers: authHeadersIn('de') })
       .willRespondWith(unauthorized());
 
-    await p.executeTest(async () => {
+    await against(p, async () => {
       await expect(api('/goals')).rejects.toMatchObject({ type: problems.tokenExpired, status: 401 });
     });
   });
@@ -90,7 +90,7 @@ describe('Preferences', () => {
         body: enveloped({ theme: M.regex('Dark|Light', 'Dark'), language: M.regex('de|en', 'de') }),
       });
 
-    await p.executeTest(async () => {
+    await against(p, async () => {
       const prefs = await api<{ language: string }>('/preferences');
       expect(prefs.language).toBeTruthy();
     });
@@ -112,7 +112,7 @@ describe('Preferences', () => {
         body: enveloped({ theme: M.regex('Dark|Light', 'Dark'), language: M.regex('de|en', 'en') }),
       });
 
-    await p.executeTest(async () => {
+    await against(p, async () => {
       const prefs = await api<{ language: string }>('/preferences', { method: 'PATCH', body: { language: 'en' } });
       expect(prefs.language).toBeTruthy();
     });

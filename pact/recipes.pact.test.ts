@@ -1,4 +1,16 @@
-import { pact, M, enveloped, authHeadersIn, jsonAuthHeadersIn, privateHeaders, problem, forbidden, unauthorized, problems } from './setup';
+import {
+  pact,
+  against,
+  M,
+  enveloped,
+  authHeadersIn,
+  jsonAuthHeadersIn,
+  privateHeaders,
+  problem,
+  forbidden,
+  unauthorized,
+  problems,
+} from './setup';
 import { api, apiWithMeta } from '../src/api/client';
 
 /**
@@ -64,7 +76,7 @@ describe('Recipes', () => {
         ),
       });
 
-    await p.executeTest(async () => {
+    await against(p, async () => {
       const list = await api<unknown[]>('/recipes?sort=name_desc');
       expect(Array.isArray(list)).toBe(true);
     });
@@ -87,7 +99,7 @@ describe('Recipes', () => {
         body: enveloped(recipeSheet),
       });
 
-    await p.executeTest(async () => {
+    await against(p, async () => {
       const r = await apiWithMeta<{ ingredients: unknown[] }>(`/recipes/${recipeId}`);
       expect(r.headers.get('ETag')).toBeTruthy();
       expect(Array.isArray(r.data.ingredients)).toBe(true);
@@ -105,7 +117,7 @@ describe('Recipes', () => {
       })
       .willRespondWith(forbidden());
 
-    await p.executeTest(async () => {
+    await against(p, async () => {
       // A valid sign-in is no permission: the id comes from a deep link and is
       // freely chosen.
       await expect(api(`/recipes/${foreignRecipeId}`)).rejects.toMatchObject({ type: problems.forbidden, status: 403 });
@@ -119,7 +131,7 @@ describe('Recipes', () => {
       .withRequest({ method: 'GET', path: '/api/v1/recipes', query: { sort: 'name_desc' }, headers: authHeadersIn('de') })
       .willRespondWith(unauthorized());
 
-    await p.executeTest(async () => {
+    await against(p, async () => {
       await expect(api('/recipes?sort=name_desc')).rejects.toMatchObject({ type: problems.tokenExpired, status: 401 });
     });
   });
@@ -140,7 +152,7 @@ describe('Recipes', () => {
         body: enveloped(recipeSheet),
       });
 
-    await p.executeTest(async () => {
+    await against(p, async () => {
       const r = await apiWithMeta<{ id: string }>('/recipes', { method: 'POST', idempotencyKey: recipeId, body: draft });
       // The screen switches to this id after saving.
       expect(r.data.id).toBeTruthy();
@@ -167,7 +179,7 @@ describe('Recipes', () => {
         body: enveloped(recipeSheet),
       });
 
-    await p.executeTest(async () => {
+    await against(p, async () => {
       const r = await apiWithMeta<{ id: string }>(`/recipes/${recipeId}`, { method: 'PUT', ifMatch: '7', body: draft });
       expect(r.data.id).toBeTruthy();
       expect(r.headers.get('ETag')).toBeTruthy();
@@ -186,7 +198,7 @@ describe('Recipes', () => {
       })
       .willRespondWith(problem(problems.concurrencyConflict, 'Rezept wurde zwischenzeitlich geändert', 409));
 
-    await p.executeTest(async () => {
+    await against(p, async () => {
       // Without this assurance a backend ignoring a stale If-Match would still
       // keep the contract.
       await expect(apiWithMeta(`/recipes/${recipeId}`, { method: 'PUT', ifMatch: '3', body: draft })).rejects.toMatchObject({
@@ -215,7 +227,7 @@ describe('Recipes', () => {
         body: enveloped({ entryId: M.uuid(), grams: M.integer(338), kcal: M.integer(412) }),
       });
 
-    await p.executeTest(async () => {
+    await against(p, async () => {
       const r = await api<{ entryId: string }>(`/recipes/${recipeId}/portions-to-diary`, {
         method: 'POST',
         idempotencyKey: opId,

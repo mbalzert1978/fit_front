@@ -1,5 +1,6 @@
 import {
   pact,
+  against,
   M,
   enveloped,
   jsonHeaders,
@@ -52,7 +53,7 @@ describe('Catalog — Produkte', () => {
         }),
       });
 
-    await p.executeTest(async () => {
+    await against(p, async () => {
       const product = await api<{ barcode: string }>(endpoints.productByBarcode('4008400401027'));
       expect(product.barcode).toBe('4008400401027');
     });
@@ -65,7 +66,7 @@ describe('Catalog — Produkte', () => {
       .withRequest({ method: 'GET', path: '/api/v1/catalog/products/by-barcode/0000000000000', headers: authHeadersIn('de') })
       .willRespondWith(problem(problems.productNotFound, 'Produkt nicht gefunden', 404));
 
-    await p.executeTest(async () => {
+    await against(p, async () => {
       // Not an error in the UI: this case leads into the photo flow.
       await expect(api(endpoints.productByBarcode('0000000000000'))).rejects.toMatchObject({ type: problems.productNotFound });
     });
@@ -82,7 +83,7 @@ describe('Catalog — Produkte', () => {
       })
       .willRespondWith(unauthorized());
 
-    await p.executeTest(async () => {
+    await against(p, async () => {
       // 404 and 401 are two different outcomes — one leads into the photo flow,
       // the other ends the session. Without an assurance they might blur.
       await expect(api(endpoints.productByBarcode('4008400401027'))).rejects.toMatchObject({
@@ -119,7 +120,7 @@ describe('Catalog — Produkte', () => {
         }),
       });
 
-    await p.executeTest(async () => {
+    await against(p, async () => {
       const product = await api<{ id: string }>(`/catalog/products/${productId}`);
       expect(product.id).toBeTruthy();
     });
@@ -163,7 +164,7 @@ describe('Catalog — Produkte', () => {
         }),
       });
 
-    await p.executeTest(async () => {
+    await against(p, async () => {
       const created = await api<{ id: string }>('/catalog/products', {
         method: 'POST',
         idempotencyKey: productId,
@@ -216,7 +217,7 @@ describe('Catalog — Suche', () => {
         ),
       });
 
-    await p.executeTest(async () => {
+    await against(p, async () => {
       const hits = await api<unknown[]>('/search?query=skyr&take=20');
       expect(Array.isArray(hits)).toBe(true);
     });
@@ -262,7 +263,7 @@ describe('Catalog — Foto-Auftrag', () => {
       .withRequest({ method: 'PUT', path: photoPath, headers: jsonAuthHeadersIn('de'), body: targetRequest })
       .willRespondWith({ status: 201, headers: privateHeaders, body: enveloped(uploadTarget) });
 
-    await p.executeTest(async () => {
+    await against(p, async () => {
       const target = await api<PhotoUploadTarget>(endpoints.photo(photoId), {
         method: 'PUT',
         body: { contentType: 'image/jpeg', byteSize: 412_388, barcode: '4008400401027' },
@@ -284,7 +285,7 @@ describe('Catalog — Foto-Auftrag', () => {
       // 200 instead of 201: the photo already exists, only the signature is new.
       .willRespondWith({ status: 200, headers: privateHeaders, body: enveloped(uploadTarget) });
 
-    await p.executeTest(async () => {
+    await against(p, async () => {
       const target = await api<PhotoUploadTarget>(endpoints.photo(photoId), {
         method: 'PUT',
         body: { contentType: 'image/jpeg', byteSize: 412_388, barcode: '4008400401027' },
@@ -310,7 +311,7 @@ describe('Catalog — Foto-Auftrag', () => {
         body: enveloped({ photoId: M.uuid(), status: 'Processing' }),
       });
 
-    await p.executeTest(async () => {
+    await against(p, async () => {
       const job = await api<{ status: string }>(endpoints.photoUpload(photoId), { method: 'PUT' });
       expect(job.status).toBe('Processing');
     });
@@ -332,7 +333,7 @@ describe('Catalog — Foto-Auftrag', () => {
         body: enveloped({ photoId: M.uuid(), status: 'Processing' }),
       });
 
-    await p.executeTest(async () => {
+    await against(p, async () => {
       const job = await api<{ status: string }>(endpoints.photo(photoId));
       expect(job.status).toBe('Processing');
     });
@@ -369,7 +370,7 @@ describe('Catalog — Foto-Auftrag', () => {
         }),
       });
 
-    await p.executeTest(async () => {
+    await against(p, async () => {
       const job = await api<{ status: string; fields: Record<string, unknown> }>(endpoints.photo(photoId));
       expect(job.status).toBe('Completed');
       expect(job.fields.kcal).toBeDefined();
@@ -392,7 +393,7 @@ describe('Catalog — Foto-Auftrag', () => {
         body: enveloped({ photoId: M.uuid(), status: 'Failed', reason: M.string('Tabelle nicht lesbar') }),
       });
 
-    await p.executeTest(async () => {
+    await against(p, async () => {
       const job = await api<{ status: string }>(endpoints.photo(photoId));
       expect(job.status).toBe('Failed');
     });

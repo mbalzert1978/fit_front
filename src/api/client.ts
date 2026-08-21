@@ -10,17 +10,30 @@ import { language, preferLanguage } from '../language';
  */
 export type ApiResponse<T> = { data: T; meta: Meta | null; headers: Headers };
 
-const BASE = process.env.EXPO_PUBLIC_API_URL;
-if (!BASE) throw new Error('EXPO_PUBLIC_API_URL fehlt (.env)');
-
 /**
  * A `.env` from the wrong environment tears the app apart at startup rather
  * than transmitting tokens and health data in the clear (`docs/regeln.md`,
  * HTTP-Schicht).
  */
 const LOOPBACK = /^http:\/\/(127\.0\.0\.1|localhost|\[::1\]|10\.0\.2\.2)(:\d+)?\/?$/;
-if (!BASE.startsWith('https://') && !LOOPBACK.test(BASE)) {
-  throw new Error('EXPO_PUBLIC_API_URL muss https sein (Klartext nur gegen 127.0.0.1/localhost)');
+
+function checked(url: string | undefined): string {
+  if (!url) throw new Error('EXPO_PUBLIC_API_URL fehlt (.env)');
+  if (!url.startsWith('https://') && !LOOPBACK.test(url)) {
+    throw new Error('EXPO_PUBLIC_API_URL muss https sein (Klartext nur gegen 127.0.0.1/localhost)');
+  }
+  return url;
+}
+
+let BASE = checked(process.env.EXPO_PUBLIC_API_URL);
+
+/**
+ * The pact mock server picks its own port at run time, so its address cannot be
+ * known at import (`pact/setup.ts`). The same check applies to it as to `.env`:
+ * a base URL set here is no less able to leak a token than one read from a file.
+ */
+export function useBaseUrl(url: string): void {
+  BASE = checked(url);
 }
 
 /**

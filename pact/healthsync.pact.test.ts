@@ -1,4 +1,4 @@
-import { pact, M, enveloped, authHeadersIn, privateHeaders, unauthorized, problems } from './setup';
+import { pact, against, M, enveloped, authHeadersIn, privateHeaders, unauthorized, problems } from './setup';
 import { api } from '../src/api/client';
 
 /**
@@ -26,7 +26,7 @@ describe('HealthSync', () => {
         }),
       });
 
-    await p.executeTest(async () => {
+    await against(p, async () => {
       const consent = await api<{ connected: boolean }>('/health/consent');
       expect(typeof consent.connected).toBe('boolean');
     });
@@ -39,7 +39,7 @@ describe('HealthSync', () => {
       .withRequest({ method: 'GET', path: '/api/v1/health/consent', headers: authHeadersIn('de') })
       .willRespondWith(unauthorized());
 
-    await p.executeTest(async () => {
+    await against(p, async () => {
       await expect(api('/health/consent')).rejects.toMatchObject({ type: problems.tokenExpired, status: 401 });
     });
   });
