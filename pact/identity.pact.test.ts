@@ -365,6 +365,9 @@ describe('Identity', () => {
         );
         expect(e).toBeInstanceOf(ApiError);
         const fehler = e as ApiError;
+        // Der Status steht hier so ausdrücklich wie im deutschen Fall: 422 ist
+        // die Zusage, nicht 400, und sie gilt in beiden Sprachen gleich.
+        expect(fehler.status).toBe(422);
         expect(fehler.type).toBe(problems.validationFailed);
         expect(fehler.errors?.email?.[0]).toEqual(expect.any(String));
       } finally {
