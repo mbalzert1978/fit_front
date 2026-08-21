@@ -3,20 +3,15 @@ import { api, endpoints } from '../src/api/client';
 import { parseDiaryDate } from '../src/api/diaryDate';
 
 /**
- * Bedarf: `app/(tabs)/diary.tsx`, `app/entry/[id].tsx`, `app/(tabs)/settings.tsx`
- * (Mahlzeiten-Slots) und `app/(tabs)/scan.tsx` (letzte Einträge).
+ * Needed by: `app/(tabs)/diary.tsx`, `app/entry/[id].tsx`,
+ * `app/(tabs)/settings.tsx` (meal slots) and `app/(tabs)/scan.tsx`.
  *
- * Zugesichert ist nur, was diese Screens lesen. `sourceType`/`sourceId` am
- * Eintrag stehen zwar im Typ, werden aber von keinem Screen angefasst — sie
- * fehlen hier bewusst. `isFuture` fehlt ebenfalls: ob ein Tag in der Zukunft
- * liegt, vergleicht der Screen selbst — ein Feld, das beide Seiten rechnen,
- * wäre eine zweite Wahrheit. `PATCH .../slot` fehlt ebenso: die
- * Verschiebe-Mutation existiert, die Gestik dazu nicht (Issue #20).
- *
- * Alles hier ist die Ernährung eines einzelnen Nutzers. Jede Anfrage weist sich
- * deshalb aus, und jede Antwort mit Rumpf trägt `no-store` — ein Tagebuchtag im
- * Klartext im Cache-Verzeichnis wäre der Punkt, an dem ein Gerätebackup mehr
- * verrät als jede Anmeldung.
+ * Assured is only what these screens read (`docs/regeln.md` rule 2).
+ * `sourceType`/`sourceId` on the entry are missing deliberately — no screen
+ * touches them; `isFuture` too, see
+ * `docs/decisions/2026-08-20-0925-kalendertag-ist-reine-client-sache.md`;
+ * `PATCH .../slot` as well: the mutation exists, the gesture does not
+ * (Issue #20).
  */
 const provider = () => pact('nutritrack-diary');
 const date = parseDiaryDate('2026-08-04');
@@ -84,7 +79,7 @@ describe('Diary — Tagesansicht', () => {
           goal: { dailyKcal: M.integer(2150), carbsG: M.integer(215), proteinG: M.integer(161), fatG: M.integer(72) },
           remainingKcal: M.integer(2150),
           slots: M.eachLike({ id: M.uuid(), name: M.string('Frühstück'), kcal: M.integer(0), entries: [] }),
-          // Der Aktivitätsblock wird dann gar nicht gezeichnet.
+          // The activity block is then not drawn at all.
           activity: null,
         }),
       });
@@ -103,7 +98,7 @@ describe('Diary — Tagesansicht', () => {
       .willRespondWith(unauthorized());
 
     await p.executeTest(async () => {
-      // Genau an dieser Antwort hängt die Erneuerung in `src/api/client.ts`.
+      // The renewal in `src/api/client.ts` hangs on exactly this response.
       await expect(api(endpoints.diaryDay(date))).rejects.toMatchObject({ type: problems.tokenExpired, status: 401 });
     });
   });
@@ -116,7 +111,7 @@ describe('Diary — Tagesansicht', () => {
       .willRespondWith(problem(problems.forbidden, 'Kein Zugriff auf diese Ressource', 403));
 
     await p.executeTest(async () => {
-      // Ohne diese Zusage dürfte das Backend fremde Tage mit 200 beantworten.
+      // Without this assurance the backend could answer someone else's day with 200.
       await expect(api(endpoints.diaryDay(parseDiaryDate('2026-08-06')))).rejects.toMatchObject({
         type: problems.forbidden,
         status: 403,
@@ -197,7 +192,7 @@ describe('Diary — Einträge', () => {
       .willRespondWith({ status: 204 });
 
     await p.executeTest(async () => {
-      // Der Screen kehrt danach nur zurück; eine Nutzlast wertet er nicht aus.
+      // The screen only goes back afterwards; it reads no payload.
       await expect(api(`${endpoints.entries(date)}/${entryId}`, { method: 'DELETE' })).resolves.toBeUndefined();
     });
   });
@@ -253,8 +248,8 @@ describe('Diary — Mahlzeiten-Slots', () => {
       .withRequest({
         method: 'POST',
         path: '/api/v1/diary/slots',
-        // Die Client-Id ist zugleich der Schlüssel: eine zweimal zugestellte
-        // Anfrage darf nicht zwei Slots ergeben.
+        // The client id is at the same time the key: a request delivered twice
+        // must not yield two slots.
         headers: { ...jsonAuthHeadersIn('de'), 'Idempotency-Key': slotId },
         body: { id: M.uuid(), name: 'Neue Mahlzeit' },
       })
@@ -318,7 +313,7 @@ describe('Diary — Mahlzeiten-Slots', () => {
       .willRespondWith(problem(problems.slotNotEmpty, 'Slot enthält noch Einträge', 409));
 
     await p.executeTest(async () => {
-      // Der Screen zeigt genau auf diesen `type` hin die Zeile „enthält noch Einträge".
+      // On exactly this `type` the screen shows its "slot not empty" line.
       await expect(api(`/diary/slots/${slotId}`, { method: 'DELETE' })).rejects.toMatchObject({
         type: problems.slotNotEmpty,
       });

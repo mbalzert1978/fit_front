@@ -2,15 +2,11 @@ import { pact, M, enveloped, authHeadersIn, jsonAuthHeadersIn, privateHeaders, u
 import { api } from '../src/api/client';
 
 /**
- * Bedarf: `app/(tabs)/settings.tsx` — Tagesziel, Makro-Verteilung,
- * Brennwert-Standard, Rundung, Aktivkalorien sowie Darstellung und Sprache.
+ * Needed by: `app/(tabs)/settings.tsx` — daily goal, macro split, energy
+ * standard, rounding, activity calories, appearance and language.
  *
- * Das Speichern der Ziele passiert in mehreren, jeweils kleinen Teil-Nutzlasten
- * (nur Verteilung, nur Tagesziel, nur ein Schalter). Zugesichert ist deshalb,
- * dass eine Teilangabe genügt und die vollständigen Ziele zurückkommen.
- *
- * Ziele und Einstellungen gehören zu einem Nutzer: jede Anfrage weist sich aus,
- * jede Antwort ist `no-store`.
+ * The screen saves in several small part-payloads, so what is assured is that a
+ * partial statement suffices and the complete goals come back.
  */
 const goals = () => pact('nutritrack-goals');
 
@@ -21,7 +17,7 @@ const goalsBody = {
     protein: { percent: M.integer(30), grams: M.integer(161), kcal: M.integer(661) },
     fat: { percent: M.integer(30), grams: M.integer(72), kcal: M.integer(670) },
   },
-  // Die vier Werte steuern Schalterstellungen und die Rechnung im Screen selbst.
+  // These four drive switch positions and the screen's own arithmetic.
   energyStandard: M.regex('Physiological|Declaration', 'Physiological'),
   rounding: M.regex('Up|Down', 'Up'),
   includeActivityInGoal: M.boolean(false),
@@ -60,7 +56,7 @@ describe('Goals', () => {
       .willRespondWith({ status: 200, headers: privateHeaders, body: enveloped(goalsBody) });
 
     await p.executeTest(async () => {
-      // Die Antwort landet direkt im Cache; ein Nachladen findet nicht statt.
+      // The response goes straight into the cache; no reload follows.
       const g = await api<{ macros: unknown }>('/goals', {
         method: 'PUT',
         body: { macros: { carbs: { percent: 40 }, protein: { percent: 30 }, fat: { percent: 30 } } },

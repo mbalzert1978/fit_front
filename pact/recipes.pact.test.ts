@@ -2,15 +2,12 @@ import { pact, M, enveloped, authHeadersIn, jsonAuthHeadersIn, privateHeaders, p
 import { api, apiWithMeta } from '../src/api/client';
 
 /**
- * Bedarf: `app/(tabs)/recipes.tsx` (Liste) und `app/recipe/[id].tsx` (Blatt,
- * Speichern, Übernahme ins Tagebuch).
+ * Needed by: `app/(tabs)/recipes.tsx` (list) and `app/recipe/[id].tsx` (sheet,
+ * saving, handover into the diary). `totalGrams`/`totalKcal` are not read — the
+ * sheet computes them from the ingredients itself.
  *
- * Die Liste zeigt Portionen, Gramm und kcal je Portion; `totalGrams`/`totalKcal`
- * rechnet das Blatt aus den Zutaten selbst und liest sie deshalb nicht.
- *
- * Rezepte gehören einem Nutzer: jede Anfrage weist sich aus, jede Antwort ist
- * `no-store`, und dass ein fremdes Rezept nicht herausgegeben wird, steht als
- * eigene Zusage da — der Frontend-Code allein kann das nicht sicherstellen.
+ * That someone else's recipe is not served stands as an assurance of its own:
+ * the frontend code alone cannot ensure it.
  */
 const provider = () => pact('nutritrack-recipes');
 const recipeId = '2f1c9b7e-1111-4222-8333-444455556666';
@@ -84,8 +81,8 @@ describe('Recipes', () => {
       })
       .willRespondWith({
         status: 200,
-        // Der ETag steht im gleichnamigen Header und geht unverändert als
-        // If-Match zurück; ohne ihn kein Speichern.
+        // The ETag stands in the header of the same name and goes back unchanged
+        // as If-Match; without it there is no saving.
         headers: { ...privateHeaders, ETag: M.string('7') },
         body: enveloped(recipeSheet),
       });
@@ -109,8 +106,8 @@ describe('Recipes', () => {
       .willRespondWith(forbidden());
 
     await p.executeTest(async () => {
-      // Eine gültige Anmeldung ist keine Berechtigung: die Id kommt aus einem
-      // Deep-Link und ist frei wählbar.
+      // A valid sign-in is no permission: the id comes from a deep link and is
+      // freely chosen.
       await expect(api(`/recipes/${foreignRecipeId}`)).rejects.toMatchObject({ type: problems.forbidden, status: 403 });
     });
   });
@@ -145,11 +142,10 @@ describe('Recipes', () => {
 
     await p.executeTest(async () => {
       const r = await apiWithMeta<{ id: string }>('/recipes', { method: 'POST', idempotencyKey: recipeId, body: draft });
-      // Auf diese Id schaltet der Screen nach dem Speichern um.
+      // The screen switches to this id after saving.
       expect(r.data.id).toBeTruthy();
-      // Der ETag der neuen Fassung ist zugesichert; `useSaveRecipe` heftet ihn ans
-      // Rezept. Eine Zusage, die kein Aufrufer je anfasst, merkt niemand, wenn
-      // sie bricht — deshalb wird er hier gelesen.
+      // An assurance no caller ever touches goes unnoticed when it breaks —
+      // hence the ETag is read here.
       expect(r.headers.get('ETag')).toBeTruthy();
     });
   });
@@ -166,7 +162,7 @@ describe('Recipes', () => {
       })
       .willRespondWith({
         status: 200,
-        // Der neue ETag; der alte ging als If-Match in die Anfrage.
+        // The new ETag; the old one went into the request as If-Match.
         headers: { ...privateHeaders, ETag: M.string('8') },
         body: enveloped(recipeSheet),
       });
@@ -191,8 +187,8 @@ describe('Recipes', () => {
       .willRespondWith(problem(problems.concurrencyConflict, 'Rezept wurde zwischenzeitlich geändert', 409));
 
     await p.executeTest(async () => {
-      // Ohne diese Zusage bliebe offen, was ein überholtes If-Match bewirkt —
-      // und ein Backend, das es ignoriert, hielte den Vertrag trotzdem ein.
+      // Without this assurance a backend ignoring a stale If-Match would still
+      // keep the contract.
       await expect(apiWithMeta(`/recipes/${recipeId}`, { method: 'PUT', ifMatch: '3', body: draft })).rejects.toMatchObject({
         type: problems.concurrencyConflict,
         status: 409,
@@ -208,9 +204,8 @@ describe('Recipes', () => {
       .withRequest({
         method: 'POST',
         path: M.regex(`/api/v1/recipes/${uuidPath}/portions-to-diary`, `/api/v1/recipes/${recipeId}/portions-to-diary`),
-        // Ohne Schlüssel legte eine zweimal zugestellte Anfrage die Portionen
-        // zweimal ins Tagebuch — und die Hülle dürfte nach einer Erneuerung
-        // gar nicht wiederholen.
+        // Without a key a request delivered twice would put the portions into the
+        // diary twice — and the wrapper could not repeat after a renewal at all.
         headers: { ...jsonAuthHeadersIn('de'), 'Idempotency-Key': opId },
         body: { date: '2026-08-04', mealSlotId: M.uuid(), amount: M.integer(1), unit: 'Portion' },
       })

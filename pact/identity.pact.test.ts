@@ -18,50 +18,33 @@ import { __seedSession, __readSession } from './stubs/expoSecureStore';
 import type { Session, SignIn, AccountUser } from '../src/api/types';
 
 /**
- * Bedarf: `app/login.tsx` und `app/register.tsx` (beide über
- * `src/api/session.ts`), die Kontozeile in `app/(tabs)/settings.tsx` sowie die
- * 401-Behandlung in `src/api/client.ts`. Die Anmeldemaske unterscheidet genau
- * zwei Ausgänge — angemeldet oder Feld rot; deshalb dort genau ein Erfolgs- und
- * ein Fehlerfall.
+ * Needed by: `app/login.tsx` and `app/register.tsx` (both through
+ * `src/api/session.ts`), the account line in `app/(tabs)/settings.tsx` and the
+ * 401 handling in `src/api/client.ts`.
  *
- * Die Registrierung hat drei Felder und braucht deshalb mehr: die vergebene
- * E-Mail als eigenen Zustand (409) und alles, was gegen eine Regel verstößt,
- * feldweise begründet (`validation-failed`). Welche Regeln das sind, steht
- * nicht hier — sie gehören dem Server, und die Maske zeigt, was er sagt.
+ * The sign-in form knows exactly two outcomes, hence one success and one error
+ * case. Registration has three fields and needs more: the taken email as its
+ * own state, and every rule violation reasoned per field.
  *
- * Und die Sprache steht als eigenes Paar da: derselbe Verstoß, einmal auf
- * Deutsch und einmal auf Englisch gefragt. Eine einzelne Interaktion könnte das
- * nicht zeigen — ihr Wortlaut ist ein Matcher, und der nimmt jede Sprache an.
- *
- * Die Antwort hat **zwei benannte Teile**: `user` ist die erzeugte Ressource,
- * `session` das Token-Paar. Die Erneuerung liefert nur `session` — sie läuft bei
- * jedem Start und soll den User-Store nicht anfassen. Die Sitzung ist nach
- * OAuth 2 benannt (`tokenType`, `expiresIn`, `refreshExpiresIn`); dass die
- * Laufzeiten heute kein Screen liest, nimmt sie nicht aus der Zusage — die Form
- * der Auth-Antwort ist Vorgabe, nicht Ableitung aus dem heutigen Bedarf; siehe
- * `docs/regeln.md` Regel 2.
+ * The language stands here as a **pair** — the same violation asked in German
+ * and in English. A single interaction could not show it: its wording is a
+ * matcher, and a matcher takes any language.
  */
 const provider = () => pact('nutritrack-identity');
 
 /**
- * Die Zonenkennung, wie das Gerät sie nennt — deshalb ein Matcher und nicht
- * dieser eine Ort: zugesagt ist die Form, nicht Berlin.
- *
- * Und die Form ist bewusst weit. Der Regelfall ist `Bereich/Ort`
- * (`Europe/Berlin`), aber `UTC` ist genauso eine gültige Kennung, und Android
- * kann eine Versatz-Kennung liefern, wenn es keine benannte Zone auflöst
- * (`GMT+01:00`). Der Client normalisiert nichts — das tut der Server, und was
- * dabei herauskommt, steht in seiner Antwort. Zugesagt ist hier deshalb nur,
- * was der Client wirklich einhalten kann: nicht leer, kein Leerzeichen, nichts
- * außerhalb dieser Zeichen. Leer kommt ohnehin nicht vor — ohne Zone entsteht
- * gar keine Anfrage (`timeZoneId()` in `src/time.ts` wirft).
+ * The zone as the device names it: a matcher, because the form is assured and
+ * not Berlin. The form is deliberately wide — beside `Area/City`, `UTC` is a
+ * valid identifier too, and Android may deliver an offset (`GMT+01:00`) where
+ * it resolves no named zone. Assured is only what the client can really keep
+ * (`docs/decisions/2026-08-20-0957-die-zonenform-steht-als-matcher-die-versatz-zone-als-eigene-interaktion.md`).
  */
 const anyTimeZoneId = M.regex('^[A-Za-z0-9_+:/-]+$', 'Europe/Berlin');
 
-/** Der Schlüssel entsteht in der Maske, nicht im Test — deshalb ein Matcher. */
+/** The key arises in the form, not in the test — hence a matcher. */
 const anyIdempotencyKey = M.uuid();
 
-/** Der Wert, den die Maske in diesem Lauf zieht; er steht im Vertrag als Form. */
+/** The value the form draws in this run; the contract carries it as a form. */
 const attemptKey = '3f2a1b0c-4d5e-4f60-8a91-b2c3d4e5f607';
 
 const session = {
@@ -72,19 +55,13 @@ const session = {
   refreshExpiresIn: M.integer(5184000),
 };
 
-/**
- * Das Konto, wie der Server es führt. `locale` und `timeZoneId` sind hier die
- * **wirksamen** Werte: der Server nimmt entgegen, was das Gerät nennt, und gibt
- * zurück, was daraus geworden ist.
- */
+/** `locale` and `timeZoneId` are the **effective** values, not the ones asked for. */
 const user = {
   id: M.uuid(),
   email: M.string('a@b.de'),
   displayName: M.string('Markus'),
-  // Verankert, wie jeder Regex in diesem Repo: Pact vergleicht Teilstücke, und
-  // ohne Anker bestünde jeder String, der irgendwo ein „de" trägt — `de-DE`,
-  // `sv-SE`, `Dezember`. Zugesichert sind genau die beiden Werte, die der
-  // Server kennt.
+  // Anchored, like every regex in this repo: Pact compares substrings, so
+  // without anchors any string carrying a "de" would pass.
   locale: M.regex('^(de|en)$', 'de'),
   timeZoneId: M.string('Europe/Berlin'),
 };
@@ -136,31 +113,24 @@ describe('Identity', () => {
       .withRequest({
         method: 'POST',
         path: '/api/v1/identity/register',
-        // Der `Idempotency-Key` ist der Unterschied zwischen „wir wissen nicht,
-        // ob es geklappt hat" und einem zweiten Versuch, der dieselbe Antwort
-        // bekommt. Ohne ihn läse ein Nutzer, dessen Antwort auf dem Rückweg
-        // verlorenging, beim zweiten Tippen „E-Mail bereits registriert" —
-        // vergeben von ihm selbst, eine Sekunde zuvor.
+        // Without the key a user whose response got lost on the way back would
+        // read "email already registered" on the second try — taken by
+        // themselves, a second earlier.
         headers: { ...jsonHeadersIn('de'), 'Idempotency-Key': anyIdempotencyKey },
-        // Der Rumpf steht hier so, wie `register()` in `src/api/session.ts` ihn
-        // schickt — der Test ruft die Hülle selbst auf und nicht `api()` direkt.
-        // `locale` und `timeZoneId` sind Merkmale, die am Konto bleiben; deshalb
-        // reisen sie im Rumpf und nicht nur als Kopfzeile, die diese eine
-        // Antwort verhandelt. Beide kommen aus einer Naht: die Sprache aus
-        // `src/language.ts` — dieselbe, die oben als `Accept-Language` steht —,
-        // die Zone aus `src/time.ts`.
+        // The body as `register()` sends it: the test calls the wrapper itself
+        // and not `api()`. `locale` and `timeZoneId` are traits that stay with
+        // the account, so they travel in the body and not only as a header that
+        // negotiates this one response.
         body: { ...registration, locale: 'de', timeZoneId: anyTimeZoneId },
       })
       .willRespondWith({
         status: 201,
-        // `Location` nennt die erzeugte Ressource (RFC 9110 §15.3.2). Sie hat
-        // in dieser API genau einen Namen: `/identity/me`. Eine zweite,
-        // id-tragende URI wäre ein Name, den niemand benutzt — kein Screen
-        // liest je ein fremdes Konto.
+        // `Location` names the created resource (RFC 9110 §15.3.2), and it has
+        // exactly one name in this API — an id-carrying URI would be a name
+        // nobody uses.
         headers: { ...authResponseHeaders, Location: '/api/v1/identity/me' },
-        // Dieselbe Nutzlast wie die Anmeldung: `app/register.tsx` führt danach
-        // direkt ins Tagebuch, und dafür braucht es die Sitzung sofort. Zwei
-        // Formen für dieselbe Sache gäbe es sonst ohne Not.
+        // The same payload as sign-in: `app/register.tsx` goes straight to the
+        // diary afterwards and needs the session at once.
         body: enveloped({ user, session }),
       });
 
@@ -170,7 +140,7 @@ describe('Identity', () => {
       expect(s.session.refreshToken).toBeTruthy();
       expect(s.session.tokenType).toBe('Bearer');
       expect(s.user.id).toBeTruthy();
-      // Und die Sitzung liegt danach im Gerät — wer ein Konto anlegt, ist drin.
+      // And the session lies on the device afterwards — creating an account signs you in.
       expect(__readSession()).toBeTruthy();
     });
   });
@@ -183,32 +153,28 @@ describe('Identity', () => {
         method: 'POST',
         path: '/api/v1/identity/register',
         headers: { ...jsonHeadersIn('de'), 'Idempotency-Key': anyIdempotencyKey },
-        // Hier steht der Wert selbst und kein Matcher: `GMT+01:00` **ist** die
-        // Zusage. Android liefert diese Form, wenn das System keine benannte
-        // Zone auflöst; der Nutzer kann dafür nichts, und ein Konto muss auch
-        // dann entstehen.
+        // The value itself and no matcher: `GMT+01:00` **is** the assurance.
+        // Android delivers this form where it resolves no named zone, and an
+        // account has to come about then too.
         body: { ...registration, locale: 'de', timeZoneId: 'GMT+01:00' },
       })
       .willRespondWith({
         status: 201,
         headers: { ...authResponseHeaders, Location: '/api/v1/identity/me' },
-        // Und hier steht die andere Hälfte der Zusage, ebenfalls als Wert: der
-        // Server nimmt die Versatz-Form nicht nur an, er **normalisiert** sie
-        // auf `±HH:MM` — eine der beiden Zonenformen aus RFC 9557 §4.1, die
-        // andere ist der IANA-Name. Nicht auf `Etc/GMT-1`: dort ist das
-        // Vorzeichen invertiert, und für halbe Stunden (`GMT+05:30`, Indien)
-        // gibt es diese Zonen gar nicht.
+        // The other half of the assurance, also as a value: the server
+        // **normalises** the offset to `±HH:MM` — one of the two zone forms in
+        // RFC 9557 §4.1. Not to `Etc/GMT-1`, where the sign is inverted and
+        // half-hour offsets have no zone at all.
         body: enveloped({ user: { ...user, timeZoneId: '+01:00' }, session }),
       });
 
     await p.executeTest(async () => {
-      // Über die Naht, damit der Wert denselben Weg nimmt wie auf dem Gerät —
-      // von Hand in den Rumpf geschrieben wäre es eine Zusage über nichts.
+      // Through the seam, so the value takes the same path as on the device —
+      // written into the body by hand it would assure nothing.
       setTimeProvider({ now: () => new Date(), timeZoneId: () => 'GMT+01:00' });
       try {
         const s = await register(registrationRequest(registration), attemptKey);
-        // Genau dafür ist die Rückgabe da: die Anfrage war ein Wunsch, die
-        // Antwort ist die Wahrheit über das Konto.
+        // The request was a wish, the response is the truth about the account.
         expect(s.user.timeZoneId).toBe('+01:00');
       } finally {
         resetTimeProvider();
@@ -226,11 +192,8 @@ describe('Identity', () => {
         headers: { ...jsonHeadersIn('de'), 'Idempotency-Key': anyIdempotencyKey },
         body: { ...registration, locale: 'de', timeZoneId: anyTimeZoneId },
       })
-      // Zwei Zusagen in einer: der `type`, an dem der Screen diesen Fall von
-      // jedem sonstigen Fehlschlag unterscheidet, **und** `detail` — der Satz zu
-      // genau diesem Vorfall. Kein `errors`: eine vergebene Adresse verstößt
-      // gegen keine Feldregel, und RFC 9457 hat für den Satz zum Vorfall schon
-      // ein Feld. Auch hier redet der Server; die Maske hat nur einen Rückfall.
+      // Two assurances in one: the `type` the screen tells this case apart by,
+      // and `detail`. No `errors` — a taken address violates no field rule.
       .willRespondWith(
         problem(problems.emailAlreadyRegistered, 'Diese E-Mail-Adresse ist bereits registriert', 409, {
           detail: 'Die E-Mail-Adresse a@b.de ist bereits mit einem anderen Konto verknüpft',
@@ -257,49 +220,38 @@ describe('Identity', () => {
         body: {
           email: 'kein-at-zeichen',
           password: 'kurz',
-          // Ein Name, den die Maske nicht beurteilen kann: zu kurz ist eine
-          // Regel des Servers, keine der Oberfläche.
+          // A name the form cannot judge: too short is a rule of the server.
           displayName: 'a',
           locale: 'de',
           timeZoneId: anyTimeZoneId,
         },
       })
-      // **422 und nicht 400** (RFC 9110 §15.5.21): der Rumpf war lesbar, seine
-      // Angaben waren es nicht. 400 bleibt dem kaputten Rumpf vorbehalten —
-      // fehlendes Pflichtfeld, unbekanntes Feld, kaputtes JSON. Der Unterschied
-      // ist keiner für Feinschmecker: bei 422 hat der Nutzer etwas falsch
-      // gemacht und bekommt seine Felder angestrichen, bei 400 haben *wir*
-      // etwas Falsches geschickt und ihm ist nichts vorzuwerfen.
-      //
-      // Bestellt ist die **Begründung je Feld**, nicht ein Sammelsatz: die Maske
-      // hat drei Eingaben und muss die richtige anstreichen. Beide Verstöße
-      // kommen in einer Antwort — nacheinander wäre es für den Nutzer ein
-      // zweiter Fehlschlag für denselben Versuch.
-      //
-      // Der Wortlaut ist Matcher und nicht Wert: was genau falsch ist, weiß der
-      // Server, und seine Regeln kennt die Maske nicht. Sie zeigt den Satz, den
-      // sie bekommt — deshalb trägt die Anfrage `Accept-Language`.
+      // **422 and not 400** (RFC 9110 §15.5.21): the body was readable, its
+      // data was not
+      // (`docs/decisions/2026-08-20-1248-regelverstoesse-sind-422-der-kaputte-rumpf-bleibt-400.md`).
+      // Ordered is the reasoning **per field**, not one collected sentence: the
+      // form has three inputs and has to mark the right one. Both violations
+      // come in one response — one after the other would be a second failure
+      // for the same attempt.
       .willRespondWith(
         problem(problems.validationFailed, 'Die Eingabe ist ungültig', 422, {
           detail: 'Bitte überprüfen Sie die mit Fehlern markierten Felder',
           errors: {
-            // Die Beispiele stehen so genau da, wie die Sätze wirklich kommen:
-            // sie zeigen, welchen Platz die Maske einplanen muss.
+            // The examples stand as precisely as the sentences really arrive:
+            // they show how much room the form has to plan for.
             email: M.eachLike('Die E-Mail-Adresse benötigt genau ein @-Zeichen (gefunden: 0)'),
             password: M.eachLike('Das Passwort muss mindestens 10 Zeichen lang sein (aktuell: 4)'),
-            // Der dritte Schlüssel steht mit im Vertrag, weil die Maske drei
-            // Felder anstreicht. Bliebe er offen, dürfte die Gegenseite ihn
-            // `name` nennen — die Verifikation bliebe grün und das Namensfeld
-            // stumm.
+            // The third key stands in the contract because the form marks three
+            // fields. Left open, the other side could call it `name` — green
+            // verification, silent name field.
             displayName: M.eachLike('Der Name muss mindestens 2 Zeichen lang sein (aktuell: 1)'),
           },
         }),
       );
 
     await p.executeTest(async () => {
-      // Die Maske hält ihre eine eigene Regel ein (`minPasswordLength`), aber
-      // sie ist nicht der einzige Prüfer: hier geht bewusst vorbei, was sie
-      // nicht abfangen kann.
+      // The form keeps its one own rule, but it is not the only judge: what it
+      // cannot catch deliberately goes past here.
       const e = await register(registrationRequest({ email: 'kein-at-zeichen', password: 'kurz', displayName: 'a' }), attemptKey).catch(
         (err: unknown) => err,
       );
@@ -307,7 +259,7 @@ describe('Identity', () => {
       const error = e as ApiError;
       expect(error.status).toBe(422);
       expect(error.type).toBe(problems.validationFailed);
-      // Genau das liest `app/register.tsx`: Feldname → mindestens ein Satz.
+      // Exactly what `app/register.tsx` reads: field name → at least one sentence.
       expect(error.errors?.email?.[0]).toEqual(expect.any(String));
       expect(error.errors?.password?.[0]).toEqual(expect.any(String));
       expect(error.errors?.displayName?.[0]).toEqual(expect.any(String));
@@ -321,28 +273,23 @@ describe('Identity', () => {
       .withRequest({
         method: 'POST',
         path: '/api/v1/identity/register',
-        // Derselbe Fall wie eben, ein Unterschied: die Sprache. Genau deshalb
-        // steht er hier ein zweites Mal — an einem Paar wird sichtbar, was an
-        // einer einzelnen Interaktion nicht zu sehen wäre, nämlich dass die
-        // Sätze der Anfrage folgen und nicht dem Geschmack des Servers.
+        // The same case as above with one difference, the language: only a pair
+        // shows that the sentences follow the request and not the server's taste.
         headers: { ...jsonHeadersIn('en'), 'Idempotency-Key': anyIdempotencyKey },
         body: {
           email: 'kein-at-zeichen',
           password: 'kurz',
-          // Ein Name, den die Maske nicht beurteilen kann: zu kurz ist eine
-          // Regel des Servers, keine der Oberfläche.
+          // A name the form cannot judge: too short is a rule of the server.
           displayName: 'a',
-          // `locale` geht mit: es ist dieselbe Naht, die auch `Accept-Language`
-          // füllt. Ein Konto, dessen Sprache eine andere wäre als die, in der
-          // der Nutzer gerade liest, entsteht so gar nicht erst.
+          // `locale` travels along from the same seam that fills
+          // `Accept-Language`: an account whose language differs from the one
+          // the user is reading in cannot come about.
           locale: 'en',
           timeZoneId: anyTimeZoneId,
         },
       })
-      // `type` ist derselbe wie im deutschen Fall — die Kennung ist eine Sache
-      // des Protokolls und hat keine Sprache. Was sich ändert, sind `title`,
-      // `detail` und jeder Satz in `errors`; der Client zeigt sie unverändert,
-      // weil er sie nicht beurteilen kann.
+      // The same `type` as in the German case: an identifier belongs to the
+      // protocol and has no language. `title`, `detail` and `errors` change.
       .willRespondWith(
         problem(problems.validationFailed, 'The input is invalid', 422, {
           language: 'en',
@@ -356,8 +303,8 @@ describe('Identity', () => {
       );
 
     await p.executeTest(async () => {
-      // Über die Naht und nicht von Hand in den Rumpf: so nimmt die Sprache
-      // denselben Weg wie auf dem Gerät eines englischsprachigen Nutzers.
+      // Through the seam, so the language takes the same path as on the device
+      // of an English-speaking user.
       setLanguageProvider({ tag: () => 'en' });
       try {
         const e = await register(registrationRequest({ email: 'kein-at-zeichen', password: 'kurz', displayName: 'a' }), attemptKey).catch(
@@ -365,8 +312,8 @@ describe('Identity', () => {
         );
         expect(e).toBeInstanceOf(ApiError);
         const error = e as ApiError;
-        // Der Status steht hier so ausdrücklich wie im deutschen Fall: 422 ist
-        // die Zusage, nicht 400, und sie gilt in beiden Sprachen gleich.
+        // As explicit as in the German case: 422 is the assurance, not 400, and
+        // it holds in both languages alike.
         expect(error.status).toBe(422);
         expect(error.type).toBe(problems.validationFailed);
         expect(error.errors?.email?.[0]).toEqual(expect.any(String));
@@ -386,7 +333,7 @@ describe('Identity', () => {
         headers: jsonHeadersIn('de'),
         body: { email: 'a@b.de', password: 'falsch' },
       })
-      // Fehler tragen keinen Umschlag: problem+json bleibt, wie es ist.
+      // Errors carry no envelope: problem+json stays as it is.
       .willRespondWith(problem(problems.invalidCredentials, 'Anmeldung fehlgeschlagen', 401));
 
     await p.executeTest(async () => {
@@ -402,9 +349,8 @@ describe('Identity', () => {
       .willRespondWith({ status: 200, headers: privateHeaders, body: enveloped(user) });
 
     await p.executeTest(async () => {
-      // Das liest die Kontozeile in `app/(tabs)/settings.tsx`. Ohne sie wüsste
-      // die App nach einem Kaltstart nicht, auf wessen Daten sie schaut — und
-      // ohne einen Leser wäre dieser Endpunkt eine Zusage ohne Bedarf.
+      // Read by the account line in `app/(tabs)/settings.tsx` — without a
+      // reader this endpoint would be an assurance nobody needs.
       const me = await api<AccountUser>('/identity/me');
       expect(me.displayName).toBeTruthy();
       expect(me.email).toBeTruthy();
@@ -436,21 +382,20 @@ describe('Identity', () => {
       .willRespondWith({
         status: 200,
         headers: authResponseHeaders,
-        // **Nur** die Sitzung, kein `user`: die Erneuerung läuft bei jedem Start
-        // und nach jedem abgelaufenen Access-Token. Ein Konto mitzuliefern hieße,
-        // auf diesem Pfad jedes Mal den User-Store anzufassen.
+        // **Only** the session, no `user`: the renewal runs at every startup and
+        // is not meant to touch the user store.
         body: enveloped({ session: { ...session, refreshToken: M.string('rt_neu') } }),
       });
 
     await p.executeTest(async () => {
-      // Diesen Aufruf macht die fetch-Hülle selbst, sobald eine Antwort 401 ist.
+      // The fetch wrapper makes this call itself as soon as a response is 401.
       const r = await apiWithMeta<{ session: Session }>('/identity/refresh', {
         method: 'POST',
         body: { refreshToken: 'rt_alt' },
       });
       expect(r.data.session.accessToken).toBeTruthy();
       expect(r.data.session.refreshToken).toBeTruthy();
-      // Auch hier: derselbe Faden im Header wie im Rumpf.
+      // Here too: the same thread in the header as in the body.
       expect(r.headers.get('X-Request-Id')).toBe(r.meta?.requestId);
     });
   });
@@ -469,12 +414,10 @@ describe('Identity', () => {
 
     await p.executeTest(async () => {
       __seedSession('rt_alt');
-      // Abmelden ist keine örtliche Angelegenheit: ohne diesen Aufruf bliebe der
-      // Refresh-Token seine volle Laufzeit gültig, und wer ihn aus einem
-      // Gerätebackup zieht, käme damit weiter an die Daten.
+      // Signing out is not a local matter: without this call the refresh token
+      // stays valid for its full lifetime, and a device backup still carries it.
       await signOut();
-      // Und danach ist im Gerät nichts mehr übrig, woraus sich eine Sitzung
-      // wiederherstellen ließe.
+      // And nothing is left on the device to restore a session from.
       expect(__readSession()).toBeNull();
     });
   });

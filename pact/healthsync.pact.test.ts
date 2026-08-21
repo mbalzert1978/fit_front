@@ -2,16 +2,11 @@ import { pact, M, enveloped, authHeadersIn, privateHeaders, unauthorized, proble
 import { api } from '../src/api/client';
 
 /**
- * Bedarf: `app/(tabs)/settings.tsx`, Abschnitt „Apple Health".
+ * Needed by: `app/(tabs)/settings.tsx`, section "Apple Health".
  *
- * Gelesen wird heute nur die Freigabe-Auskunft: sie beschriftet die Zeile
- * (Verbunden/Nicht verbunden) und stellt die beiden Schalter. Das Herstellen
- * der Verbindung und `PUT /health/activity/{date}` fehlen bewusst — sie sind
- * noch nicht gebaut (Issue #21), und ein Vertrag ohne
- * Aufrufer wäre eine Zusage, die niemand einlöst.
- *
- * Die Freigaben gehören zu einem Nutzer: die Anfrage weist sich aus, und die
- * Antwort ist `no-store`.
+ * Only the consent statement is read today. Establishing the connection and
+ * `PUT /health/activity/{date}` are missing deliberately — not built yet
+ * (Issue #21), and a contract without a caller assures what nobody redeems.
  */
 const provider = () => pact('nutritrack-health');
 
