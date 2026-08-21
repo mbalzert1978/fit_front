@@ -38,6 +38,7 @@ letzte fasst zwei an. Die sechste kommt weiter unten dazu, unter „4. Prüfen".
    Ab hier bricht `npx tsc --noEmit`, bis Schritt 3 steht. Das ist gewollt.
 2. **Ressourcendatei anlegen:** `src/i18n/fr.ts`, nach dem Muster von
    [`../src/i18n/en.ts`](../src/i18n/en.ts):
+
    ```ts
    import { fr as frLocale } from 'date-fns/locale';
    import type { Texts } from './de';
@@ -49,6 +50,7 @@ letzte fasst zwei an. Die sechste kommt weiter unten dazu, unter „4. Prüfen".
      // …
    };
    ```
+
    `Partial` ist die Erlaubnis, unfertig zu sein: **lass weg, was du nicht sicher übersetzen
    kannst.** Ein fehlender Satz erscheint deutsch — ein geratener Satz steht falsch auf dem Schirm
    und niemand merkt es. Erfinde keine Schlüssel; `Partial<Texts>` lehnt unbekannte Namen ab.
