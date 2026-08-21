@@ -37,7 +37,7 @@ das Nutzlose.
 
 - `register(r, idempotencyKey)` in [`../../src/api/session.ts`](../../src/api/session.ts) nimmt den
   Schlüssel von außen; `useIdempotencyKey()` in `app/register.tsx` hält ihn an den Daten fest.
-- Alle vier Registrierungs-Interaktionen im Vertrag tragen den Header. Er steht als Matcher da
+- Alle fünf Registrierungs-Interaktionen im Vertrag tragen den Header. Er steht als Matcher da
   (`M.uuid()`), weil der Wert in der Maske entsteht und nicht im Test.
 - Ein Vertrag für den **wiederverwendeten** Schlüssel fehlt weiterhin — offener Punkt 11. Er ist
   jetzt näher am Bedarf als vorher, aber noch immer kein Fall, den ein Screen behandelt.
