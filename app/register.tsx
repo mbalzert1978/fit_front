@@ -25,12 +25,12 @@ type FieldHints = Partial<Record<SichtbaresFeld, string[]>>;
  */
 function splitHints(errors: Record<string, string[]>) {
   const fields: FieldHints = {};
-  const ohneFeld: string[] = [];
+  const general: string[] = [];
   for (const [feld, saetze] of Object.entries(errors)) {
     if ((sichtbareFelder as readonly string[]).includes(feld)) fields[feld as SichtbaresFeld] = saetze;
-    else ohneFeld.push(...saetze);
+    else general.push(...saetze);
   }
-  return { fields, ohneFeld };
+  return { fields, general };
 }
 
 /** Die feldweisen Begründungen, wenn welche kamen. */
@@ -44,8 +44,8 @@ function errorsOf(e: unknown): Record<string, string[]> {
  * die Maske reicht ihn unverändert durch und übersetzt nichts. Eigene Sätze hat
  * sie nur, wo keiner kommt: beim Netzfehler, und als letzter Rückfall.
  */
-function generalHintFor(e: unknown, ohneFeld: string[]): string | null {
-  if (ohneFeld.length > 0) return ohneFeld.join(' ');
+function generalHintFor(e: unknown, general: string[]): string | null {
+  if (general.length > 0) return general.join(' ');
   if (e instanceof OfflineError) return 'Keine Verbindung';
   if (e instanceof ApiError) return e.detail ?? 'Registrierung derzeit nicht möglich';
   return 'Registrierung derzeit nicht möglich';
@@ -103,10 +103,10 @@ export default function RegisterScreen() {
       await register(anfrage, keyFor(anfrage));
       router.replace('/(tabs)/diary');
     } catch (e) {
-      const { fields: benannt, ohneFeld } = splitHints(errorsOf(e));
+      const { fields: benannt, general } = splitHints(errorsOf(e));
       setFields(benannt);
       setConflict(e instanceof ApiError && e.type === problems.emailAlreadyRegistered);
-      setHint(generalHintFor(e, ohneFeld));
+      setHint(generalHintFor(e, general));
     } finally {
       setBusy(false);
     }
