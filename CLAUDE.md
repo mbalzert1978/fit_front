@@ -11,8 +11,9 @@ Wächst diese Datei um einen Absatz, der etwas über das Repo behauptet, gehört
 - [`docs/regeln.md`](docs/regeln.md) — was für jede Änderung gilt: wo Literale stehen dürfen, unter
   welchen Regeln Verträge geschrieben werden, was vor der Abnahme durchlaufen sein muss. Vor jeder
   Änderung an Oberfläche oder Verträgen zuerst hierher.
-- [`docs/offene-punkte.md`](docs/offene-punkte.md) — vor jeder Annahme darüber, ob etwas fehlt oder
-  bewusst offen gelassen wurde. Was dort steht, ist nicht vergessen, sondern aufgeschoben.
+- **Die Issues dieses Repositories auf GitHub** — vor jeder Annahme darüber, ob etwas fehlt oder
+  bewusst offen gelassen wurde. Was dort offen steht, ist nicht vergessen, sondern aufgeschoben.
+  Offene Punkte werden ausschließlich dort geführt, nicht als Datei im Repo.
 - [`src/theme.ts`](src/theme.ts) — das Designsystem. Vor jedem Farb-, Schrift-, Radien- oder
   Abstandswert zuerst hierher; die Regel, wo Literale stehen dürfen, steht in
   [`docs/regeln.md`](docs/regeln.md).
@@ -26,10 +27,12 @@ Wächst diese Datei um einen Absatz, der etwas über das Repo behauptet, gehört
 - [`src/nav.ts`](src/nav.ts) — bevor Zustand durch den Aufnahme-Ablauf gereicht wird.
 - [`pact/`](pact/) — die zugesicherten Verträge; die Regeln, unter denen sie geschrieben werden,
   stehen in [`docs/regeln.md`](docs/regeln.md).
-- [`../fit_back/docs/Draft/BACKEND.md`](../fit_back/docs/Draft/BACKEND.md) — die fachliche
-  Spezifikation der API. Sie liegt in einem **anderen Repository**: von hier aus wird sie gelesen,
-  nie geändert; weicht die App von ihr ab, wird das abgestimmt statt einseitig nachgezogen.
 - [`docs/decisions/`](docs/decisions/) — je eine Datei pro Entscheidung, siehe unten.
+
+**Es gibt keine Quelle außerhalb dieses Repositories.** Was die API leistet, steht in
+[`pact/`](pact/) und in den daraus erzeugten Verträgen unter [`pacts/`](pacts/) — nirgends sonst.
+Kein anderes Repository wird gelesen, zitiert oder als Spezifikation herangezogen, und keine
+Änderung hier wartet auf eine Abstimmung dort.
 
 Nennt eine dieser Quellen ihrerseits eine Datei, die nicht im Zugriff liegt, wird ihr Inhalt nicht
 geraten und nicht ersatzweise erfunden — es wird nachgefragt.

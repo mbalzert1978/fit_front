@@ -5,6 +5,3 @@
 # scheitert dann auf einem frischen Checkout an Dateien, die niemand angefasst
 # hat. text=auto laesst Git Binaerdateien weiterhin selbst erkennen.
 * text=auto eol=lf
-
-# Die Pact-Fixture ist ein Bild und wird nie angefasst.
-*.jpg binary
