@@ -159,4 +159,8 @@ export const en: Partial<Texts> = {
   settingsDark: 'Dark',
   settingsLight: 'Light',
   settingsLanguage: 'Language',
+
+  errorUnknown: 'Unknown error',
+  errorStaleRecipe: 'Reload the recipe and save again',
+  errorIncompleteTokenPair: 'Response without a complete token pair',
 };

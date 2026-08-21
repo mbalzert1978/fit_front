@@ -175,6 +175,10 @@ export const de = {
   /** Sprachnamen stehen in ihrer eigenen Sprache und werden nicht übersetzt. */
   languageDe: 'Deutsch',
   languageEn: 'English',
+
+  errorUnknown: 'Unbekannter Fehler',
+  errorStaleRecipe: 'Rezept neu laden und erneut speichern',
+  errorIncompleteTokenPair: 'Antwort ohne vollständiges Token-Paar',
 };
 
 export type Texts = typeof de;

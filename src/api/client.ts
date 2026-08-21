@@ -3,6 +3,7 @@ import type { DiaryDate } from './diaryDate';
 import type { Session, Envelope, Meta } from './types';
 import { clientProblems } from './problems';
 import { language, preferLanguage } from '../language';
+import { texts } from '../i18n';
 
 /**
  * A response with the envelope off. The `ETag` stays in `headers` like any
@@ -140,7 +141,7 @@ const secondsFromNow = (s: unknown) => (typeof s === 'number' && s > 0 ? Date.no
 export async function storeSession(t: Session) {
   if (!t?.accessToken || !t?.refreshToken) {
     await clearSession();
-    throw new ApiError({ type: clientProblems.malformedTokenResponse, title: 'Antwort ohne vollständiges Token-Paar', status: 502 });
+    throw new ApiError({ type: clientProblems.malformedTokenResponse, title: texts().errorIncompleteTokenPair, status: 502 });
   }
   const session: StoredSession = {
     accessToken: t.accessToken,
@@ -244,7 +245,7 @@ function asProblem(body: unknown, status: number): ProblemDetails {
   const errors = asFieldErrors(p.errors);
   return {
     type: text(p.type) ?? 'about:blank',
-    title: text(p.title) ?? 'Unbekannter Fehler',
+    title: text(p.title) ?? texts().errorUnknown,
     status,
     detail: text(p.detail),
     instance: text(p.instance),

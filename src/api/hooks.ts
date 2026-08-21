@@ -4,6 +4,7 @@ import { qk } from './queryKeys';
 import { newId } from './ids';
 import { clientProblems } from './problems';
 import { preferLanguage } from '../language';
+import { texts } from '../i18n';
 import type { DiaryDate } from './diaryDate';
 import type {
   AccountUser,
@@ -182,7 +183,7 @@ export function useSaveRecipe(id: string) {
       // No ETag, no save: a `PUT` without `If-Match` silently overwrites a
       // version saved in the meantime.
       if (!body.etag) {
-        throw new ApiError({ type: clientProblems.preconditionRequired, title: 'Rezept neu laden und erneut speichern', status: 428 });
+        throw new ApiError({ type: clientProblems.preconditionRequired, title: texts().errorStaleRecipe, status: 428 });
       }
       return apiWithMeta<Recipe>(`/recipes/${pathSegment(id)}`, { method: 'PUT', body, ifMatch: body.etag }).then(withEtag);
     },
