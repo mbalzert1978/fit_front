@@ -7,6 +7,7 @@ import { preferLanguage } from '../language';
 import { texts } from '../i18n';
 import type { DiaryDate } from './diaryDate';
 import type {
+  AccountDeletion,
   AccountUser,
   DiaryDay,
   Goals,
@@ -201,6 +202,18 @@ export function useRecipeToDiary(recipeId: string) {
     onSuccess: (_d, b) => qc.invalidateQueries({ queryKey: qk.diary(b.date) }),
   });
 }
+
+/**
+ * Delete one's own account: no `Idempotency-Key`, no cache reset, no sign-out
+ * (`docs/decisions/2026-08-21-1329-die-kontoloeschung-nennt-ihre-frist.md`); key and `gcTime` keep the deadline past an unmount
+ * (`docs/decisions/2026-08-21-2200-die-frist-lebt-im-cache-und-haengt-am-rumpf.md`).
+ */
+export const useDeleteAccount = () =>
+  useMutation({
+    mutationKey: qk.accountDeletion(),
+    gcTime: Infinity,
+    mutationFn: () => api<AccountDeletion>('/identity/me', { method: 'DELETE' }),
+  });
 
 export function useCreateProduct() {
   const qc = useQueryClient();

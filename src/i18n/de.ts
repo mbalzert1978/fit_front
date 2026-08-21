@@ -22,6 +22,8 @@ export const de = {
   /** Tag und Monat ohne Wochentag. */
   dayMonthFormat: 'd. MMMM',
   weekdayFormat: 'EEEE',
+  /** Tag und Uhrzeit eines genannten Zeitpunkts — die Löschfrist steht so da. */
+  instantFormat: 'dd.MM.yyyy, HH:mm',
 
   tabDiary: 'Tagebuch',
   tabScan: 'Scan',
@@ -143,6 +145,21 @@ export const de = {
   recipeGrams: 'Gramm',
 
   settingsAccount: 'Konto',
+  settingsDeleteAccount: 'Konto löschen',
+  /**
+   * Das Wort, das getippt sein muss, damit die Löschung hinausgeht — ohne
+   * Umlaut, obwohl deutsch: auf einer Tastatur ohne Ö kostet das Bestätigen
+   * sonst eine Fingerübung, und der Weg soll bedacht sein, nicht schwierig.
+   */
+  settingsDeleteWord: 'LOESCHEN',
+  settingsDeleteConfirm: (word: string) => `Zum Bestätigen ${word} eingeben`,
+  settingsDeleteHint: 'Gelöscht wird nicht sofort — die Frist steht danach hier.',
+  settingsDeleteBusy: 'Wird gelöscht …',
+  settingsDeleteSubmit: 'Konto endgültig löschen',
+  settingsDeleteFailed: 'Löschen derzeit nicht möglich',
+  settingsDeletedAt: (when: string) => `Dein Konto wird am ${when} Uhr gelöscht. Bis dahin sind deine Daten noch da.`,
+  settingsCancel: 'Abbrechen',
+  settingsSignOut: 'Abmelden',
   settingsSlots: 'Mahlzeiten-Slots',
   settingsSlotNotEmpty: 'Dieser Slot enthält noch Einträge',
   settingsAddSlot: 'Slot hinzufügen',

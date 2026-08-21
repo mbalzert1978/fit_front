@@ -1,12 +1,15 @@
 import React, { useEffect, useState } from 'react';
 import { Text, TextInput, View } from 'react-native';
 import Slider from '@react-native-community/slider';
-import { Screen, SectionHeading, ValueField, Segmented, Toggle, OutlineButton, SquareIconButton } from '../../src/components';
+import { useMutationState } from '@tanstack/react-query';
+import { format } from 'date-fns';
+import { Screen, SectionHeading, ValueField, FormField, Segmented, Toggle, OutlineButton, SquareIconButton } from '../../src/components';
 import { useTheme, useThemeMode } from '../../src/theme/ThemeProvider';
 import { useLanguage, useTexts, type Texts } from '../../src/i18n';
 import { preferLanguage } from '../../src/language';
 import {
   useMe,
+  useDeleteAccount,
   useGoals,
   useSaveGoals,
   usePreferences,
@@ -16,7 +19,11 @@ import {
   useHealthConsent,
 } from '../../src/api/hooks';
 import { newId } from '../../src/api/ids';
+import { qk } from '../../src/api/queryKeys';
+import type { AccountDeletion } from '../../src/api/types';
 import { ApiError } from '../../src/api/client';
+import { hintFor } from '../../src/api/hints';
+import { signOut } from '../../src/api/session';
 import { problems } from '../../src/api/problems';
 
 type MacroKey = 'carbs' | 'protein' | 'fat';
@@ -298,6 +305,86 @@ function Appearance() {
   );
 }
 
+/** Where the server sent no `detail`, his `title` still stands — an own sentence only where nothing of his arrives. */
+function deletionHint(e: unknown, txt: Texts): string {
+  return hintFor(e, txt, e instanceof ApiError ? e.message : txt.settingsDeleteFailed);
+}
+
+/**
+ * The sentence for the accepted deletion, with the deadline as day and time of the device. `new Date(iso)` reads a named instant and not
+ * the clock, so it goes past `src/time.ts`; the contract assures it as `M.datetime`, so there is no branch for its absence
+ * (`docs/decisions/2026-08-21-1329-die-kontoloeschung-nennt-ihre-frist.md`).
+ */
+function deadlineSentence(iso: string, txt: Texts): string {
+  return txt.settingsDeletedAt(format(new Date(iso), txt.instantFormat, { locale: txt.dateLocale }));
+}
+
+/**
+ * The only path in this app that cannot be taken back: closed, open with input, accepted — the deadline and the second tap
+ * (`docs/decisions/2026-08-21-1329-die-kontoloeschung-nennt-ihre-frist.md`), the fourth button and the guard on the body
+ * (`docs/decisions/2026-08-21-2200-die-frist-lebt-im-cache-und-haengt-am-rumpf.md`).
+ */
+function AccountDeletionSection() {
+  const t = useTheme();
+  const txt = useTexts();
+  const del = useDeleteAccount();
+  // Read through the key, not through this observer
+  // (`docs/decisions/2026-08-21-2200-die-frist-lebt-im-cache-und-haengt-am-rumpf.md`).
+  const accepted = useMutationState({
+    filters: { mutationKey: qk.accountDeletion(), status: 'success' },
+    select: (m) => m.state.data as AccountDeletion,
+  }).at(-1);
+  const [typedWord, setTypedWord] = useState<string | null>(null);
+  const open = typedWord !== null;
+  // Closing also means: forget the last failure
+  // (`docs/decisions/2026-08-21-2200-die-frist-lebt-im-cache-und-haengt-am-rumpf.md`).
+  const close = () => {
+    setTypedWord(null);
+    del.reset();
+  };
+
+  if (accepted) {
+    return (
+      <View style={{ gap: t.space[4], marginTop: t.space[6] }}>
+        <Text style={[t.font.body, { color: t.color.text }]}>{deadlineSentence(accepted.deletionEffectiveUtc, txt)}</Text>
+        <OutlineButton label={txt.settingsSignOut} onPress={() => void signOut()} />
+      </View>
+    );
+  }
+
+  if (!open) {
+    return (
+      <View style={{ marginTop: t.space[6] }}>
+        <OutlineButton label={txt.settingsDeleteAccount} variant="muted" onPress={() => setTypedWord('')} />
+      </View>
+    );
+  }
+
+  return (
+    <View style={{ gap: t.space[4], marginTop: t.space[6] }}>
+      <FormField
+        label={txt.settingsDeleteConfirm(txt.settingsDeleteWord)}
+        note={del.error ? deletionHint(del.error, txt) : txt.settingsDeleteHint}
+        noteInvalid={!!del.error}
+        value={typedWord}
+        onChangeText={setTypedWord}
+        // A hint to the on-screen keyboard and nothing else — hence the
+        // comparison below ignores case and surrounding whitespace: on a
+        // hardware keyboard, in the web or when pasting the button would
+        // otherwise stay off without anything saying why.
+        autoCapitalize="characters"
+        autoCorrect={false}
+      />
+      <OutlineButton
+        label={del.isPending ? txt.settingsDeleteBusy : txt.settingsDeleteSubmit}
+        onPress={() => del.mutate()}
+        disabled={typedWord.trim().toUpperCase() !== txt.settingsDeleteWord.toUpperCase() || del.isPending}
+      />
+      <OutlineButton label={txt.settingsCancel} variant="muted" onPress={close} />
+    </View>
+  );
+}
+
 /** The only place that says whose account you are looking at — and the caller for `GET /identity/me`. */
 function Account() {
   const t = useTheme();
@@ -311,6 +398,7 @@ function Account() {
         <Text style={[t.font.body, { color: t.color.text }]}>{me?.displayName ?? '—'}</Text>
         <Text style={[t.font.micro, { color: t.color.textMuted }]}>{me?.email ?? ''}</Text>
       </View>
+      <AccountDeletionSection />
     </>
   );
 }

@@ -16,7 +16,7 @@ import { register, registrationRequest, login } from '../src/api/session';
 import { setTimeProvider, resetTimeProvider } from '../src/time';
 import { setLanguageProvider, resetLanguageProvider } from '../src/language';
 import { __seedSession, __readSession } from './stubs/expoSecureStore';
-import type { Session, SignIn, AccountUser } from '../src/api/types';
+import type { Session, SignIn, AccountUser, AccountDeletion } from '../src/api/types';
 
 /**
  * Needed by: `app/login.tsx` and `app/register.tsx` (both through
@@ -66,6 +66,15 @@ const user = {
   locale: M.regex('^(de|en)$', 'de'),
   timeZoneId: M.string('Europe/Berlin'),
 };
+
+/**
+ * The point in time from which the deletion takes effect — as a form and not as
+ * a value: which day it is, the server decides. Assured is that an instant
+ * comes out which `new Date(...)` can read. An `M.string()` would take "soon"
+ * as well, and the account line would then read "Invalid Date" — of all things
+ * on the one path that cannot be taken back.
+ */
+const anyInstant = M.datetime("yyyy-MM-dd'T'HH:mm:ss'Z'", '2026-09-20T09:14:22Z');
 
 const registration = { email: 'a@b.de', password: 'geheim123!', displayName: 'Markus' };
 
@@ -398,6 +407,42 @@ describe('Identity', () => {
       expect(r.data.session.refreshToken).toBeTruthy();
       // Here too: the same thread in the header as in the body.
       expect(r.headers.get('X-Request-Id')).toBe(r.meta?.requestId);
+    });
+  });
+
+  it('nimmt die Kontolöschung an und nennt die Frist', async () => {
+    const p = provider();
+    p.given('Nutzer a@b.de ist angemeldet')
+      .uponReceiving('Eigenes Konto löschen')
+      // No `Idempotency-Key`
+      // (`docs/decisions/2026-08-21-1329-die-kontoloeschung-nennt-ihre-frist.md`).
+      .withRequest({ method: 'DELETE', path: '/api/v1/identity/me', headers: authHeadersIn('de') })
+      .willRespondWith({
+        // **202 and not 204**, with the instant in the body
+        // (`docs/decisions/2026-08-21-1329-die-kontoloeschung-nennt-ihre-frist.md`).
+        status: 202,
+        headers: privateHeaders,
+        body: enveloped({ deletionEffectiveUtc: anyInstant }),
+      });
+
+    await against(p, async () => {
+      // This is what the account section in `app/(tabs)/settings.tsx` reads: it
+      // shows the deadline and ends the session only on a second tap, see
+      // `docs/decisions/2026-08-21-1329-die-kontoloeschung-nennt-ihre-frist.md`.
+      const q = await api<AccountDeletion>('/identity/me', { method: 'DELETE' });
+      expect(Number.isNaN(Date.parse(q.deletionEffectiveUtc))).toBe(false);
+    });
+  });
+
+  it('löscht kein Konto ohne gültigen Token', async () => {
+    const p = provider();
+    p.given('Access-Token ist abgelaufen')
+      .uponReceiving('Eigenes Konto mit abgelaufenem Token löschen')
+      .withRequest({ method: 'DELETE', path: '/api/v1/identity/me', headers: authHeadersIn('de') })
+      .willRespondWith(unauthorized());
+
+    await against(p, async () => {
+      await expect(api('/identity/me', { method: 'DELETE' })).rejects.toMatchObject({ type: problems.tokenExpired, status: 401 });
     });
   });
 

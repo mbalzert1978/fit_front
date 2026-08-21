@@ -38,6 +38,13 @@ export type AccountUser = {
 /** Account **and** session; the renewal delivers only `Session` and leaves the user store alone. */
 export type SignIn = { user: AccountUser; session: Session };
 
+/**
+ * What comes back from `DELETE /identity/me`: 202 and the instant the deletion
+ * takes effect
+ * (`docs/decisions/2026-08-21-1329-die-kontoloeschung-nennt-ihre-frist.md`).
+ */
+export type AccountDeletion = { deletionEffectiveUtc: string };
+
 /** Nutrients per 100 g. Optional fields may be missing — then they are not set. */
 export type Nutrients = {
   kcal: number;
