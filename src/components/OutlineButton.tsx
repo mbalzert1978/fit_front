@@ -2,10 +2,7 @@ import React from 'react';
 import { Pressable, Text } from 'react-native';
 import { useTheme } from '../theme/ThemeProvider';
 
-/**
- * Die eine Button-Form der App: 1 px Rand auf transparentem Grund.
- * Es gibt keinen flächig gefüllten Button. Beschriftung linksbündig.
- */
+/** Die eine Button-Form der App; einen flächig gefüllten gibt es nicht (`docs/regeln.md`, Prüfliste). */
 export function OutlineButton({
   label,
   onPress,

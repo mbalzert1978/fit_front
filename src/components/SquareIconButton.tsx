@@ -2,10 +2,7 @@ import React from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { useTheme } from '../theme/ThemeProvider';
 
-/**
- * 34 × 34, umrandet, für + und −.
- * Die sichtbare Fläche ist 34 px; hitSlop hebt das Tippziel auf 44 pt.
- */
+/** 34 × 34 sichtbar; `hitSlop` hebt das Tippziel auf die geforderten 44 pt. */
 export function SquareIconButton({ glyph, onPress, label }: { glyph: '+' | '−'; onPress?: () => void; label: string }) {
   const t = useTheme();
   const slop = (t.hit - 34) / 2;

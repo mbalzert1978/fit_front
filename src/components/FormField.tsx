@@ -3,12 +3,11 @@ import { Text, TextInput, View, type TextInputProps } from 'react-native';
 import { useTheme } from '../theme/ThemeProvider';
 
 /**
- * Beschriftetes Textfeld mit Platz für das, was daran nicht stimmt.
+ * Textfeld mit Platz für das, was daran nicht stimmt.
  *
- * `hints` sind die Sätze aus `problem+json` (`errors[Feld]`). Sie stehen **am
- * Feld** und nicht in einer Sammelzeile darunter: bei drei Feldern müsste der
- * Nutzer sonst raten, welches gemeint ist. `note` ist der eigene Hinweis der
- * Maske; er weicht, sobald der Server etwas Genaueres sagt.
+ * `hints` sind die Sätze aus `problem+json` und stehen **am Feld**, nicht in
+ * einer Sammelzeile: sonst müsste der Nutzer raten, welches gemeint ist. `note`
+ * ist der eigene Hinweis der Maske und weicht, sobald der Server redet.
  */
 export function FormField({
   label,

@@ -3,9 +3,8 @@ import { Animated, Easing, Text, View, type ViewStyle } from 'react-native';
 import { useTheme } from '../theme/ThemeProvider';
 
 /**
- * Kameravorschau-Rahmen: heller Ausrichtungsrahmen, optional laufende Scanlinie.
- * Die Kamera selbst (expo-camera) wird als children übergeben, damit dieser
- * Rahmen sowohl für Barcode-Scan als auch für die Tabellen-Aufnahme dient.
+ * Ausrichtungsrahmen, optional mit Scanlinie. Die Kamera kommt als `children`,
+ * damit derselbe Rahmen für Barcode-Scan und Tabellen-Aufnahme dient.
  */
 export function CameraFrame({
   children,

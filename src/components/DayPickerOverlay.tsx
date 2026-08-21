@@ -7,9 +7,9 @@ import { toDiaryDate, type DiaryDate } from '../api/diaryDate';
 import { time } from '../time';
 
 /**
- * Überlagerndes, scrollbares Datumsfeld: 30 Tage zurück bis 14 Tage vorwärts.
- * Diese Spanne setzt der Client; der Server misst dieselben vierzehn Tage gegen
- * UTC und lässt einen Tag Spielraum, sodass keine Zeitzone an den Rand stößt.
+ * 30 Tage zurück bis 14 vorwärts. Die Spanne setzt der Client; der Server misst
+ * dieselben vierzehn Tage gegen UTC mit einem Tag Spielraum, damit keine
+ * Zeitzone an den Rand stößt.
  */
 export function DayPickerOverlay({
   visible,

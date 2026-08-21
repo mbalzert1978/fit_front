@@ -64,9 +64,8 @@ export function Toggle({
 }
 
 /**
- * Zwei Schalter, die sich gegenseitig ausschließen. Ein Zustand "beide aus"
- * existiert nicht: jeder Tipp auf einen der beiden Schalter kippt das Paar.
- * Rückgabewert einsetzen als: const p = useExclusivePair(mode === 'a', setter)
+ * Zwei Schalter, die sich gegenseitig ausschließen. „Beide aus" gibt es nicht:
+ * jeder Tipp kippt das Paar.
  */
 export function useExclusivePair(firstActive: boolean, set: (firstActive: boolean) => void) {
   return {

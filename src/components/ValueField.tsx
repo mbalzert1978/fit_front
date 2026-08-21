@@ -2,10 +2,7 @@ import React from 'react';
 import { Text, TextInput, View } from 'react-native';
 import { useTheme } from '../theme/ThemeProvider';
 
-/**
- * Numerisches Eingabefeld, rechtsbündig, tabellarische Ziffern.
- * missing = Pflichtwert fehlt → 2 px Akzentrand (siehe /capture/confirm).
- */
+/** Numerisches Feld, rechtsbündig. `missing` streicht einen fehlenden Pflichtwert an. */
 export function ValueField({
   value,
   onChangeText,

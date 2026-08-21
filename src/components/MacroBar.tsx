@@ -3,10 +3,7 @@ import { Text, View } from 'react-native';
 import { useTheme } from '../theme/ThemeProvider';
 import { useTexts } from '../i18n';
 
-/**
- * Balken mit Bezeichnung, Ist- und Zielwert. Werte kommen ganzzahlig vom Server;
- * hier wird nicht gerundet und nichts umgerechnet.
- */
+/** Werte kommen ganzzahlig vom Server; hier wird nicht gerundet und nichts umgerechnet. */
 export function MacroBar({
   label,
   value,
