@@ -79,7 +79,6 @@ export default function ScanScreen() {
   const lock = useRef(false);
   const granted = !!permission?.granted;
 
-  // Ergebnisse erst bei Eingabe, mit 300 ms Verzögerung.
   useEffect(() => {
     const id = setTimeout(() => setDebounced(query), 300);
     return () => clearTimeout(id);

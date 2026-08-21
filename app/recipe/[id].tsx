@@ -39,12 +39,9 @@ function ComputedTotals({ totals, server, changed }: { totals: Totals; server?: 
 }
 
 /**
- * Speichern samt den beiden Ausgängen, die kein Erfolg sind.
- *
- * Ohne ETag wird gar nicht erst geschrieben: ein `PUT` ohne `If-Match`
- * überschriebe eine fremde, zwischenzeitlich gespeicherte Fassung lautlos.
- * Kommt der Konflikt vom Server, bleibt der Entwurf stehen und der Serverstand
- * wird nachgeladen — verloren geht nichts.
+ * Ohne ETag wird gar nicht erst geschrieben — ein `PUT` ohne `If-Match`
+ * überschriebe lautlos eine zwischenzeitlich gespeicherte Fassung. Kommt der
+ * Konflikt vom Server, bleibt der Entwurf stehen und der Serverstand kommt nach.
  */
 function SaveRecipe({
   id,

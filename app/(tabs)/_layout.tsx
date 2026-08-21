@@ -5,9 +5,8 @@ import { useTheme } from '../../src/theme/ThemeProvider';
 import { useTexts } from '../../src/i18n';
 
 /**
- * Vier Ziele, auf jedem Screen sichtbar. Bewusst keine Zurück-Pfeile:
- * Navigation läuft über diese Leiste und über Aktionen im Inhalt.
- * Detailscreens liegen als Stack darüber und markieren ihren Tab weiterhin aktiv.
+ * Vier Ziele, auf jedem Screen sichtbar, ohne Zurück-Pfeile (`docs/regeln.md`,
+ * Prüfliste). Detailscreens liegen als Stack darüber und lassen ihren Tab aktiv.
  */
 function TabLabel({ children, focused }: { children: string; focused: boolean }) {
   const t = useTheme();

@@ -22,10 +22,9 @@ export default function RootLayout() {
   }, []);
 
   /**
-   * Endet die Sitzung — abgelaufener Refresh-Token, verworfene Sitzung, später
-   * ein Abmelden von Hand —, dann fällt der Cache und der Weg führt zur
-   * Anmeldung. Ohne das bliebe der Nutzer auf den Tabs stehen, sähe die zuletzt
-   * geladenen Werte weiter und käme mangels Zurück-Pfeil nirgends hin.
+   * Endet die Sitzung, fällt der Cache und der Weg führt zur Anmeldung — sonst
+   * bliebe der Nutzer mit veralteten Werten auf den Tabs stehen und käme
+   * mangels Zurück-Pfeil nirgends hin.
    */
   useEffect(() => {
     onSignedOut(() => {

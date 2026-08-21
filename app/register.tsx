@@ -17,12 +17,9 @@ type VisibleField = (typeof visibleFields)[number];
 type FieldHints = Partial<Record<VisibleField, string[]>>;
 
 /**
- * Trennt, was an ein Feld gehört, von dem, was hier kein Feld hat.
- *
- * Der Server prüft mehr, als diese Maske abfragt — `locale` und `timeZoneId`
- * kommen aus dem Gerät und stehen in keiner Zeile. Käme dazu eine Begründung
- * und niemand finge sie auf, scheiterte die Registrierung **stumm**: kein roter
- * Rand, kein Satz, nur ein Knopf, der wieder angeht.
+ * Trennt, was an ein Feld gehört, von dem, was hier kein Feld hat. Der Server
+ * prüft mehr, als die Maske abfragt; fienge niemand das auf, scheiterte die
+ * Registrierung **stumm** — nur ein Knopf, der wieder angeht.
  */
 function splitHints(errors: Record<string, string[]>) {
   const fields: FieldHints = {};
@@ -40,10 +37,9 @@ function errorsOf(e: unknown): Record<string, string[]> {
 }
 
 /**
- * Die Zeile unter den Feldern. Der Server redet zuerst: `detail` ist sein Satz
- * zu genau diesem Vorfall, und er kommt in der Sprache, in der gefragt wurde —
- * die Maske reicht ihn unverändert durch und übersetzt nichts. Eigene Sätze hat
- * sie nur, wo keiner kommt: beim Netzfehler, und als letzter Rückfall.
+ * Die Zeile unter den Feldern. Der Server redet zuerst, die Maske reicht durch
+ * und übersetzt nichts
+ * (`docs/decisions/2026-08-20-1209-der-satz-zum-vorfall-steht-in-detail.md`).
  */
 function generalHintFor(e: unknown, general: string[], txt: Texts): string | null {
   if (general.length > 0) return general.join(' ');
@@ -53,19 +49,11 @@ function generalHintFor(e: unknown, general: string[], txt: Texts): string | nul
 }
 
 /**
- * Der Idempotency-Key eines Registrierungsversuchs.
- *
- * Er hängt an den **Daten**, nicht am Tastendruck: zweimal dasselbe getippt ist
- * derselbe Versuch, und der Server spielt die erste Antwort noch einmal ab,
- * statt eine zweite Registrierung zu prüfen. Genau dafür ist er da — die
- * Antwort geht auf dem Rückweg verloren, der Nutzer tippt erneut, und ohne
- * Schlüssel läse er, seine E-Mail sei bereits vergeben. Von ihm selbst.
- *
- * Ändert sich ein Feld, ist es ein anderer Versuch und braucht einen anderen
- * Schlüssel: derselbe an einem anderen Rumpf ist ein Fehler und keine
- * Wiederholung (`idempotency-key-reused`). Deshalb hängt er am **ganzen**
- * Rumpf, so wie er hinausgeht — samt Sprache und Zone, die kein Feld der Maske
- * sind und sich zwischen zwei Versuchen trotzdem ändern können.
+ * Der Idempotency-Key hängt an den **Daten**, nicht am Tastendruck: zweimal
+ * dasselbe getippt ist derselbe Versuch. Und er hängt am **ganzen** Rumpf, samt
+ * Sprache und Zone, die kein Feld der Maske sind und sich trotzdem ändern
+ * können — derselbe Schlüssel an einem anderen Rumpf ist ein Fehler
+ * (`docs/decisions/2026-08-21-1104-der-schluessel-haengt-am-ganzen-rumpf.md`).
  */
 function useIdempotencyKey() {
   const attempt = useRef<{ payload: string; key: string } | null>(null);
@@ -90,11 +78,7 @@ export default function RegisterScreen() {
   const [busy, setBusy] = useState(false);
   const keyFor = useIdempotencyKey();
 
-  /**
-   * Ein Aufruf, ein Ausgang: die Registrierung legt das Konto an und liefert
-   * dieselbe Sitzung wie die Anmeldung. Deshalb führt der Erfolg direkt ins
-   * Tagebuch und nicht zurück auf die Anmeldemaske.
-   */
+  /** Ein Aufruf, ein Ausgang — deshalb führt der Erfolg direkt ins Tagebuch und nicht zur Anmeldung. */
   async function submit() {
     setBusy(true);
     setFields({});
@@ -114,8 +98,7 @@ export default function RegisterScreen() {
     }
   }
 
-  // Die eigene Regel steht vor dem Aufruf, nicht erst in seiner Antwort. Alles
-  // Weitere prüft der Server; er kennt seine Regeln, die Maske nicht.
+  // Die eine eigene Regel steht vor dem Aufruf; alles Weitere prüft der Server.
   const tooShort = password.length > 0 && password.length < minPasswordLength;
   const nameOk = name.trim().length > 0;
 

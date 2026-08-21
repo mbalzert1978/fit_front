@@ -253,17 +253,12 @@ function HealthSection() {
 }
 
 /**
- * Darstellung und Sprache — beide wirken sofort und werden zugleich geschrieben.
+ * Darstellung und Sprache wirken sofort und werden zugleich geschrieben: die
+ * Sprache geht an die Naht, bevor die Antwort da ist, damit der Nutzer nicht auf
+ * eine Runde zum Server wartet.
  *
- * Die Sprache geht an die Naht, bevor die Antwort da ist: sie hält die
- * Oberfläche und `Accept-Language` zusammen, und der Nutzer soll nicht auf eine
- * Runde zum Server warten, um zu sehen, dass sein Tippen etwas bewirkt hat.
- * Kommt die Antwort, setzt `useSavePreferences` denselben Wert noch einmal —
- * das ist der Stand, der wirklich gespeichert ist.
- *
- * `usePreferences()` steht hier ohne Leser: die Abfrage ist der Weg, auf dem die
- * gespeicherte Vorliebe überhaupt erst in die Naht kommt. Bis dahin gilt die
- * Gerätesprache.
+ * `usePreferences()` steht hier ohne Leser — die Abfrage ist der Weg, auf dem
+ * die gespeicherte Vorliebe überhaupt in die Naht kommt.
  */
 function Appearance() {
   const txt = useTexts();
@@ -303,12 +298,7 @@ function Appearance() {
   );
 }
 
-/**
- * Wer hier angemeldet ist. Ohne diese Zeile stand nirgends in der App, auf
- * welches Konto man gerade schaut — die Sitzung liegt im Gerät und schweigt.
- * Sie ist zugleich der Aufrufer, ohne den `GET /identity/me` eine Zusage ohne
- * Bedarf wäre (Regel 6).
- */
+/** Der einzige Ort, an dem steht, auf wessen Konto man schaut — und der Aufrufer für `GET /identity/me`. */
 function Account() {
   const t = useTheme();
   const txt = useTexts();

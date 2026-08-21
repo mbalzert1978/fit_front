@@ -18,18 +18,14 @@ export default function LoginScreen() {
   const [busy, setBusy] = useState(false);
 
   /**
-   * Jeder Ausgang außer „angemeldet" wird sichtbar. Zuvor blieb alles stumm,
-   * was kein `ApiError` war — eine unerwartete Antwortform etwa aktivierte den
-   * Knopf einfach wieder, ohne dass irgendetwas auf dem Schirm stand.
+   * Jeder Ausgang außer „angemeldet" wird sichtbar; stumm zu scheitern hieße,
+   * den Knopf wieder anzuschalten und nichts zu sagen.
    *
-   * Beide Felder werden rot, nicht eines: bei falschen Anmeldedaten sagt der
-   * Server nicht, welches der beiden gemeint ist, und er soll es auch nicht.
-   *
-   * Der Satz darunter ist seiner: `detail` erklärt genau diesen Vorfall, und er
-   * kommt in der Sprache, in der gefragt wurde (`Accept-Language`, aus
-   * `src/language.ts`). Ein eigener Satz stünde sonst deutsch neben einer
-   * englischen Oberfläche — und wüsste dazu weniger. Eigene Sätze bleiben, wo
-   * keiner kommt: beim Netzfehler und als letzter Rückfall.
+   * Beide Felder werden rot, nicht eines: welches gemeint ist, sagt der Server
+   * bei falschen Anmeldedaten nicht — und soll es nicht. Der Satz darunter ist
+   * seiner
+   * (`docs/decisions/2026-08-20-1209-der-satz-zum-vorfall-steht-in-detail.md`);
+   * eigene Sätze bleiben, wo keiner kommt.
    */
   async function submit() {
     setBusy(true);
@@ -73,7 +69,6 @@ export default function LoginScreen() {
       {hint ? <Text style={[t.font.micro, { color: t.color.accent, marginTop: t.space[4] }]}>{hint}</Text> : null}
       <View style={{ gap: t.space[4], marginTop: t.space[8] }}>
         <OutlineButton label={busy ? txt.loginBusy : txt.loginTitle} onPress={submit} disabled={busy || !email || !password} />
-        {/* Ohne diesen Weg käme niemand in die App, der noch kein Konto hat. */}
         <OutlineButton label={txt.loginToRegister} variant="muted" onPress={() => router.push('/register')} />
       </View>
     </Screen>

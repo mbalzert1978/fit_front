@@ -114,11 +114,10 @@ export default function DiaryScreen() {
   const { data: day } = useDiaryDay(date);
   const d = day ?? EMPTY_DAY;
   const activity = d.activity;
-  // Zukunft ist der Vergleich zweier Kalendertage gegen die Uhr des Geräts.
-  // Der Server sagt dazu nichts; sein Tag wäre ein anderer als der hier gezeigte.
+  // Reine Client-Sache: der Tag des Servers wäre ein anderer als der gezeigte
+  // (docs/decisions/2026-08-20-0925-kalendertag-ist-reine-client-sache.md).
   const isFuture = date > today();
 
-  // Bestätigungsleiste blendet nach 3,2 s aus.
   useEffect(() => {
     if (!confirmation) return;
     const id = setTimeout(() => setConfirmation(null), 3200);
