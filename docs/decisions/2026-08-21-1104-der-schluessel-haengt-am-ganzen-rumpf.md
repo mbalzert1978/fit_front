@@ -35,7 +35,7 @@ Wurf als Fehler ankommt wie jeder andere — davor hätte er den Bildschirm ohne
 
 ## Folgen
 
-- `register(request: RegistrationRequest, idempotencyKey)` nimmt den fertigen Rumpf; der Typ
+- `register(anfrage: RegistrationRequest, idempotencyKey)` nimmt den fertigen Rumpf; der Typ
   `Registration` bleibt, was er war: das, was der Nutzer tippt.
 - Von `2026-08-20-1242-die-registrierung-traegt-einen-idempotency-key.md` wird **ein Punkt der
   Folgen abgelöst** — die Signatur `register(r, idempotencyKey)` und die Aussage, `useIdempotencyKey()`
