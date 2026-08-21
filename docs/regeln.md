@@ -44,9 +44,14 @@ Consumer-driven: die App schreibt den Vertrag, das Backend verifiziert ihn.
    dann haben *wir* etwas Falsches geschickt, und ihm ist nichts vorzuwerfen.
    `product-not-found` (404), `invalid-credentials` (401),
    `slot-not-empty` (409) und `concurrency-conflict` (409) steuern Abläufe im UI. `token-expired`
-   (401) und `forbidden` (403) steuern keinen Screen und stehen trotzdem in **jedem** Kontext: an
-   der 401 hängt die gesamte Erneuerung in [`../src/api/client.ts`](../src/api/client.ts), und ohne
-   die 403 dürfte das Backend eine fremde Ressource ausliefern, ohne den Vertrag zu brechen.
+   (401) und `forbidden` (403) steuern keinen Screen und stehen trotzdem im Vertrag — die **401 in
+   jedem Kontext**, weil an ihr die gesamte Erneuerung in
+   [`../src/api/client.ts`](../src/api/client.ts) hängt, die **403 dort, wo sich eine fremde
+   Ressource adressieren lässt**, weil das Backend sie sonst ausliefern dürfte, ohne den Vertrag zu
+   brechen. Wo eine Ressource ohne Id am Token hängt (`/identity/me`, `/goals`, `/health/consent`)
+   oder niemandem gehört (Katalog), gibt es keine fremde Anfrage zu stellen und damit auch keine
+   403 zuzusichern — eine solche Zusage bräuchte nach Regel 5 einen Zustand, den das Backend nicht
+   herstellen kann.
    Zugesichert werden sie genauso wie die Erfolgsfälle. Die gemeinsamen Bausteine dafür stehen in
    [`../pact/setup.ts`](../pact/setup.ts) und werden dort benutzt statt daneben nachgebaut.
 5. **`given(...)` benennt einen Zustand, den das Backend herstellen kann** — deutsch, kurz, ohne Ids.
