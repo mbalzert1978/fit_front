@@ -112,7 +112,7 @@ export const privateHeaders = { ...jsonHeaders, 'Cache-Control': 'no-store' };
  * Aufruf bezeichnen. Zusichern kann Pact diese Gleichheit nicht — ein Matcher
  * kennt nur sein eigenes Feld. Geprüft wird sie deshalb im Consumer-Test gegen
  * den Mock (`identity.pact.test.ts`); gegenüber dem Provider bleibt sie eine
- * Bitte, siehe `docs/offene-punkte.md`.
+ * Bitte, siehe Issue #30.
  */
 export const authResponseHeaders = { ...privateHeaders, 'X-Request-Id': M.string(REQUEST_ID) };
 

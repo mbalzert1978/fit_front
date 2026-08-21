@@ -64,8 +64,10 @@ Consumer-driven: die App schreibt den Vertrag, das Backend verifiziert ihn.
    Provider, ruft einen auf oder prüft, ob einer den Vertrag hält — wer das feststellt, ist der
    Provider in seinem eigenen Repo. Die versionierte Vertragsdatei ist die Übergabe.
 8. **Ein Vertrag ist eine Bestellung, keine Abbildung.** Was ein Screen braucht, steht im
-   Vertrag — auch wenn das Backend es heute nicht anbietet und auch wenn seine Spezifikation es
-   anders nennt. Weicht beides voneinander ab, wird das abgestimmt, nicht einseitig nachgezogen.
+   Vertrag — auch wenn das Backend es heute nicht anbietet. Es gibt **keine Spezifikation neben dem
+   Vertrag**, an der er sich zu messen hätte: kein Dokument in einem anderen Repository, keine
+   fremde Benennung, auf die gewartet oder Rücksicht genommen wird. Der Vertrag legt fest, der
+   Provider löst ein, und ob er es tut, zeigt seine Verifikation in seinem eigenen Repo.
 9. **Jede Antwort mit Rumpf trägt den Umschlag** und jede zugesicherte Antwort ihren Status und die
    fachlich relevanten Header — bei geschützten Endpunkten einschließlich `Authorization` an der
    Anfrage und `Cache-Control: no-store` an jeder Antwort mit personenbezogenen Daten. Form,

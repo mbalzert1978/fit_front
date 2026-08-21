@@ -10,9 +10,8 @@ import { parseDiaryDate } from '../src/api/diaryDate';
  * Eintrag stehen zwar im Typ, werden aber von keinem Screen angefasst — sie
  * fehlen hier bewusst. `isFuture` fehlt ebenfalls: ob ein Tag in der Zukunft
  * liegt, vergleicht der Screen selbst — ein Feld, das beide Seiten rechnen,
- * wäre eine zweite Wahrheit. `PATCH .../slot` fehlt auch: die
- * Verschiebe-Mutation existiert, die Gestik dazu nicht
- * (docs/offene-punkte.md, Punkt 2).
+ * wäre eine zweite Wahrheit. `PATCH .../slot` fehlt ebenso: die
+ * Verschiebe-Mutation existiert, die Gestik dazu nicht (Issue #20).
  *
  * Alles hier ist die Ernährung eines einzelnen Nutzers. Jede Anfrage weist sich
  * deshalb aus, und jede Antwort mit Rumpf trägt `no-store` — ein Tagebuchtag im

@@ -4,6 +4,106 @@
   },
   "interactions": [
     {
+      "description": "Abschluss des Uploads melden",
+      "providerStates": [
+        {
+          "name": "Bytes des Fotos liegen im Objektspeicher"
+        }
+      ],
+      "request": {
+        "headers": {
+          "Accept-Language": "de",
+          "Authorization": "Bearer eyJ..."
+        },
+        "matchingRules": {
+          "header": {
+            "Authorization": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "Bearer .+"
+                }
+              ]
+            }
+          },
+          "path": {
+            "combine": "AND",
+            "matchers": [
+              {
+                "match": "regex",
+                "regex": "/api/v1/catalog/photos/[0-9a-f-]{36}/upload"
+              }
+            ]
+          }
+        },
+        "method": "PUT",
+        "path": "/api/v1/catalog/photos/7c6b5a49-3827-4160-9d5e-1f2a3b4c5d6e/upload"
+      },
+      "response": {
+        "body": {
+          "data": {
+            "photoId": "e2490de5-5bd3-43d5-b7c4-526e33f71304",
+            "status": "Processing"
+          },
+          "meta": {
+            "apiVersion": "1",
+            "requestId": "01JQ8Z3K7V9XW2P4M6N8R0T5YB",
+            "timestamp": "2026-08-18T09:14:22Z"
+          }
+        },
+        "generators": {
+          "body": {
+            "$.data.photoId": {
+              "type": "Uuid"
+            }
+          }
+        },
+        "headers": {
+          "Cache-Control": "no-store",
+          "Content-Type": "application/json"
+        },
+        "matchingRules": {
+          "body": {
+            "$.data.photoId": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
+                }
+              ]
+            },
+            "$.meta.apiVersion": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.meta.requestId": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.meta.timestamp": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            }
+          }
+        },
+        "status": 202
+      }
+    },
+    {
       "description": "Bestätigtes Produkt anlegen",
       "providerStates": [
         {
@@ -743,119 +843,6 @@
       }
     },
     {
-      "description": "Nährwerttabelle hochladen",
-      "providerStates": [
-        {
-          "name": "Nutzer ist angemeldet"
-        }
-      ],
-      "request": {
-        "body": "LS1uYWVocndlcnR0YWJlbGxlDQpDb250ZW50LURpc3Bvc2l0aW9uOiBmb3JtLWRhdGE7IG5hbWU9ImZpbGUiOyBmaWxlbmFtZT0ibmFlaHJ3ZXJ0dGFiZWxsZS5qcGciDQpDb250ZW50LVR5cGU6IGltYWdlL2pwZWcNCg0K/9j/4AAQSkZJRgABAQEAYABgAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/wAALCAABAAEBAREA/8QAFAABAAAAAAAAAAAAAAAAAAAACf/EABQQAQAAAAAAAAAAAAAAAAAAAAD/2gAIAQEAAD8AKp//2Q0KLS1uYWVocndlcnR0YWJlbGxlLS0NCg==",
-        "headers": {
-          "Accept-Language": "de",
-          "Authorization": "Bearer eyJ...",
-          "Content-Type": "multipart/form-data; boundary=naehrwerttabelle"
-        },
-        "matchingRules": {
-          "body": {
-            "$.file": {
-              "combine": "AND",
-              "matchers": [
-                {
-                  "match": "contentType",
-                  "value": "image/jpeg"
-                }
-              ]
-            }
-          },
-          "header": {
-            "Authorization": {
-              "combine": "AND",
-              "matchers": [
-                {
-                  "match": "regex",
-                  "regex": "Bearer .+"
-                }
-              ]
-            },
-            "Content-Type": {
-              "combine": "AND",
-              "matchers": [
-                {
-                  "match": "regex",
-                  "regex": "multipart/form-data;(\\s*charset=[^;]*;)?\\s*boundary=.*"
-                }
-              ]
-            }
-          }
-        },
-        "method": "POST",
-        "path": "/api/v1/catalog/photos"
-      },
-      "response": {
-        "body": {
-          "data": {
-            "photoId": "e2490de5-5bd3-43d5-b7c4-526e33f71304",
-            "status": "Processing"
-          },
-          "meta": {
-            "apiVersion": "1",
-            "requestId": "01JQ8Z3K7V9XW2P4M6N8R0T5YB",
-            "timestamp": "2026-08-18T09:14:22Z"
-          }
-        },
-        "generators": {
-          "body": {
-            "$.data.photoId": {
-              "type": "Uuid"
-            }
-          }
-        },
-        "headers": {
-          "Cache-Control": "no-store",
-          "Content-Type": "application/json"
-        },
-        "matchingRules": {
-          "body": {
-            "$.data.photoId": {
-              "combine": "AND",
-              "matchers": [
-                {
-                  "match": "regex",
-                  "regex": "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
-                }
-              ]
-            },
-            "$.meta.apiVersion": {
-              "combine": "AND",
-              "matchers": [
-                {
-                  "match": "type"
-                }
-              ]
-            },
-            "$.meta.requestId": {
-              "combine": "AND",
-              "matchers": [
-                {
-                  "match": "type"
-                }
-              ]
-            },
-            "$.meta.timestamp": {
-              "combine": "AND",
-              "matchers": [
-                {
-                  "match": "type"
-                }
-              ]
-            }
-          }
-        },
-        "status": 202
-      }
-    },
-    {
       "description": "Produkt-Lookup mit abgelaufenem Token",
       "providerStates": [
         {
@@ -1297,6 +1284,312 @@
                 {
                   "match": "regex",
                   "regex": "Curated|Ocr|Manual"
+                }
+              ]
+            },
+            "$.meta.apiVersion": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.meta.requestId": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.meta.timestamp": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            }
+          }
+        },
+        "status": 200
+      }
+    },
+    {
+      "description": "Upload-Ziel für die Nährwerttabelle anfordern",
+      "providerStates": [
+        {
+          "name": "Nutzer ist angemeldet"
+        }
+      ],
+      "request": {
+        "body": {
+          "barcode": "4008400401027",
+          "byteSize": 412388,
+          "contentType": "image/jpeg"
+        },
+        "headers": {
+          "Accept-Language": "de",
+          "Authorization": "Bearer eyJ...",
+          "Content-Type": "application/json"
+        },
+        "matchingRules": {
+          "body": {
+            "$.barcode": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.byteSize": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "integer"
+                }
+              ]
+            }
+          },
+          "header": {
+            "Authorization": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "Bearer .+"
+                }
+              ]
+            }
+          },
+          "path": {
+            "combine": "AND",
+            "matchers": [
+              {
+                "match": "regex",
+                "regex": "/api/v1/catalog/photos/[0-9a-f-]{36}"
+              }
+            ]
+          }
+        },
+        "method": "PUT",
+        "path": "/api/v1/catalog/photos/7c6b5a49-3827-4160-9d5e-1f2a3b4c5d6e"
+      },
+      "response": {
+        "body": {
+          "data": {
+            "expiresIn": 900,
+            "photoId": "e2490de5-5bd3-43d5-b7c4-526e33f71304",
+            "uploadHeaders": {
+              "Content-Type": "image/jpeg"
+            },
+            "uploadUrl": "https://objektspeicher.example/nutritrack/7c6b5a49-3827-4160-9d5e-1f2a3b4c5d6e?X-Amz-Expires=900&X-Amz-Signature=8d1f2c"
+          },
+          "meta": {
+            "apiVersion": "1",
+            "requestId": "01JQ8Z3K7V9XW2P4M6N8R0T5YB",
+            "timestamp": "2026-08-18T09:14:22Z"
+          }
+        },
+        "generators": {
+          "body": {
+            "$.data.photoId": {
+              "type": "Uuid"
+            }
+          }
+        },
+        "headers": {
+          "Cache-Control": "no-store",
+          "Content-Type": "application/json"
+        },
+        "matchingRules": {
+          "body": {
+            "$.data.expiresIn": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "integer"
+                }
+              ]
+            },
+            "$.data.photoId": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
+                }
+              ]
+            },
+            "$.data.uploadHeaders['Content-Type']": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.data.uploadUrl": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "https://.+"
+                }
+              ]
+            },
+            "$.meta.apiVersion": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.meta.requestId": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.meta.timestamp": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            }
+          }
+        },
+        "status": 201
+      }
+    },
+    {
+      "description": "Upload-Ziel nach abgelaufener Signatur erneut anfordern",
+      "providerStates": [
+        {
+          "name": "Foto-Auftrag wartet auf den Upload"
+        }
+      ],
+      "request": {
+        "body": {
+          "barcode": "4008400401027",
+          "byteSize": 412388,
+          "contentType": "image/jpeg"
+        },
+        "headers": {
+          "Accept-Language": "de",
+          "Authorization": "Bearer eyJ...",
+          "Content-Type": "application/json"
+        },
+        "matchingRules": {
+          "body": {
+            "$.barcode": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.byteSize": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "integer"
+                }
+              ]
+            }
+          },
+          "header": {
+            "Authorization": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "Bearer .+"
+                }
+              ]
+            }
+          },
+          "path": {
+            "combine": "AND",
+            "matchers": [
+              {
+                "match": "regex",
+                "regex": "/api/v1/catalog/photos/[0-9a-f-]{36}"
+              }
+            ]
+          }
+        },
+        "method": "PUT",
+        "path": "/api/v1/catalog/photos/7c6b5a49-3827-4160-9d5e-1f2a3b4c5d6e"
+      },
+      "response": {
+        "body": {
+          "data": {
+            "expiresIn": 900,
+            "photoId": "e2490de5-5bd3-43d5-b7c4-526e33f71304",
+            "uploadHeaders": {
+              "Content-Type": "image/jpeg"
+            },
+            "uploadUrl": "https://objektspeicher.example/nutritrack/7c6b5a49-3827-4160-9d5e-1f2a3b4c5d6e?X-Amz-Expires=900&X-Amz-Signature=8d1f2c"
+          },
+          "meta": {
+            "apiVersion": "1",
+            "requestId": "01JQ8Z3K7V9XW2P4M6N8R0T5YB",
+            "timestamp": "2026-08-18T09:14:22Z"
+          }
+        },
+        "generators": {
+          "body": {
+            "$.data.photoId": {
+              "type": "Uuid"
+            }
+          }
+        },
+        "headers": {
+          "Cache-Control": "no-store",
+          "Content-Type": "application/json"
+        },
+        "matchingRules": {
+          "body": {
+            "$.data.expiresIn": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "integer"
+                }
+              ]
+            },
+            "$.data.photoId": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
+                }
+              ]
+            },
+            "$.data.uploadHeaders['Content-Type']": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.data.uploadUrl": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "https://.+"
                 }
               ]
             },
