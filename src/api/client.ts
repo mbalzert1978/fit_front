@@ -226,6 +226,46 @@ async function raw(path: string, o: Options, access: string | null): Promise<Res
 }
 
 /**
+ * Die Sätze zu den Feldern, so wie ein Screen sie liest: Feldname auf eine Liste
+ * von Sätzen. Was diese Form nicht hat, kommt nicht durch — ein einzelner String
+ * zerfiele in `Object.entries` in seine Zeichen und stünde im `FormField`
+ * Buchstabe für Buchstabe. Eingepackt statt verworfen wird er trotzdem: er ist
+ * die Begründung, die der Nutzer lesen soll.
+ */
+function asFieldErrors(v: unknown): Record<string, string[]> | undefined {
+  if (typeof v !== 'object' || v === null || Array.isArray(v)) return undefined;
+  const felder: Record<string, string[]> = {};
+  for (const [feld, roh] of Object.entries(v)) {
+    const saetze = (Array.isArray(roh) ? roh : [roh]).filter((s): s is string => typeof s === 'string');
+    if (saetze.length > 0) felder[feld] = saetze;
+  }
+  return Object.keys(felder).length > 0 ? felder : undefined;
+}
+
+/**
+ * Die Fehlernutzlast wird geprüft wie der Umschlag und nicht behauptet: ein
+ * `as`-Cast reichte jede Form durch, und ihr erster Leser (`splitHints` in
+ * `app/register.tsx`) hat keine zweite Gelegenheit zu prüfen. Taugt ein Feld
+ * nicht, gilt der Rückfall — `about:blank` ist nach RFC 9457 die Kennung dafür,
+ * dass die Antwort nur mit ihrem Status spricht.
+ *
+ * Der Status kommt vom Transport, nicht aus dem Rumpf: beobachtet ist nur jener.
+ */
+function asProblem(body: unknown, status: number): ProblemDetails {
+  const p = (typeof body === 'object' && body !== null ? body : {}) as Partial<Record<keyof ProblemDetails, unknown>>;
+  const satz = (v: unknown) => (typeof v === 'string' && v ? v : undefined);
+  const errors = asFieldErrors(p.errors);
+  return {
+    type: satz(p.type) ?? 'about:blank',
+    title: satz(p.title) ?? 'Unbekannter Fehler',
+    status,
+    detail: satz(p.detail),
+    instance: satz(p.instance),
+    ...(errors ? { errors } : {}),
+  };
+}
+
+/**
  * Die einzige Stelle, an der ein Umschlag aufgeht. Beide Wege nach draußen —
  * `apiWithMeta` und die Erneuerung — kommen hier durch; deshalb steht `data`,
  * `meta` und `headers` genau einmal im Repo zusammengesetzt. Fehler bleiben
@@ -241,10 +281,7 @@ async function raw(path: string, o: Options, access: string | null): Promise<Res
 async function unwrap<T>(res: Response): Promise<ApiResponse<T>> {
   const headers = res.headers;
   if (res.status === 204) return { data: undefined as T, meta: null, headers };
-  if (!res.ok) {
-    const problem = (await res.json().catch(() => null)) as ProblemDetails | null;
-    throw new ApiError(problem ?? { type: 'about:blank', title: 'Unbekannter Fehler', status: res.status });
-  }
+  if (!res.ok) throw new ApiError(asProblem(await res.json().catch(() => null), res.status));
   const body = (await res.json().catch(() => null)) as Envelope<T> | null;
   if (!body || typeof body !== 'object' || !('data' in body)) {
     throw new ApiError({ type: clientProblems.malformedEnvelope, title: 'Antwort ohne data/meta-Umschlag', status: res.status });
