@@ -1,4 +1,4 @@
-import { pact, M, enveloped, authHeaders, germanAuthHeaders, jsonAuthHeaders, privateHeaders, problem, unauthorized } from './setup';
+import { pact, M, enveloped, authHeadersIn, jsonAuthHeadersIn, privateHeaders, problem, unauthorized, problems } from './setup';
 import { api, endpoints } from '../src/api/client';
 import { parseDiaryDate } from '../src/api/diaryDate';
 
@@ -8,8 +8,10 @@ import { parseDiaryDate } from '../src/api/diaryDate';
  *
  * Zugesichert ist nur, was diese Screens lesen. `sourceType`/`sourceId` am
  * Eintrag stehen zwar im Typ, werden aber von keinem Screen angefasst — sie
- * fehlen hier bewusst. `PATCH .../slot` fehlt ebenso: die Verschiebe-Mutation
- * existiert, die Gestik dazu nicht (Issue #20).
+ * fehlen hier bewusst. `isFuture` fehlt ebenfalls: ob ein Tag in der Zukunft
+ * liegt, vergleicht der Screen selbst — ein Feld, das beide Seiten rechnen,
+ * wäre eine zweite Wahrheit. `PATCH .../slot` fehlt ebenso: die
+ * Verschiebe-Mutation existiert, die Gestik dazu nicht (Issue #20).
  *
  * Alles hier ist die Ernährung eines einzelnen Nutzers. Jede Anfrage weist sich
  * deshalb aus, und jede Antwort mit Rumpf trägt `no-store` — ein Tagebuchtag im
@@ -27,13 +29,12 @@ describe('Diary — Tagesansicht', () => {
     const p = provider();
     p.given('Nutzer hat am 2026-08-04 Einträge und eine verbundene Aktivitätsquelle')
       .uponReceiving('Tagesansicht laden')
-      .withRequest({ method: 'GET', path: '/api/v1/diary/days/2026-08-04', headers: germanAuthHeaders })
+      .withRequest({ method: 'GET', path: '/api/v1/diary/days/2026-08-04', headers: authHeadersIn('de') })
       .willRespondWith({
         status: 200,
         headers: privateHeaders,
         body: enveloped({
           date: '2026-08-04',
-          isFuture: M.boolean(false),
           totals: { kcal: M.integer(1583), carbsG: M.integer(142), proteinG: M.integer(118), fatG: M.integer(51) },
           goal: { dailyKcal: M.integer(2150), carbsG: M.integer(215), proteinG: M.integer(161), fatG: M.integer(72) },
           remainingKcal: M.integer(567),
@@ -63,10 +64,9 @@ describe('Diary — Tagesansicht', () => {
       });
 
     await p.executeTest(async () => {
-      const day = await api<{ date: string; remainingKcal: number; isFuture: boolean }>(endpoints.diaryDay(date));
+      const day = await api<{ date: string; remainingKcal: number }>(endpoints.diaryDay(date));
       expect(day.date).toBe('2026-08-04');
       expect(typeof day.remainingKcal).toBe('number');
-      expect(typeof day.isFuture).toBe('boolean');
     });
   });
 
@@ -74,13 +74,12 @@ describe('Diary — Tagesansicht', () => {
     const p = provider();
     p.given('Nutzer hat am 2026-08-05 Einträge und keine Aktivitätsquelle')
       .uponReceiving('Tagesansicht ohne Aktivitätsquelle laden')
-      .withRequest({ method: 'GET', path: '/api/v1/diary/days/2026-08-05', headers: germanAuthHeaders })
+      .withRequest({ method: 'GET', path: '/api/v1/diary/days/2026-08-05', headers: authHeadersIn('de') })
       .willRespondWith({
         status: 200,
         headers: privateHeaders,
         body: enveloped({
           date: '2026-08-05',
-          isFuture: M.boolean(false),
           totals: { kcal: M.integer(0), carbsG: M.integer(0), proteinG: M.integer(0), fatG: M.integer(0) },
           goal: { dailyKcal: M.integer(2150), carbsG: M.integer(215), proteinG: M.integer(161), fatG: M.integer(72) },
           remainingKcal: M.integer(2150),
@@ -100,12 +99,12 @@ describe('Diary — Tagesansicht', () => {
     const p = provider();
     p.given('Access-Token ist abgelaufen')
       .uponReceiving('Tagesansicht mit abgelaufenem Token laden')
-      .withRequest({ method: 'GET', path: '/api/v1/diary/days/2026-08-04', headers: germanAuthHeaders })
+      .withRequest({ method: 'GET', path: '/api/v1/diary/days/2026-08-04', headers: authHeadersIn('de') })
       .willRespondWith(unauthorized());
 
     await p.executeTest(async () => {
       // Genau an dieser Antwort hängt die Erneuerung in `src/api/client.ts`.
-      await expect(api(endpoints.diaryDay(date))).rejects.toMatchObject({ type: 'token-expired', status: 401 });
+      await expect(api(endpoints.diaryDay(date))).rejects.toMatchObject({ type: problems.tokenExpired, status: 401 });
     });
   });
 
@@ -113,13 +112,13 @@ describe('Diary — Tagesansicht', () => {
     const p = provider();
     p.given('Tagebuchtag gehört einem anderen Nutzer')
       .uponReceiving('Fremden Tagebuchtag laden')
-      .withRequest({ method: 'GET', path: '/api/v1/diary/days/2026-08-06', headers: germanAuthHeaders })
-      .willRespondWith(problem('forbidden', 'Kein Zugriff auf diese Ressource', 403));
+      .withRequest({ method: 'GET', path: '/api/v1/diary/days/2026-08-06', headers: authHeadersIn('de') })
+      .willRespondWith(problem(problems.forbidden, 'Kein Zugriff auf diese Ressource', 403));
 
     await p.executeTest(async () => {
       // Ohne diese Zusage dürfte das Backend fremde Tage mit 200 beantworten.
       await expect(api(endpoints.diaryDay(parseDiaryDate('2026-08-06')))).rejects.toMatchObject({
-        type: 'forbidden',
+        type: problems.forbidden,
         status: 403,
       });
     });
@@ -134,7 +133,7 @@ describe('Diary — Einträge', () => {
       .withRequest({
         method: 'POST',
         path: '/api/v1/diary/days/2026-08-04/entries',
-        headers: { ...jsonAuthHeaders, 'Idempotency-Key': entryId, 'Accept-Language': 'de' },
+        headers: { ...jsonAuthHeadersIn('de'), 'Idempotency-Key': entryId },
         body: {
           id: M.uuid(),
           mealSlotId: M.uuid(),
@@ -172,7 +171,7 @@ describe('Diary — Einträge', () => {
       .withRequest({
         method: 'PATCH',
         path: M.regex(`/api/v1/diary/days/2026-08-04/entries/${uuidPath}`, `/api/v1/diary/days/2026-08-04/entries/${entryId}`),
-        headers: jsonAuthHeaders,
+        headers: jsonAuthHeadersIn('de'),
         body: { grams: M.integer(200) },
       })
       .willRespondWith({
@@ -193,7 +192,7 @@ describe('Diary — Einträge', () => {
       .withRequest({
         method: 'DELETE',
         path: M.regex(`/api/v1/diary/days/2026-08-04/entries/${uuidPath}`, `/api/v1/diary/days/2026-08-04/entries/${entryId}`),
-        headers: authHeaders,
+        headers: authHeadersIn('de'),
       })
       .willRespondWith({ status: 204 });
 
@@ -207,7 +206,7 @@ describe('Diary — Einträge', () => {
     const p = provider();
     p.given('Nutzer hat kürzlich Einträge erfasst')
       .uponReceiving('Letzte Einträge laden')
-      .withRequest({ method: 'GET', path: '/api/v1/diary/recent', query: { take: '10' }, headers: authHeaders })
+      .withRequest({ method: 'GET', path: '/api/v1/diary/recent', query: { take: '10' }, headers: authHeadersIn('de') })
       .willRespondWith({
         status: 200,
         headers: privateHeaders,
@@ -234,7 +233,7 @@ describe('Diary — Mahlzeiten-Slots', () => {
     const p = provider();
     p.given('Nutzer hat die drei Standard-Slots')
       .uponReceiving('Mahlzeiten-Slots laden')
-      .withRequest({ method: 'GET', path: '/api/v1/diary/slots', headers: authHeaders })
+      .withRequest({ method: 'GET', path: '/api/v1/diary/slots', headers: authHeadersIn('de') })
       .willRespondWith({
         status: 200,
         headers: privateHeaders,
@@ -256,7 +255,7 @@ describe('Diary — Mahlzeiten-Slots', () => {
         path: '/api/v1/diary/slots',
         // Die Client-Id ist zugleich der Schlüssel: eine zweimal zugestellte
         // Anfrage darf nicht zwei Slots ergeben.
-        headers: { ...jsonAuthHeaders, 'Idempotency-Key': slotId },
+        headers: { ...jsonAuthHeadersIn('de'), 'Idempotency-Key': slotId },
         body: { id: M.uuid(), name: 'Neue Mahlzeit' },
       })
       .willRespondWith({
@@ -277,7 +276,7 @@ describe('Diary — Mahlzeiten-Slots', () => {
       .withRequest({
         method: 'PATCH',
         path: M.regex(`/api/v1/diary/slots/${uuidPath}`, `/api/v1/diary/slots/${slotId}`),
-        headers: jsonAuthHeaders,
+        headers: jsonAuthHeadersIn('de'),
         body: { name: M.string('Zweites Frühstück') },
       })
       .willRespondWith({
@@ -298,7 +297,7 @@ describe('Diary — Mahlzeiten-Slots', () => {
       .withRequest({
         method: 'DELETE',
         path: M.regex(`/api/v1/diary/slots/${uuidPath}`, `/api/v1/diary/slots/${slotId}`),
-        headers: authHeaders,
+        headers: authHeadersIn('de'),
       })
       .willRespondWith({ status: 204 });
 
@@ -314,14 +313,14 @@ describe('Diary — Mahlzeiten-Slots', () => {
       .withRequest({
         method: 'DELETE',
         path: M.regex(`/api/v1/diary/slots/${uuidPath}`, `/api/v1/diary/slots/${slotId}`),
-        headers: authHeaders,
+        headers: authHeadersIn('de'),
       })
-      .willRespondWith(problem('slot-not-empty', 'Slot enthält noch Einträge', 409));
+      .willRespondWith(problem(problems.slotNotEmpty, 'Slot enthält noch Einträge', 409));
 
     await p.executeTest(async () => {
       // Der Screen zeigt genau auf diesen `type` hin die Zeile „enthält noch Einträge".
       await expect(api(`/diary/slots/${slotId}`, { method: 'DELETE' })).rejects.toMatchObject({
-        type: 'slot-not-empty',
+        type: problems.slotNotEmpty,
       });
     });
   });

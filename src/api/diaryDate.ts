@@ -1,4 +1,5 @@
 import { format } from 'date-fns';
+import { time } from '../time';
 
 /**
  * Kalendertag als eigener Typ (Gegenstück zu DiaryDate im Backend).
@@ -16,4 +17,9 @@ export function parseDiaryDate(s: string): DiaryDate {
   return s as DiaryDate;
 }
 
-export const today = () => toDiaryDate(new Date());
+/**
+ * „Heute" ist die Zeit des Geräts, und die kommt aus der Naht in `src/time.ts`
+ * statt aus einem `new Date()` mitten im Code — sonst prüft jeder Test an jedem
+ * Tag etwas anderes.
+ */
+export const today = () => toDiaryDate(time.now());

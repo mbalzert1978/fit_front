@@ -4,8 +4,13 @@ import { addDays, format } from 'date-fns';
 import { de } from 'date-fns/locale';
 import { useTheme } from '../theme/ThemeProvider';
 import { toDiaryDate, type DiaryDate } from '../api/diaryDate';
+import { time } from '../time';
 
-/** Überlagerndes, scrollbares Datumsfeld: 30 Tage zurück bis 14 Tage vorwärts. */
+/**
+ * Überlagerndes, scrollbares Datumsfeld: 30 Tage zurück bis 14 Tage vorwärts.
+ * Diese Spanne setzt der Client; der Server misst dieselben vierzehn Tage gegen
+ * UTC und lässt einen Tag Spielraum, sodass keine Zeitzone an den Rand stößt.
+ */
 export function DayPickerOverlay({
   visible,
   value,
@@ -19,7 +24,7 @@ export function DayPickerOverlay({
 }) {
   const t = useTheme();
   const days = useMemo(() => {
-    const today = new Date();
+    const today = time.now();
     const out: { date: DiaryDate; weekday: string; day: string }[] = [];
     for (let offset = -30; offset <= 14; offset++) {
       const d = addDays(today, offset);

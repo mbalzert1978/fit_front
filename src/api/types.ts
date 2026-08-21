@@ -1,4 +1,5 @@
 import type { DiaryDate } from './diaryDate';
+import type { Language } from '../language';
 
 /**
  * Begleitinformation, die jede Antwort mit Rumpf trägt. Kein Screen liest sie —
@@ -20,14 +21,47 @@ export type Envelope<T> = { data: T; meta: Meta };
  * im Feldnamen. Die Identität ist ein Objekt, damit sie wachsen kann, ohne dass
  * ein zweites flaches Feld daneben entsteht.
  */
-export type AuthTokens = {
+/**
+ * Die Sitzung, wie der Server sie ausgibt — nach OAuth 2 benannt (RFC 6749
+ * §5.1), nur in camelCase wie die übrige API. `refreshExpiresIn` ist eine
+ * Erweiterung; für die Laufzeit des Refresh-Tokens hat der RFC kein Feld.
+ *
+ * Die Laufzeiten sind **relativ in Sekunden** und keine Zeitstempel: der
+ * Client hat eine eigene Uhr, und die geht falsch. Aus der Sekundenzahl wird
+ * erst in `client.ts` ein Zeitpunkt, gemessen an genau dieser Uhr.
+ *
+ * Dieselben fünf Felder überall, wo eine Sitzung entsteht oder erneuert wird —
+ * ein Ableser im ganzen Repo.
+ */
+export type Session = {
   tokenType: 'Bearer';
   accessToken: string;
   expiresIn: number;
   refreshToken: string;
   refreshExpiresIn: number;
-  user: { id: string };
 };
+
+/**
+ * Das Konto, wie der Server es führt. `locale` und `timeZoneId` stehen hier,
+ * weil sie die **wirksamen** Werte sind und nicht die gefragten: der Server
+ * normalisiert eine Versatz-Zone (`GMT+01:00` wird `+01:00`), und was dabei
+ * herauskommt, steht in der Antwort. Die Anfrage ist ein Wunsch, die Antwort
+ * die Wahrheit über die Ressource.
+ */
+export type AccountUser = {
+  id: string;
+  email: string;
+  displayName: string;
+  locale: Language;
+  timeZoneId: string;
+};
+
+/**
+ * Was `register` und `login` zurückgeben: das Konto **und** die Sitzung. Die
+ * Erneuerung liefert nur `Session` — sie liegt auf dem heißen Pfad und soll den
+ * User-Store nicht anfassen.
+ */
+export type SignIn = { user: AccountUser; session: Session };
 
 /** Nährwerte je 100 g. Optionale Felder dürfen fehlen — dann sind sie nicht gesetzt. */
 export type Nutrients = {
@@ -65,9 +99,13 @@ export type MealSlotDay = { id: string; name: string; kcal: number; entries: Dia
 
 export type ActivityEntry = { externalId: string; name: string; detail: string; kcal: number };
 
+/**
+ * Ohne `isFuture`: ob ein Tag in der Zukunft liegt, ist der Vergleich zweier
+ * Kalendertage und kommt ohne Antwort vom Server aus — siehe
+ * `docs/decisions/2026-08-20-0925-kalendertag-ist-reine-client-sache.md`.
+ */
 export type DiaryDay = {
   date: DiaryDate;
-  isFuture: boolean;
   totals: { kcal: number; carbsG: number; proteinG: number; fatG: number };
   goal: { dailyKcal: number; carbsG: number; proteinG: number; fatG: number };
   remainingKcal: number;
@@ -170,7 +208,13 @@ export type RecipeSave = {
   etag?: string;
 };
 
-export type Preferences = { theme: 'Dark' | 'Light'; language: 'de' | 'en' };
+/**
+ * `language` steht hier nicht als zweite Liste: sie ist dieselbe Menge, die
+ * `src/language.ts` an `Accept-Language` und beim Anlegen eines Kontos an
+ * `locale` schickt. Zwei Aufzählungen dafür liefen auseinander, sobald eine
+ * dritte Sprache dazukommt.
+ */
+export type Preferences = { theme: 'Dark' | 'Light'; language: Language };
 
 export type HealthConsent = { connected: boolean; importActivity: boolean; exportNutrition: boolean };
 

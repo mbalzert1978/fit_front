@@ -141,6 +141,7 @@
           }
         },
         "headers": {
+          "Accept-Language": "de",
           "Authorization": "Bearer eyJ...",
           "Content-Type": "application/json",
           "Idempotency-Key": "3f2a1b0c-4d5e-4f60-8a91-b2c3d4e5f607"
@@ -871,15 +872,35 @@
       },
       "response": {
         "body": {
+          "detail": "Anmeldung abgelaufen",
+          "instance": "/api/v1/example",
           "status": 401,
           "title": "Anmeldung abgelaufen",
-          "type": "token-expired"
+          "type": "tag:nutritrack.app,2026:problems/token-expired"
         },
         "headers": {
+          "Content-Language": "de-DE",
           "Content-Type": "application/problem+json"
         },
         "matchingRules": {
           "body": {
+            "$.detail": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.instance": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "^/api/v1/.+"
+                }
+              ]
+            },
             "$.title": {
               "combine": "AND",
               "matchers": [
@@ -1089,15 +1110,35 @@
       },
       "response": {
         "body": {
+          "detail": "Produkt nicht gefunden",
+          "instance": "/api/v1/example",
           "status": 404,
           "title": "Produkt nicht gefunden",
-          "type": "product-not-found"
+          "type": "tag:nutritrack.app,2026:problems/product-not-found"
         },
         "headers": {
+          "Content-Language": "de-DE",
           "Content-Type": "application/problem+json"
         },
         "matchingRules": {
           "body": {
+            "$.detail": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.instance": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "^/api/v1/.+"
+                }
+              ]
+            },
             "$.title": {
               "combine": "AND",
               "matchers": [
@@ -1289,6 +1330,7 @@
           "contentType": "image/jpeg"
         },
         "headers": {
+          "Accept-Language": "de",
           "Authorization": "Bearer eyJ...",
           "Content-Type": "application/json"
         },
@@ -1441,6 +1483,7 @@
           "contentType": "image/jpeg"
         },
         "headers": {
+          "Accept-Language": "de",
           "Authorization": "Bearer eyJ...",
           "Content-Type": "application/json"
         },
@@ -1588,6 +1631,7 @@
       ],
       "request": {
         "headers": {
+          "Accept-Language": "de",
           "Authorization": "Bearer eyJ..."
         },
         "matchingRules": {

@@ -4,6 +4,7 @@ import Slider from '@react-native-community/slider';
 import { Screen, SectionHeading, ValueField, Segmented, Toggle, OutlineButton, SquareIconButton } from '../../src/components';
 import { useTheme, useThemeMode } from '../../src/theme/ThemeProvider';
 import {
+  useMe,
   useGoals,
   useSaveGoals,
   usePreferences,
@@ -14,6 +15,7 @@ import {
 } from '../../src/api/hooks';
 import { newId } from '../../src/api/ids';
 import { ApiError } from '../../src/api/client';
+import { problems } from '../../src/api/problems';
 
 type MacroKey = 'carbs' | 'protein' | 'fat';
 const macroLabel: Record<MacroKey, string> = { carbs: 'Kohlenhydrate', protein: 'Eiweiß', fat: 'Fett' };
@@ -58,7 +60,7 @@ function SlotList() {
               setSlotError(null);
               slotOps.remove.mutate(s.id, {
                 onError: (e) =>
-                  setSlotError(e instanceof ApiError && e.type === 'slot-not-empty' ? 'Dieser Slot enthält noch Einträge' : null),
+                  setSlotError(e instanceof ApiError && e.type === problems.slotNotEmpty ? 'Dieser Slot enthält noch Einträge' : null),
               });
             }}
           />
@@ -278,12 +280,34 @@ function Appearance() {
   );
 }
 
+/**
+ * Wer hier angemeldet ist. Ohne diese Zeile stand nirgends in der App, auf
+ * welches Konto man gerade schaut — die Sitzung liegt im Gerät und schweigt.
+ * Sie ist zugleich der Aufrufer, ohne den `GET /identity/me` eine Zusage ohne
+ * Bedarf wäre (Regel 6).
+ */
+function Konto() {
+  const t = useTheme();
+  const { data: me } = useMe();
+
+  return (
+    <>
+      <SectionHeading>Konto</SectionHeading>
+      <View style={{ minHeight: t.hit, justifyContent: 'center' }}>
+        <Text style={[t.font.body, { color: t.color.text }]}>{me?.displayName ?? '—'}</Text>
+        <Text style={[t.font.micro, { color: t.color.textMuted }]}>{me?.email ?? ''}</Text>
+      </View>
+    </>
+  );
+}
+
 export default function SettingsScreen() {
   const t = useTheme();
 
   return (
     <Screen>
       <Text style={[t.font.title, { color: t.color.text }]}>Mehr</Text>
+      <Konto />
       <SlotList />
       <DailyGoal />
       <MacroCalc />

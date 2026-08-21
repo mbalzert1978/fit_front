@@ -6,5 +6,6 @@ module.exports = {
   setupFilesAfterEnv: ['<rootDir>/pact/reset.ts'],
   moduleNameMapper: {
     '^expo-secure-store$': '<rootDir>/pact/stubs/expoSecureStore.ts',
+    '^expo-localization$': '<rootDir>/pact/stubs/expoLocalization.ts',
   },
 };

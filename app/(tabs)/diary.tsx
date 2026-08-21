@@ -11,7 +11,6 @@ import type { DiaryDay, MealSlotDay } from '../../src/api/types';
 
 /** Steht für den noch nicht geladenen Tag: alles null, kein Datum. */
 const EMPTY_DAY = {
-  isFuture: false,
   totals: { kcal: 0, carbsG: 0, proteinG: 0, fatG: 0 },
   goal: { dailyKcal: 0, carbsG: 0, proteinG: 0, fatG: 0 },
   remainingKcal: 0,
@@ -111,6 +110,9 @@ export default function DiaryScreen() {
   const { data: day } = useDiaryDay(date);
   const d = day ?? EMPTY_DAY;
   const activity = d.activity;
+  // Zukunft ist der Vergleich zweier Kalendertage gegen die Uhr des Geräts.
+  // Der Server sagt dazu nichts; sein Tag wäre ein anderer als der hier gezeigte.
+  const isFuture = date > today();
 
   // Bestätigungsleiste blendet nach 3,2 s aus.
   useEffect(() => {
@@ -131,7 +133,7 @@ export default function DiaryScreen() {
 
       <DayTotals totals={d.totals} goal={d.goal} remaining={d.remainingKcal} />
 
-      {d.isFuture ? <Text style={[t.font.micro, { color: t.color.textMuted, marginTop: t.space[6] }]}>Geplanter Tag</Text> : null}
+      {isFuture ? <Text style={[t.font.micro, { color: t.color.textMuted, marginTop: t.space[6] }]}>Geplanter Tag</Text> : null}
 
       {confirmation ? (
         <View

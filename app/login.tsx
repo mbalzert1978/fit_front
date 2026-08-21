@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
-import { Text, TextInput, View } from 'react-native';
+import { Text, View } from 'react-native';
 import { router } from 'expo-router';
-import { Screen, OutlineButton } from '../src/components';
+import { Screen, OutlineButton, FormField } from '../src/components';
 import { useTheme } from '../src/theme/ThemeProvider';
 import { login } from '../src/api/session';
 import { ApiError, OfflineError } from '../src/api/client';
+import { problems } from '../src/api/problems';
 
 export default function LoginScreen() {
   const t = useTheme();
@@ -14,21 +15,19 @@ export default function LoginScreen() {
   const [hint, setHint] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
-  const field = {
-    color: t.color.text,
-    backgroundColor: t.color.inputBg,
-    borderWidth: 1,
-    borderColor: failed ? t.color.accent : t.color.neutral600,
-    borderRadius: t.radius.md,
-    paddingHorizontal: t.space[3],
-    minHeight: t.hit,
-    marginTop: t.space[3],
-  };
-
   /**
    * Jeder Ausgang außer „angemeldet" wird sichtbar. Zuvor blieb alles stumm,
    * was kein `ApiError` war — eine unerwartete Antwortform etwa aktivierte den
    * Knopf einfach wieder, ohne dass irgendetwas auf dem Schirm stand.
+   *
+   * Beide Felder werden rot, nicht eines: bei falschen Anmeldedaten sagt der
+   * Server nicht, welches der beiden gemeint ist, und er soll es auch nicht.
+   *
+   * Der Satz darunter ist seiner: `detail` erklärt genau diesen Vorfall, und er
+   * kommt in der Sprache, in der gefragt wurde (`Accept-Language`, aus
+   * `src/language.ts`). Ein eigener Satz stünde sonst deutsch neben einer
+   * englischen Oberfläche — und wüsste dazu weniger. Eigene Sätze bleiben, wo
+   * keiner kommt: beim Netzfehler und als letzter Rückfall.
    */
   async function submit() {
     setBusy(true);
@@ -40,7 +39,8 @@ export default function LoginScreen() {
     } catch (e) {
       setFailed(true);
       if (e instanceof OfflineError) setHint('Keine Verbindung');
-      else if (e instanceof ApiError && e.type === 'invalid-credentials') setHint(null);
+      else if (e instanceof ApiError)
+        setHint(e.detail ?? (e.type === problems.invalidCredentials ? null : 'Anmeldung derzeit nicht möglich'));
       else setHint('Anmeldung derzeit nicht möglich');
     } finally {
       setBusy(false);
@@ -50,24 +50,30 @@ export default function LoginScreen() {
   return (
     <Screen>
       <Text style={[t.font.title, { color: t.color.text }]}>Anmelden</Text>
-      <View style={{ marginTop: t.space[8] }}>
-        <Text style={[t.font.label, { color: t.color.textMuted }]}>E-Mail</Text>
-        <TextInput
+      <View style={{ gap: t.space[6], marginTop: t.space[8] }}>
+        <FormField
+          label="E-Mail"
+          invalid={failed}
           value={email}
           onChangeText={setEmail}
           autoCapitalize="none"
           keyboardType="email-address"
           textContentType="username"
-          style={[t.font.body, field]}
+        />
+        <FormField
+          label="Passwort"
+          invalid={failed}
+          value={password}
+          onChangeText={setPassword}
+          secureTextEntry
+          textContentType="password"
         />
       </View>
-      <View style={{ marginTop: t.space[6] }}>
-        <Text style={[t.font.label, { color: t.color.textMuted }]}>Passwort</Text>
-        <TextInput value={password} onChangeText={setPassword} secureTextEntry textContentType="password" style={[t.font.body, field]} />
-      </View>
       {hint ? <Text style={[t.font.micro, { color: t.color.accent, marginTop: t.space[4] }]}>{hint}</Text> : null}
-      <View style={{ marginTop: t.space[8] }}>
+      <View style={{ gap: t.space[4], marginTop: t.space[8] }}>
         <OutlineButton label={busy ? 'Anmelden …' : 'Anmelden'} onPress={submit} disabled={busy || !email || !password} />
+        {/* Ohne diesen Weg käme niemand in die App, der noch kein Konto hat. */}
+        <OutlineButton label="Konto anlegen" variant="muted" onPress={() => router.push('/register')} />
       </View>
     </Screen>
   );

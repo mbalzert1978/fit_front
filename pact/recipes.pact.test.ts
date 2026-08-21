@@ -1,4 +1,4 @@
-import { pact, M, enveloped, authHeaders, jsonAuthHeaders, privateHeaders, problem, forbidden, unauthorized } from './setup';
+import { pact, M, enveloped, authHeadersIn, jsonAuthHeadersIn, privateHeaders, problem, forbidden, unauthorized, problems } from './setup';
 import { api, apiWithMeta } from '../src/api/client';
 
 /**
@@ -52,7 +52,7 @@ describe('Recipes', () => {
     const p = provider();
     p.given('Nutzer hat zwei Rezepte')
       .uponReceiving('Rezeptliste laden')
-      .withRequest({ method: 'GET', path: '/api/v1/recipes', query: { sort: 'name_desc' }, headers: authHeaders })
+      .withRequest({ method: 'GET', path: '/api/v1/recipes', query: { sort: 'name_desc' }, headers: authHeadersIn('de') })
       .willRespondWith({
         status: 200,
         headers: privateHeaders,
@@ -80,7 +80,7 @@ describe('Recipes', () => {
       .withRequest({
         method: 'GET',
         path: M.regex(`/api/v1/recipes/${uuidPath}`, `/api/v1/recipes/${recipeId}`),
-        headers: authHeaders,
+        headers: authHeadersIn('de'),
       })
       .willRespondWith({
         status: 200,
@@ -104,14 +104,14 @@ describe('Recipes', () => {
       .withRequest({
         method: 'GET',
         path: M.regex(`/api/v1/recipes/${uuidPath}`, `/api/v1/recipes/${foreignRecipeId}`),
-        headers: authHeaders,
+        headers: authHeadersIn('de'),
       })
       .willRespondWith(forbidden());
 
     await p.executeTest(async () => {
       // Eine gültige Anmeldung ist keine Berechtigung: die Id kommt aus einem
       // Deep-Link und ist frei wählbar.
-      await expect(api(`/recipes/${foreignRecipeId}`)).rejects.toMatchObject({ type: 'forbidden', status: 403 });
+      await expect(api(`/recipes/${foreignRecipeId}`)).rejects.toMatchObject({ type: problems.forbidden, status: 403 });
     });
   });
 
@@ -119,11 +119,11 @@ describe('Recipes', () => {
     const p = provider();
     p.given('Access-Token ist abgelaufen')
       .uponReceiving('Rezeptliste mit abgelaufenem Token laden')
-      .withRequest({ method: 'GET', path: '/api/v1/recipes', query: { sort: 'name_desc' }, headers: authHeaders })
+      .withRequest({ method: 'GET', path: '/api/v1/recipes', query: { sort: 'name_desc' }, headers: authHeadersIn('de') })
       .willRespondWith(unauthorized());
 
     await p.executeTest(async () => {
-      await expect(api('/recipes?sort=name_desc')).rejects.toMatchObject({ type: 'token-expired', status: 401 });
+      await expect(api('/recipes?sort=name_desc')).rejects.toMatchObject({ type: problems.tokenExpired, status: 401 });
     });
   });
 
@@ -134,7 +134,7 @@ describe('Recipes', () => {
       .withRequest({
         method: 'POST',
         path: '/api/v1/recipes',
-        headers: { ...jsonAuthHeaders, 'Idempotency-Key': recipeId },
+        headers: { ...jsonAuthHeadersIn('de'), 'Idempotency-Key': recipeId },
         body: recipeBody,
       })
       .willRespondWith({
@@ -161,7 +161,7 @@ describe('Recipes', () => {
       .withRequest({
         method: 'PUT',
         path: M.regex(`/api/v1/recipes/${uuidPath}`, `/api/v1/recipes/${recipeId}`),
-        headers: { ...jsonAuthHeaders, 'If-Match': M.string('7') },
+        headers: { ...jsonAuthHeadersIn('de'), 'If-Match': M.string('7') },
         body: recipeBody,
       })
       .willRespondWith({
@@ -185,16 +185,16 @@ describe('Recipes', () => {
       .withRequest({
         method: 'PUT',
         path: M.regex(`/api/v1/recipes/${uuidPath}`, `/api/v1/recipes/${recipeId}`),
-        headers: { ...jsonAuthHeaders, 'If-Match': M.string('3') },
+        headers: { ...jsonAuthHeadersIn('de'), 'If-Match': M.string('3') },
         body: recipeBody,
       })
-      .willRespondWith(problem('concurrency-conflict', 'Rezept wurde zwischenzeitlich geändert', 409));
+      .willRespondWith(problem(problems.concurrencyConflict, 'Rezept wurde zwischenzeitlich geändert', 409));
 
     await p.executeTest(async () => {
       // Ohne diese Zusage bliebe offen, was ein überholtes If-Match bewirkt —
       // und ein Backend, das es ignoriert, hielte den Vertrag trotzdem ein.
       await expect(apiWithMeta(`/recipes/${recipeId}`, { method: 'PUT', ifMatch: '3', body: draft })).rejects.toMatchObject({
-        type: 'concurrency-conflict',
+        type: problems.concurrencyConflict,
         status: 409,
       });
     });
@@ -211,7 +211,7 @@ describe('Recipes', () => {
         // Ohne Schlüssel legte eine zweimal zugestellte Anfrage die Portionen
         // zweimal ins Tagebuch — und die Hülle dürfte nach einer Erneuerung
         // gar nicht wiederholen.
-        headers: { ...jsonAuthHeaders, 'Idempotency-Key': opId },
+        headers: { ...jsonAuthHeadersIn('de'), 'Idempotency-Key': opId },
         body: { date: '2026-08-04', mealSlotId: M.uuid(), amount: M.integer(1), unit: 'Portion' },
       })
       .willRespondWith({

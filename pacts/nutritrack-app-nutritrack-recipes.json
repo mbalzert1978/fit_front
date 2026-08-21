@@ -12,6 +12,7 @@
       ],
       "request": {
         "headers": {
+          "Accept-Language": "de",
           "Authorization": "Bearer eyJ..."
         },
         "matchingRules": {
@@ -41,15 +42,35 @@
       },
       "response": {
         "body": {
+          "detail": "Kein Zugriff auf diese Ressource",
+          "instance": "/api/v1/example",
           "status": 403,
           "title": "Kein Zugriff auf diese Ressource",
-          "type": "forbidden"
+          "type": "tag:nutritrack.app,2026:problems/forbidden"
         },
         "headers": {
+          "Content-Language": "de-DE",
           "Content-Type": "application/problem+json"
         },
         "matchingRules": {
           "body": {
+            "$.detail": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.instance": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "^/api/v1/.+"
+                }
+              ]
+            },
             "$.title": {
               "combine": "AND",
               "matchers": [
@@ -97,6 +118,7 @@
           }
         },
         "headers": {
+          "Accept-Language": "de",
           "Authorization": "Bearer eyJ...",
           "Content-Type": "application/json",
           "Idempotency-Key": "2f1c9b7e-1111-4222-8333-444455556666"
@@ -387,6 +409,7 @@
           }
         },
         "headers": {
+          "Accept-Language": "de",
           "Authorization": "Bearer eyJ...",
           "Content-Type": "application/json",
           "Idempotency-Key": "4d3c2b1a-0000-4111-8222-333344445555"
@@ -549,6 +572,7 @@
           }
         },
         "headers": {
+          "Accept-Language": "de",
           "Authorization": "Bearer eyJ...",
           "Content-Type": "application/json",
           "If-Match": "3"
@@ -650,15 +674,35 @@
       },
       "response": {
         "body": {
+          "detail": "Rezept wurde zwischenzeitlich geändert",
+          "instance": "/api/v1/example",
           "status": 409,
           "title": "Rezept wurde zwischenzeitlich geändert",
-          "type": "concurrency-conflict"
+          "type": "tag:nutritrack.app,2026:problems/concurrency-conflict"
         },
         "headers": {
+          "Content-Language": "de-DE",
           "Content-Type": "application/problem+json"
         },
         "matchingRules": {
           "body": {
+            "$.detail": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.instance": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "^/api/v1/.+"
+                }
+              ]
+            },
             "$.title": {
               "combine": "AND",
               "matchers": [
@@ -706,6 +750,7 @@
           }
         },
         "headers": {
+          "Accept-Language": "de",
           "Authorization": "Bearer eyJ...",
           "Content-Type": "application/json",
           "If-Match": "7"
@@ -1000,6 +1045,7 @@
       ],
       "request": {
         "headers": {
+          "Accept-Language": "de",
           "Authorization": "Bearer eyJ..."
         },
         "matchingRules": {
@@ -1222,6 +1268,7 @@
       ],
       "request": {
         "headers": {
+          "Accept-Language": "de",
           "Authorization": "Bearer eyJ..."
         },
         "matchingRules": {
@@ -1363,6 +1410,7 @@
       ],
       "request": {
         "headers": {
+          "Accept-Language": "de",
           "Authorization": "Bearer eyJ..."
         },
         "matchingRules": {
@@ -1388,15 +1436,35 @@
       },
       "response": {
         "body": {
+          "detail": "Anmeldung abgelaufen",
+          "instance": "/api/v1/example",
           "status": 401,
           "title": "Anmeldung abgelaufen",
-          "type": "token-expired"
+          "type": "tag:nutritrack.app,2026:problems/token-expired"
         },
         "headers": {
+          "Content-Language": "de-DE",
           "Content-Type": "application/problem+json"
         },
         "matchingRules": {
           "body": {
+            "$.detail": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.instance": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "^/api/v1/.+"
+                }
+              ]
+            },
             "$.title": {
               "combine": "AND",
               "matchers": [

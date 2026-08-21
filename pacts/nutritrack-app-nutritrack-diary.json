@@ -12,6 +12,7 @@
       ],
       "request": {
         "headers": {
+          "Accept-Language": "de",
           "Authorization": "Bearer eyJ..."
         },
         "matchingRules": {
@@ -41,15 +42,35 @@
       },
       "response": {
         "body": {
+          "detail": "Slot enthält noch Einträge",
+          "instance": "/api/v1/example",
           "status": 409,
           "title": "Slot enthält noch Einträge",
-          "type": "slot-not-empty"
+          "type": "tag:nutritrack.app,2026:problems/slot-not-empty"
         },
         "headers": {
+          "Content-Language": "de-DE",
           "Content-Type": "application/problem+json"
         },
         "matchingRules": {
           "body": {
+            "$.detail": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.instance": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "^/api/v1/.+"
+                }
+              ]
+            },
             "$.title": {
               "combine": "AND",
               "matchers": [
@@ -239,6 +260,7 @@
       ],
       "request": {
         "headers": {
+          "Accept-Language": "de",
           "Authorization": "Bearer eyJ..."
         },
         "matchingRules": {
@@ -300,15 +322,35 @@
       },
       "response": {
         "body": {
+          "detail": "Kein Zugriff auf diese Ressource",
+          "instance": "/api/v1/example",
           "status": 403,
           "title": "Kein Zugriff auf diese Ressource",
-          "type": "forbidden"
+          "type": "tag:nutritrack.app,2026:problems/forbidden"
         },
         "headers": {
+          "Content-Language": "de-DE",
           "Content-Type": "application/problem+json"
         },
         "matchingRules": {
           "body": {
+            "$.detail": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.instance": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "^/api/v1/.+"
+                }
+              ]
+            },
             "$.title": {
               "combine": "AND",
               "matchers": [
@@ -331,6 +373,7 @@
       ],
       "request": {
         "headers": {
+          "Accept-Language": "de",
           "Authorization": "Bearer eyJ..."
         },
         "matchingRules": {
@@ -371,6 +414,7 @@
       ],
       "request": {
         "headers": {
+          "Accept-Language": "de",
           "Authorization": "Bearer eyJ..."
         },
         "matchingRules": {
@@ -524,6 +568,7 @@
           }
         },
         "headers": {
+          "Accept-Language": "de",
           "Authorization": "Bearer eyJ...",
           "Content-Type": "application/json",
           "Idempotency-Key": "66666666-7777-8888-9999-000000000000"
@@ -647,6 +692,7 @@
           "name": "Zweites Frühstück"
         },
         "headers": {
+          "Accept-Language": "de",
           "Authorization": "Bearer eyJ...",
           "Content-Type": "application/json"
         },
@@ -774,6 +820,7 @@
       ],
       "request": {
         "headers": {
+          "Accept-Language": "de",
           "Authorization": "Bearer eyJ..."
         },
         "matchingRules": {
@@ -895,6 +942,7 @@
           "grams": 200
         },
         "headers": {
+          "Accept-Language": "de",
           "Authorization": "Bearer eyJ...",
           "Content-Type": "application/json"
         },
@@ -1063,7 +1111,6 @@
               "fatG": 72,
               "proteinG": 161
             },
-            "isFuture": false,
             "remainingKcal": 567,
             "slots": [
               {
@@ -1196,14 +1243,6 @@
               "matchers": [
                 {
                   "match": "integer"
-                }
-              ]
-            },
-            "$.data.isFuture": {
-              "combine": "AND",
-              "matchers": [
-                {
-                  "match": "type"
                 }
               ]
             },
@@ -1390,15 +1429,35 @@
       },
       "response": {
         "body": {
+          "detail": "Anmeldung abgelaufen",
+          "instance": "/api/v1/example",
           "status": 401,
           "title": "Anmeldung abgelaufen",
-          "type": "token-expired"
+          "type": "tag:nutritrack.app,2026:problems/token-expired"
         },
         "headers": {
+          "Content-Language": "de-DE",
           "Content-Type": "application/problem+json"
         },
         "matchingRules": {
           "body": {
+            "$.detail": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.instance": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "^/api/v1/.+"
+                }
+              ]
+            },
             "$.title": {
               "combine": "AND",
               "matchers": [
@@ -1451,7 +1510,6 @@
               "fatG": 72,
               "proteinG": 161
             },
-            "isFuture": false,
             "remainingKcal": 2150,
             "slots": [
               {
@@ -1516,14 +1574,6 @@
               "matchers": [
                 {
                   "match": "integer"
-                }
-              ]
-            },
-            "$.data.isFuture": {
-              "combine": "AND",
-              "matchers": [
-                {
-                  "match": "type"
                 }
               ]
             },

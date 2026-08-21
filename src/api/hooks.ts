@@ -2,8 +2,11 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api, apiWithMeta, ApiError, endpoints, pathSegment, type ApiResponse } from './client';
 import { qk } from './queryKeys';
 import { newId } from './ids';
+import { clientProblems } from './problems';
+import { preferLanguage } from '../language';
 import type { DiaryDate } from './diaryDate';
 import type {
+  AccountUser,
   DiaryDay,
   Goals,
   GoalsUpdate,
@@ -61,9 +64,31 @@ export const useRecipe = (id: string) =>
     enabled: id !== 'neu',
   });
 
+/**
+ * Wer angemeldet ist. Nach einem Kaltstart weiß die App sonst nichts über ihren
+ * Nutzer — sie hat eine Sitzung im Gerät, aber keinen Namen dazu. `/identity/me`
+ * ist der einzige Weg zum Konto, den diese API kennt; eine Id im Pfad gäbe es
+ * nicht, weil kein Screen ein fremdes Konto liest.
+ */
+export const useMe = () => useQuery({ queryKey: qk.me(), queryFn: () => api<AccountUser>('/identity/me') });
+
 export const useGoals = () => useQuery({ queryKey: qk.goals(), queryFn: () => api<Goals>('/goals') });
 
-export const usePreferences = () => useQuery({ queryKey: qk.preferences(), queryFn: () => api<Preferences>('/preferences') });
+/**
+ * Die Einstellungen — und mit ihnen die Sprache, in der der Nutzer lesen will.
+ * Sie geht an die Naht weiter, sobald sie da ist: von dort füllt sie
+ * `Accept-Language` an jeder folgenden Anfrage, und die Sätze des Servers
+ * kommen so, wie der Nutzer sie gewählt hat, nicht wie sein Telefon steht.
+ */
+export const usePreferences = () =>
+  useQuery({
+    queryKey: qk.preferences(),
+    queryFn: async () => {
+      const p = await api<Preferences>('/preferences');
+      preferLanguage(p.language);
+      return p;
+    },
+  });
 
 export const useHealthConsent = () => useQuery({ queryKey: ['health', 'consent'], queryFn: () => api<HealthConsent>('/health/consent') });
 
@@ -122,7 +147,14 @@ export function useSavePreferences() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (body: Partial<Preferences>) => api<Preferences>('/preferences', { method: 'PATCH', body }),
-    onSuccess: (p) => qc.setQueryData(qk.preferences(), p),
+    // Die Antwort trägt die Sprache, die jetzt gilt — nicht die, die geschickt
+    // wurde. Ab hier fragt der Client in ihr, und zwar sofort: sonst käme der
+    // nächste Fehler noch in der alten Sprache, unmittelbar nach einer
+    // Umstellung, die der Nutzer eben vorgenommen hat.
+    onSuccess: (p) => {
+      preferLanguage(p.language);
+      qc.setQueryData(qk.preferences(), p);
+    },
   });
 }
 
@@ -159,7 +191,7 @@ export function useSaveRecipe(id: string) {
       // eine fremde, zwischenzeitlich gespeicherte Fassung lautlos — lieber hier
       // scheitern und neu laden lassen als dort Arbeit verlieren.
       if (!body.etag) {
-        throw new ApiError({ type: 'precondition-required', title: 'Rezept neu laden und erneut speichern', status: 428 });
+        throw new ApiError({ type: clientProblems.preconditionRequired, title: 'Rezept neu laden und erneut speichern', status: 428 });
       }
       return apiWithMeta<Recipe>(`/recipes/${pathSegment(id)}`, { method: 'PUT', body, ifMatch: body.etag }).then(withEtag);
     },

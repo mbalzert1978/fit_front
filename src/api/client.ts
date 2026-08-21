@@ -1,6 +1,8 @@
 import * as SecureStore from 'expo-secure-store';
 import type { DiaryDate } from './diaryDate';
-import type { AuthTokens, Envelope, Meta } from './types';
+import type { Session, Envelope, Meta } from './types';
+import { clientProblems } from './problems';
+import { language, preferLanguage } from '../language';
 
 /**
  * Was eine Antwort trägt, nachdem der Umschlag ab ist: die Nutzlast aus `data`,
@@ -25,11 +27,21 @@ if (!BASE.startsWith('https://') && !LOOPBACK.test(BASE)) {
   throw new Error('EXPO_PUBLIC_API_URL muss https sein (Klartext nur gegen 127.0.0.1/localhost)');
 }
 
+/**
+ * Die Fehlerform nach RFC 9457. `type` ist die Kennung der Fehlerart (eine URI,
+ * siehe `problems.ts`), `title` benennt die Art, `detail` erklärt **diesen**
+ * Vorfall, `instance` benennt ihn. `errors` ist die Erweiterung für die
+ * feldweise Begründung: Feldname des Anfrage-Rumpfes auf Sätze.
+ *
+ * Fehlt `type`, gilt nach RFC `about:blank` — die Antwort sagt dann nur mit
+ * ihrem Status, was los ist.
+ */
 export type ProblemDetails = {
   type: string;
   title: string;
   status: number;
   detail?: string;
+  instance?: string;
   errors?: Record<string, string[]>;
 };
 
@@ -46,6 +58,10 @@ export class ApiError extends Error {
   get errors() {
     return this.problem.errors;
   }
+  /** Der Satz zu diesem Vorfall (RFC 9457). Wo er steht, redet der Server. */
+  get detail() {
+    return this.problem.detail;
+  }
 }
 
 /** Netzwerkfehler: löst keinen Dialog aus, sondern den Rückfall auf die Outbox. */
@@ -56,7 +72,6 @@ type Options = {
   body?: unknown;
   idempotencyKey?: string;
   ifMatch?: string;
-  language?: string;
 };
 
 /* Sitzung */
@@ -80,8 +95,18 @@ type StoredSession = {
 
 const SESSION_KEY = 'session';
 
-/** Die getrennten Schlüssel der früheren Fassung; werden beim Abmelden mit entfernt. */
+/** Die getrennten Schlüssel der früheren Fassung. */
 const LEGACY_KEYS = ['accessToken', 'refreshToken'] as const;
+
+/**
+ * Räumt die Schlüssel der früheren Fassung ab — bei **jedem** Schreiben einer
+ * Sitzung, nicht nur beim Abmelden. Wer von der alten Fassung kommt, findet
+ * keine Sitzung, meldet sich einmal neu an und meldet sich danach nie ab: der
+ * alte Refresh-Token bliebe sonst liegen, bis er von selbst abläuft — gültig,
+ * nie entwertet und der App unbekannt, also auch von ihr nicht abzumelden. Ein
+ * Löschen ins Leere kostet nichts.
+ */
+const clearLegacy = () => Promise.all(LEGACY_KEYS.map((k) => SecureStore.deleteItemAsync(k)));
 
 /**
  * `WHEN_UNLOCKED_THIS_DEVICE_ONLY` hält die Sitzung aus iCloud- und
@@ -107,7 +132,7 @@ async function readSession(): Promise<StoredSession | null> {
 /** Löscht die Sitzung im Gerät, ohne das Backend zu behelligen. */
 async function clearSession() {
   await SecureStore.deleteItemAsync(SESSION_KEY);
-  for (const k of LEGACY_KEYS) await SecureStore.deleteItemAsync(k);
+  await clearLegacy();
 }
 
 const secondsFromNow = (s: unknown) => (typeof s === 'number' && s > 0 ? Date.now() + s * 1000 : 0);
@@ -118,10 +143,10 @@ const secondsFromNow = (s: unknown) => (typeof s === 'number' && s > 0 ? Date.no
  * vollständiges Paar darf keine halbe Sitzung hinterlassen, die `hasSession()`
  * anschließend für gültig hält.
  */
-export async function storeTokens(t: AuthTokens) {
+export async function storeSession(t: Session) {
   if (!t?.accessToken || !t?.refreshToken) {
     await clearSession();
-    throw new ApiError({ type: 'malformed-token-response', title: 'Antwort ohne vollständiges Token-Paar', status: 502 });
+    throw new ApiError({ type: clientProblems.malformedTokenResponse, title: 'Antwort ohne vollständiges Token-Paar', status: 502 });
   }
   const session: StoredSession = {
     accessToken: t.accessToken,
@@ -130,6 +155,7 @@ export async function storeTokens(t: AuthTokens) {
     refreshTokenExpiresAt: secondsFromNow(t.refreshExpiresIn),
   };
   await SecureStore.setItemAsync(SESSION_KEY, JSON.stringify(session), KEYCHAIN);
+  await clearLegacy();
 }
 
 /**
@@ -173,13 +199,26 @@ export async function signOut() {
     }
   }
   await clearSession();
+  // Die gewählte Sprache gehörte diesem Konto. Bliebe sie stehen, läse der
+  // nächste Nutzer auf demselben Gerät in einer Sprache, die er nie gewählt hat.
+  preferLanguage(null);
   signedOutHandler?.();
 }
 
 /* Anfrage und Antwort */
 
+/**
+ * `Accept-Language` steht an **jeder** Anfrage, nicht nur an denen, deren
+ * Fehler heute jemand anzeigt. Der Server entscheidet allein an dieser Zeile,
+ * in welcher Sprache seine Sätze kommen — `title`, `detail` und jeder Satz in
+ * `errors`. Fehlt sie, fällt er auf seine Vorgabe zurück, und ein englischer
+ * Nutzer läse deutsche Fehlermeldungen, ohne dass es irgendwo auffiele.
+ *
+ * Der Wert kommt aus der Naht `src/language.ts` und nicht aus einem Literal
+ * hier: dieselbe Sprache reist beim Anlegen eines Kontos als `locale` mit.
+ */
 async function raw(path: string, o: Options, access: string | null): Promise<Response> {
-  const headers: Record<string, string> = { Accept: 'application/json', 'Accept-Language': o.language ?? 'de' };
+  const headers: Record<string, string> = { Accept: 'application/json', 'Accept-Language': language.tag() };
   if (access) headers.Authorization = `Bearer ${access}`;
   if (o.idempotencyKey) headers['Idempotency-Key'] = o.idempotencyKey;
   if (o.ifMatch) headers['If-Match'] = o.ifMatch;
@@ -193,6 +232,46 @@ async function raw(path: string, o: Options, access: string | null): Promise<Res
   } catch {
     throw new OfflineError('Keine Verbindung');
   }
+}
+
+/**
+ * Die Sätze zu den Feldern, so wie ein Screen sie liest: Feldname auf eine Liste
+ * von Sätzen. Was diese Form nicht hat, kommt nicht durch — ein einzelner String
+ * zerfiele in `Object.entries` in seine Zeichen und stünde im `FormField`
+ * Buchstabe für Buchstabe. Eingepackt statt verworfen wird er trotzdem: er ist
+ * die Begründung, die der Nutzer lesen soll.
+ */
+function asFieldErrors(v: unknown): Record<string, string[]> | undefined {
+  if (typeof v !== 'object' || v === null || Array.isArray(v)) return undefined;
+  const felder: Record<string, string[]> = {};
+  for (const [feld, roh] of Object.entries(v)) {
+    const saetze = (Array.isArray(roh) ? roh : [roh]).filter((s): s is string => typeof s === 'string');
+    if (saetze.length > 0) felder[feld] = saetze;
+  }
+  return Object.keys(felder).length > 0 ? felder : undefined;
+}
+
+/**
+ * Die Fehlernutzlast wird geprüft wie der Umschlag und nicht behauptet: ein
+ * `as`-Cast reichte jede Form durch, und ihr erster Leser (`splitHints` in
+ * `app/register.tsx`) hat keine zweite Gelegenheit zu prüfen. Taugt ein Feld
+ * nicht, gilt der Rückfall — `about:blank` ist nach RFC 9457 die Kennung dafür,
+ * dass die Antwort nur mit ihrem Status spricht.
+ *
+ * Der Status kommt vom Transport, nicht aus dem Rumpf: beobachtet ist nur jener.
+ */
+function asProblem(body: unknown, status: number): ProblemDetails {
+  const p = (typeof body === 'object' && body !== null ? body : {}) as Partial<Record<keyof ProblemDetails, unknown>>;
+  const satz = (v: unknown) => (typeof v === 'string' && v ? v : undefined);
+  const errors = asFieldErrors(p.errors);
+  return {
+    type: satz(p.type) ?? 'about:blank',
+    title: satz(p.title) ?? 'Unbekannter Fehler',
+    status,
+    detail: satz(p.detail),
+    instance: satz(p.instance),
+    ...(errors ? { errors } : {}),
+  };
 }
 
 /**
@@ -211,13 +290,10 @@ async function raw(path: string, o: Options, access: string | null): Promise<Res
 async function unwrap<T>(res: Response): Promise<ApiResponse<T>> {
   const headers = res.headers;
   if (res.status === 204) return { data: undefined as T, meta: null, headers };
-  if (!res.ok) {
-    const problem = (await res.json().catch(() => null)) as ProblemDetails | null;
-    throw new ApiError(problem ?? { type: 'about:blank', title: 'Unbekannter Fehler', status: res.status });
-  }
+  if (!res.ok) throw new ApiError(asProblem(await res.json().catch(() => null), res.status));
   const body = (await res.json().catch(() => null)) as Envelope<T> | null;
   if (!body || typeof body !== 'object' || !('data' in body)) {
-    throw new ApiError({ type: 'malformed-envelope', title: 'Antwort ohne data/meta-Umschlag', status: res.status });
+    throw new ApiError({ type: clientProblems.malformedEnvelope, title: 'Antwort ohne data/meta-Umschlag', status: res.status });
   }
   return { data: body.data, meta: body.meta ?? null, headers };
 }
@@ -227,9 +303,11 @@ async function renewOnce(): Promise<string | null> {
   if (!s?.refreshToken) return null;
   const r = await raw('/identity/refresh', { method: 'POST', body: { refreshToken: s.refreshToken } }, null);
   if (!r.ok) return null;
-  const fresh = (await unwrap<AuthTokens>(r)).data;
-  await storeTokens(fresh);
-  return fresh.accessToken;
+  // Nur `session`, kein `user`: die Erneuerung läuft bei jedem Start und nach
+  // jedem abgelaufenen Access-Token. Sie soll den User-Store nicht anfassen.
+  const fresh = (await unwrap<{ session: Session }>(r)).data;
+  await storeSession(fresh.session);
+  return fresh.session.accessToken;
 }
 
 let renewal: Promise<string | null> | null = null;
@@ -255,6 +333,26 @@ const IDEMPOTENT = new Set(['GET', 'HEAD', 'PUT', 'DELETE']);
 const mayReplay = (o: Options) => IDEMPOTENT.has(o.method ?? 'GET') || !!o.idempotencyKey;
 
 /**
+ * Der Token für die nächste Anfrage, vorausschauend erneuert, sobald der alte
+ * abgelaufen ist. `null` heißt: es gibt keine Sitzung — bei Anmeldung,
+ * Registrierung und Erneuerung ist das der Normalfall.
+ *
+ * Scheitert die Erneuerung, ist die Sitzung hinüber, und die Antwort steht
+ * damit schon fest. Dann wird abgemeldet und geworfen, statt die Anfrage ohne
+ * `Authorization` hinausgehen zu lassen: am Ziel hätte sie nichts zu suchen,
+ * und zurückkäme dieselbe 401, die hier bereits bekannt ist.
+ */
+async function accessForNext(): Promise<string | null> {
+  const s = await readSession();
+  const expired = !!s && s.accessTokenExpiresAt > 0 && Date.now() >= s.accessTokenExpiresAt - CLOCK_SKEW_MS;
+  if (!expired) return s?.accessToken ?? null;
+  const fresh = await renew();
+  if (fresh) return fresh;
+  await signOut();
+  throw new ApiError({ type: clientProblems.sessionExpired, title: 'Anmeldung abgelaufen', status: 401 });
+}
+
+/**
  * Eine einzige fetch-Hülle: Basis-URL, Authorization, Accept-Language,
  * Idempotency-Key, problem+json → ApiError.
  *
@@ -266,11 +364,7 @@ const mayReplay = (o: Options) => IDEMPOTENT.has(o.method ?? 'GET') || !!o.idemp
  * ein zweites Mal auslösen. Scheitert die Erneuerung, wird abgemeldet.
  */
 async function send(path: string, o: Options): Promise<Response> {
-  const s = await readSession();
-  const expired = !!s && s.accessTokenExpiresAt > 0 && Date.now() >= s.accessTokenExpiresAt - CLOCK_SKEW_MS;
-  const access = expired ? await renew() : (s?.accessToken ?? null);
-
-  const res = await raw(path, o, access);
+  const res = await raw(path, o, await accessForNext());
   if (res.status !== 401) return res;
 
   const fresh = await renew();

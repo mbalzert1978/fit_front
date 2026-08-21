@@ -1,6 +1,7 @@
 import type { DiaryDate } from './diaryDate';
 
 export const qk = {
+  me: () => ['me'] as const,
   diary: (date: DiaryDate) => ['diary', date] as const,
   recent: () => ['diary', 'recent'] as const,
   slots: () => ['slots'] as const,
