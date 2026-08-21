@@ -13,9 +13,9 @@ export { hasSession, signOut } from './client';
  * bleibt gar keine Sitzung zurück statt einer halben.
  */
 export async function login(email: string, password: string): Promise<SignIn> {
-  const angemeldet = await api<SignIn>('/identity/login', { method: 'POST', body: { email, password } });
-  await storeSession(angemeldet.session);
-  return angemeldet;
+  const signedIn = await api<SignIn>('/identity/login', { method: 'POST', body: { email, password } });
+  await storeSession(signedIn.session);
+  return signedIn;
 }
 
 /**
@@ -76,12 +76,12 @@ export function registrationRequest(r: Registration): RegistrationRequest {
  * Was hinausgeht, steht in `RegistrationRequest` und entsteht in
  * `registrationRequest()`; hier wird es nur noch abgeschickt.
  */
-export async function register(anfrage: RegistrationRequest, idempotencyKey: string): Promise<SignIn> {
-  const angemeldet = await api<SignIn>('/identity/register', {
+export async function register(request: RegistrationRequest, idempotencyKey: string): Promise<SignIn> {
+  const signedIn = await api<SignIn>('/identity/register', {
     method: 'POST',
     idempotencyKey,
-    body: anfrage,
+    body: request,
   });
-  await storeSession(angemeldet.session);
-  return angemeldet;
+  await storeSession(signedIn.session);
+  return signedIn;
 }

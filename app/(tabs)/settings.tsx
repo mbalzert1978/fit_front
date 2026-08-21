@@ -309,7 +309,7 @@ function Appearance() {
  * Sie ist zugleich der Aufrufer, ohne den `GET /identity/me` eine Zusage ohne
  * Bedarf wäre (Regel 6).
  */
-function Konto() {
+function Account() {
   const t = useTheme();
   const txt = useTexts();
   const { data: me } = useMe();
@@ -332,7 +332,7 @@ export default function SettingsScreen() {
   return (
     <Screen>
       <Text style={[t.font.title, { color: t.color.text }]}>{txt.tabMore}</Text>
-      <Konto />
+      <Account />
       <SlotList />
       <DailyGoal />
       <MacroCalc />

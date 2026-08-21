@@ -10,11 +10,11 @@ import { problems } from '../src/api/problems';
 import { newId } from '../src/api/ids';
 
 /** Die Felder, die diese Maske zeigt. Wozu sie keines hat, kann sie nicht anstreichen. */
-const sichtbareFelder = ['displayName', 'email', 'password'] as const;
-type SichtbaresFeld = (typeof sichtbareFelder)[number];
+const visibleFields = ['displayName', 'email', 'password'] as const;
+type VisibleField = (typeof visibleFields)[number];
 
 /** Die Sätze aus `problem+json`, nach den Feldnamen des Anfrage-Rumpfes geordnet. */
-type FieldHints = Partial<Record<SichtbaresFeld, string[]>>;
+type FieldHints = Partial<Record<VisibleField, string[]>>;
 
 /**
  * Trennt, was an ein Feld gehört, von dem, was hier kein Feld hat.
@@ -27,9 +27,9 @@ type FieldHints = Partial<Record<SichtbaresFeld, string[]>>;
 function splitHints(errors: Record<string, string[]>) {
   const fields: FieldHints = {};
   const general: string[] = [];
-  for (const [feld, saetze] of Object.entries(errors)) {
-    if ((sichtbareFelder as readonly string[]).includes(feld)) fields[feld as SichtbaresFeld] = saetze;
-    else general.push(...saetze);
+  for (const [field, messages] of Object.entries(errors)) {
+    if ((visibleFields as readonly string[]).includes(field)) fields[field as VisibleField] = messages;
+    else general.push(...messages);
   }
   return { fields, general };
 }
@@ -68,11 +68,11 @@ function generalHintFor(e: unknown, general: string[], txt: Texts): string | nul
  * sind und sich zwischen zwei Versuchen trotzdem ändern können.
  */
 function useIdempotencyKey() {
-  const versuch = useRef<{ daten: string; key: string } | null>(null);
+  const attempt = useRef<{ payload: string; key: string } | null>(null);
   return (r: RegistrationRequest) => {
-    const daten = JSON.stringify(r);
-    if (versuch.current?.daten !== daten) versuch.current = { daten, key: newId() };
-    return versuch.current.key;
+    const payload = JSON.stringify(r);
+    if (attempt.current?.payload !== payload) attempt.current = { payload, key: newId() };
+    return attempt.current.key;
   };
 }
 
@@ -101,12 +101,12 @@ export default function RegisterScreen() {
     setConflict(false);
     setHint(null);
     try {
-      const anfrage = registrationRequest({ email: email.trim(), password, displayName: name.trim() });
-      await register(anfrage, keyFor(anfrage));
+      const request = registrationRequest({ email: email.trim(), password, displayName: name.trim() });
+      await register(request, keyFor(request));
       router.replace('/(tabs)/diary');
     } catch (e) {
-      const { fields: benannt, general } = splitHints(errorsOf(e));
-      setFields(benannt);
+      const { fields: named, general } = splitHints(errorsOf(e));
+      setFields(named);
       setConflict(e instanceof ApiError && e.type === problems.emailAlreadyRegistered);
       setHint(generalHintFor(e, general, txt));
     } finally {

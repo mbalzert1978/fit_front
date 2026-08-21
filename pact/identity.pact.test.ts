@@ -62,7 +62,7 @@ const anyTimeZoneId = M.regex('^[A-Za-z0-9_+:/-]+$', 'Europe/Berlin');
 const anyIdempotencyKey = M.uuid();
 
 /** Der Wert, den die Maske in diesem Lauf zieht; er steht im Vertrag als Form. */
-const versuchsKey = '3f2a1b0c-4d5e-4f60-8a91-b2c3d4e5f607';
+const attemptKey = '3f2a1b0c-4d5e-4f60-8a91-b2c3d4e5f607';
 
 const session = {
   tokenType: 'Bearer',
@@ -89,7 +89,7 @@ const user = {
   timeZoneId: M.string('Europe/Berlin'),
 };
 
-const daten = { email: 'a@b.de', password: 'geheim123!', displayName: 'Markus' };
+const registration = { email: 'a@b.de', password: 'geheim123!', displayName: 'Markus' };
 
 describe('Identity', () => {
   it('gibt bei Anmeldung Konto und Sitzung im Umschlag zurück', async () => {
@@ -149,7 +149,7 @@ describe('Identity', () => {
         // Antwort verhandelt. Beide kommen aus einer Naht: die Sprache aus
         // `src/language.ts` — dieselbe, die oben als `Accept-Language` steht —,
         // die Zone aus `src/time.ts`.
-        body: { ...daten, locale: 'de', timeZoneId: anyTimeZoneId },
+        body: { ...registration, locale: 'de', timeZoneId: anyTimeZoneId },
       })
       .willRespondWith({
         status: 201,
@@ -165,7 +165,7 @@ describe('Identity', () => {
       });
 
     await p.executeTest(async () => {
-      const s = await register(registrationRequest(daten), versuchsKey);
+      const s = await register(registrationRequest(registration), attemptKey);
       expect(s.session.accessToken).toBeTruthy();
       expect(s.session.refreshToken).toBeTruthy();
       expect(s.session.tokenType).toBe('Bearer');
@@ -187,7 +187,7 @@ describe('Identity', () => {
         // Zusage. Android liefert diese Form, wenn das System keine benannte
         // Zone auflöst; der Nutzer kann dafür nichts, und ein Konto muss auch
         // dann entstehen.
-        body: { ...daten, locale: 'de', timeZoneId: 'GMT+01:00' },
+        body: { ...registration, locale: 'de', timeZoneId: 'GMT+01:00' },
       })
       .willRespondWith({
         status: 201,
@@ -206,7 +206,7 @@ describe('Identity', () => {
       // von Hand in den Rumpf geschrieben wäre es eine Zusage über nichts.
       setTimeProvider({ now: () => new Date(), timeZoneId: () => 'GMT+01:00' });
       try {
-        const s = await register(registrationRequest(daten), versuchsKey);
+        const s = await register(registrationRequest(registration), attemptKey);
         // Genau dafür ist die Rückgabe da: die Anfrage war ein Wunsch, die
         // Antwort ist die Wahrheit über das Konto.
         expect(s.user.timeZoneId).toBe('+01:00');
@@ -224,7 +224,7 @@ describe('Identity', () => {
         method: 'POST',
         path: '/api/v1/identity/register',
         headers: { ...jsonHeadersIn('de'), 'Idempotency-Key': anyIdempotencyKey },
-        body: { ...daten, locale: 'de', timeZoneId: anyTimeZoneId },
+        body: { ...registration, locale: 'de', timeZoneId: anyTimeZoneId },
       })
       // Zwei Zusagen in einer: der `type`, an dem der Screen diesen Fall von
       // jedem sonstigen Fehlschlag unterscheidet, **und** `detail` — der Satz zu
@@ -238,11 +238,11 @@ describe('Identity', () => {
       );
 
     await p.executeTest(async () => {
-      const e = await register(registrationRequest(daten), versuchsKey).catch((err: unknown) => err);
+      const e = await register(registrationRequest(registration), attemptKey).catch((err: unknown) => err);
       expect(e).toBeInstanceOf(ApiError);
-      const fehler = e as ApiError;
-      expect(fehler.type).toBe(problems.emailAlreadyRegistered);
-      expect(fehler.detail).toEqual(expect.any(String));
+      const error = e as ApiError;
+      expect(error.type).toBe(problems.emailAlreadyRegistered);
+      expect(error.detail).toEqual(expect.any(String));
     });
   });
 
@@ -300,17 +300,17 @@ describe('Identity', () => {
       // Die Maske hält ihre eine eigene Regel ein (`minPasswordLength`), aber
       // sie ist nicht der einzige Prüfer: hier geht bewusst vorbei, was sie
       // nicht abfangen kann.
-      const e = await register(registrationRequest({ email: 'kein-at-zeichen', password: 'kurz', displayName: 'a' }), versuchsKey).catch(
+      const e = await register(registrationRequest({ email: 'kein-at-zeichen', password: 'kurz', displayName: 'a' }), attemptKey).catch(
         (err: unknown) => err,
       );
       expect(e).toBeInstanceOf(ApiError);
-      const fehler = e as ApiError;
-      expect(fehler.status).toBe(422);
-      expect(fehler.type).toBe(problems.validationFailed);
+      const error = e as ApiError;
+      expect(error.status).toBe(422);
+      expect(error.type).toBe(problems.validationFailed);
       // Genau das liest `app/register.tsx`: Feldname → mindestens ein Satz.
-      expect(fehler.errors?.email?.[0]).toEqual(expect.any(String));
-      expect(fehler.errors?.password?.[0]).toEqual(expect.any(String));
-      expect(fehler.errors?.displayName?.[0]).toEqual(expect.any(String));
+      expect(error.errors?.email?.[0]).toEqual(expect.any(String));
+      expect(error.errors?.password?.[0]).toEqual(expect.any(String));
+      expect(error.errors?.displayName?.[0]).toEqual(expect.any(String));
     });
   });
 
@@ -360,16 +360,16 @@ describe('Identity', () => {
       // denselben Weg wie auf dem Gerät eines englischsprachigen Nutzers.
       setLanguageProvider({ tag: () => 'en' });
       try {
-        const e = await register(registrationRequest({ email: 'kein-at-zeichen', password: 'kurz', displayName: 'a' }), versuchsKey).catch(
+        const e = await register(registrationRequest({ email: 'kein-at-zeichen', password: 'kurz', displayName: 'a' }), attemptKey).catch(
           (err: unknown) => err,
         );
         expect(e).toBeInstanceOf(ApiError);
-        const fehler = e as ApiError;
+        const error = e as ApiError;
         // Der Status steht hier so ausdrücklich wie im deutschen Fall: 422 ist
         // die Zusage, nicht 400, und sie gilt in beiden Sprachen gleich.
-        expect(fehler.status).toBe(422);
-        expect(fehler.type).toBe(problems.validationFailed);
-        expect(fehler.errors?.email?.[0]).toEqual(expect.any(String));
+        expect(error.status).toBe(422);
+        expect(error.type).toBe(problems.validationFailed);
+        expect(error.errors?.email?.[0]).toEqual(expect.any(String));
       } finally {
         resetLanguageProvider();
       }

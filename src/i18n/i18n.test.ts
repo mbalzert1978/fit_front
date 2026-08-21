@@ -24,8 +24,8 @@ test('fehlt der englische Satz, kommt der deutsche', () => {
 
 test('kein Schlüssel bleibt ohne Satz', () => {
   preferLanguage('en');
-  const englisch = texts();
+  const english = texts();
   for (const key of Object.keys(de) as (keyof typeof de)[]) {
-    expect(englisch[key]).toBeDefined();
+    expect(english[key]).toBeDefined();
   }
 });

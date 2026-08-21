@@ -3,23 +3,23 @@ import { Text, View } from 'react-native';
 import { useTheme } from '../theme/ThemeProvider';
 import { useTexts, type Texts } from '../i18n';
 
-export type Confidence = 'sicher' | 'pruefen' | 'unsicher' | 'fehlt';
+export type Confidence = 'sure' | 'check' | 'unsure' | 'missing';
 
 /** Ableitung aus dem confidence-Wert der API. Fehlender Wert → 'fehlt'. */
 export function confidenceOf(confidence: number | null | undefined, hasValue: boolean): Confidence {
-  if (!hasValue || confidence == null) return 'fehlt';
-  if (confidence >= 0.9) return 'sicher';
-  if (confidence >= 0.7) return 'pruefen';
-  return 'unsicher';
+  if (!hasValue || confidence == null) return 'missing';
+  if (confidence >= 0.9) return 'sure';
+  if (confidence >= 0.7) return 'check';
+  return 'unsure';
 }
 
 const label = (txt: Texts, level: Confidence): string =>
-  ({ sicher: txt.confidenceSure, pruefen: txt.confidenceCheck, unsicher: txt.confidenceUnsure, fehlt: txt.confidenceMissing })[level];
+  ({ sure: txt.confidenceSure, check: txt.confidenceCheck, unsure: txt.confidenceUnsure, missing: txt.confidenceMissing })[level];
 
 export function ConfidenceBadge({ level }: { level: Confidence }) {
   const t = useTheme();
   const txt = useTexts();
-  const accented = level === 'unsicher' || level === 'fehlt';
+  const accented = level === 'unsure' || level === 'missing';
   return (
     <View
       style={{

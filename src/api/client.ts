@@ -243,12 +243,12 @@ async function raw(path: string, o: Options, access: string | null): Promise<Res
  */
 function asFieldErrors(v: unknown): Record<string, string[]> | undefined {
   if (typeof v !== 'object' || v === null || Array.isArray(v)) return undefined;
-  const felder: Record<string, string[]> = {};
-  for (const [feld, roh] of Object.entries(v)) {
-    const saetze = (Array.isArray(roh) ? roh : [roh]).filter((s): s is string => typeof s === 'string');
-    if (saetze.length > 0) felder[feld] = saetze;
+  const fields: Record<string, string[]> = {};
+  for (const [field, raw] of Object.entries(v)) {
+    const messages = (Array.isArray(raw) ? raw : [raw]).filter((s): s is string => typeof s === 'string');
+    if (messages.length > 0) fields[field] = messages;
   }
-  return Object.keys(felder).length > 0 ? felder : undefined;
+  return Object.keys(fields).length > 0 ? fields : undefined;
 }
 
 /**
@@ -262,14 +262,14 @@ function asFieldErrors(v: unknown): Record<string, string[]> | undefined {
  */
 function asProblem(body: unknown, status: number): ProblemDetails {
   const p = (typeof body === 'object' && body !== null ? body : {}) as Partial<Record<keyof ProblemDetails, unknown>>;
-  const satz = (v: unknown) => (typeof v === 'string' && v ? v : undefined);
+  const text = (v: unknown) => (typeof v === 'string' && v ? v : undefined);
   const errors = asFieldErrors(p.errors);
   return {
-    type: satz(p.type) ?? 'about:blank',
-    title: satz(p.title) ?? 'Unbekannter Fehler',
+    type: text(p.type) ?? 'about:blank',
+    title: text(p.title) ?? 'Unbekannter Fehler',
     status,
-    detail: satz(p.detail),
-    instance: satz(p.instance),
+    detail: text(p.detail),
+    instance: text(p.instance),
     ...(errors ? { errors } : {}),
   };
 }
