@@ -1,7 +1,4 @@
 import * as Crypto from 'expo-crypto';
 
-/**
- * Ids erzeugt der Client, damit ein offline erfasster Eintrag schon seine
- * endgültige Id hat. Dieselbe Id dient als Idempotency-Key des Schreibvorgangs.
- */
+/** Client-side, so an entry recorded offline already has its final id — and its idempotency key. */
 export const newId = () => Crypto.randomUUID();

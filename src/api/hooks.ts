@@ -22,7 +22,7 @@ import type {
   PhotoJob,
 } from './types';
 
-/* Lesen */
+/* Reading */
 
 export const useDiaryDay = (date: DiaryDate) =>
   useQuery({ queryKey: qk.diary(date), queryFn: () => api<DiaryDay>(endpoints.diaryDay(date)) });
@@ -41,7 +41,7 @@ export const useSearch = (query: string) =>
     enabled: query.trim().length > 0,
   });
 
-/** Solange Processing: alle 1,5 s erneut fragen, maximal 30 s (20 Versuche). */
+/** While Processing: ask again every 1.5 s, at most 30 s (20 attempts). */
 export const usePhotoJob = (photoId: string, attempts: number) =>
   useQuery({
     queryKey: qk.photo(photoId),
@@ -51,10 +51,7 @@ export const usePhotoJob = (photoId: string, attempts: number) =>
 
 export const useRecipes = () => useQuery({ queryKey: qk.recipes(), queryFn: () => api<Recipe[]>('/recipes?sort=name_desc') });
 
-/**
- * Der ETag steht im gleichnamigen Header, nicht im Rumpf. Er wird ans Rezept
- * geheftet, weil genau von dort das Speichern ihn als `If-Match` wieder aufnimmt.
- */
+/** Pinned to the recipe, because saving picks it up again as `If-Match` from there. */
 const withEtag = (r: ApiResponse<Recipe>): Recipe => ({ ...r.data, etag: r.headers.get('ETag') ?? undefined });
 
 export const useRecipe = (id: string) =>
@@ -65,20 +62,17 @@ export const useRecipe = (id: string) =>
   });
 
 /**
- * Wer angemeldet ist. Nach einem Kaltstart weiß die App sonst nichts über ihren
- * Nutzer — sie hat eine Sitzung im Gerät, aber keinen Namen dazu. `/identity/me`
- * ist der einzige Weg zum Konto, den diese API kennt; eine Id im Pfad gäbe es
- * nicht, weil kein Screen ein fremdes Konto liest.
+ * Who is signed in — after a cold start the device holds a session but no name.
+ * There is no id in the path: no screen reads someone else's account.
  */
 export const useMe = () => useQuery({ queryKey: qk.me(), queryFn: () => api<AccountUser>('/identity/me') });
 
 export const useGoals = () => useQuery({ queryKey: qk.goals(), queryFn: () => api<Goals>('/goals') });
 
 /**
- * Die Einstellungen — und mit ihnen die Sprache, in der der Nutzer lesen will.
- * Sie geht an die Naht weiter, sobald sie da ist: von dort füllt sie
- * `Accept-Language` an jeder folgenden Anfrage, und die Sätze des Servers
- * kommen so, wie der Nutzer sie gewählt hat, nicht wie sein Telefon steht.
+ * The preferences, and with them the chosen language: passed on to the seam as
+ * soon as it is there, so `Accept-Language` follows the choice and not the
+ * phone.
  */
 export const usePreferences = () =>
   useQuery({
@@ -92,7 +86,7 @@ export const usePreferences = () =>
 
 export const useHealthConsent = () => useQuery({ queryKey: ['health', 'consent'], queryFn: () => api<HealthConsent>('/health/consent') });
 
-/* Schreiben */
+/* Writing */
 
 export function useAddEntry(date: DiaryDate) {
   const qc = useQueryClient();
@@ -147,10 +141,8 @@ export function useSavePreferences() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (body: Partial<Preferences>) => api<Preferences>('/preferences', { method: 'PATCH', body }),
-    // Die Antwort trägt die Sprache, die jetzt gilt — nicht die, die geschickt
-    // wurde. Ab hier fragt der Client in ihr, und zwar sofort: sonst käme der
-    // nächste Fehler noch in der alten Sprache, unmittelbar nach einer
-    // Umstellung, die der Nutzer eben vorgenommen hat.
+    // The language that applies now, not the one that was sent — and it takes
+    // effect at once, so the next error does not arrive in the old language.
     onSuccess: (p) => {
       preferLanguage(p.language);
       qc.setQueryData(qk.preferences(), p);
@@ -163,8 +155,8 @@ export function useSlotMutations() {
   const done = () => qc.invalidateQueries({ queryKey: qk.slots() });
   return {
     add: useMutation({
-      // Die Client-Id ist zugleich der Idempotency-Key: derselbe Slot entsteht
-      // auch dann genau einmal, wenn die Anfrage ein zweites Mal hinausgeht.
+      // The client id is at the same time the idempotency key: a request
+      // delivered twice must not yield two slots.
       mutationFn: (b: { id: string; name: string }) => api('/diary/slots', { method: 'POST', body: b, idempotencyKey: b.id }),
       onSuccess: done,
     }),
@@ -187,9 +179,8 @@ export function useSaveRecipe(id: string) {
       if (id === 'neu') {
         return apiWithMeta<Recipe>('/recipes', { method: 'POST', body, idempotencyKey: body.id }).then(withEtag);
       }
-      // Ohne ETag kein bedingtes Speichern. Ein `PUT` ohne `If-Match` überschreibt
-      // eine fremde, zwischenzeitlich gespeicherte Fassung lautlos — lieber hier
-      // scheitern und neu laden lassen als dort Arbeit verlieren.
+      // No ETag, no save: a `PUT` without `If-Match` silently overwrites a
+      // version saved in the meantime.
       if (!body.etag) {
         throw new ApiError({ type: clientProblems.preconditionRequired, title: 'Rezept neu laden und erneut speichern', status: 428 });
       }
@@ -203,10 +194,8 @@ export function useRecipeToDiary(recipeId: string) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (b: { date: DiaryDate; mealSlotId: string; amount: number; unit: 'Portion' | 'Gram' }) =>
-      // Der Schlüssel entsteht einmal je Auslösung und bleibt über eine
-      // Wiederholung derselben Anfrage hinweg derselbe. Ohne ihn dürfte die
-      // Hülle nach einer Erneuerung nicht wiederholen — und mit ihm legt auch
-      // eine doppelt zugestellte Anfrage die Portionen nur einmal ins Tagebuch.
+      // Without a key the wrapper may not repeat after a renewal — and with it
+      // a request delivered twice still puts the portions in once.
       api(`/recipes/${pathSegment(recipeId)}/portions-to-diary`, { method: 'POST', body: b, idempotencyKey: newId() }),
     onSuccess: (_d, b) => qc.invalidateQueries({ queryKey: qk.diary(b.date) }),
   });

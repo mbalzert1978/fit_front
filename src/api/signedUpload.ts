@@ -2,28 +2,17 @@ import * as FileSystem from 'expo-file-system';
 import { OfflineError } from './client';
 
 /**
- * Der einzige HTTP-Weg dieses Repos, der **nicht** durch `src/api/client.ts` geht.
+ * The only HTTP path in this repo that does **not** go through
+ * `src/api/client.ts`: the destination is a foreign origin, the signature in the
+ * URL is the authorization, and sending the bearer token there would hand it to
+ * a third party.
  *
- * `client.ts` ist der Zugang zur eigenen API: Basis-URL, `Authorization`,
- * `Accept-Language`, der `data`/`meta`-Umschlag, `problem+json` und die
- * Erneuerung nach 401. Nichts davon gilt hier. Das Ziel ist ein fremder Origin,
- * die Signatur in der URL ist die Autorisierung, und der Objektspeicher
- * antwortet mit leerem Rumpf statt mit einem Umschlag. Den Bearer-Token an
- * diese Adresse mitzuschicken wäre nicht überflüssig, sondern falsch — er ginge
- * an einen Dritten.
- *
- * Deshalb steht diese Funktion daneben statt darin. Was sie ausdrücklich nicht
- * ist: ein zweiter allgemeiner HTTP-Weg. Eine Aufgabe, ein Aufrufer
- * (`src/api/photoUpload.ts`). Wächst hier ein zweiter Endpunkt hinein, ist das
- * der Moment, an dem die Naht neu gezogen wird — nicht der, an dem sie
- * aufweicht. Die Begründung steht in
+ * What it expressly is not: a second general HTTP path. One task, one caller
+ * (`src/api/photoUpload.ts`). Reasoning:
  * `docs/decisions/2026-08-18-1800-foto-upload-ueber-presigned-url.md`.
  */
 
-/**
- * Der Objektspeicher hat die Bytes nicht angenommen. Trägt den Status, weil an
- * ihm die Entscheidung hängt, ob ein frisches Ziel zu holen ist.
- */
+/** Carries the status, because the decision to fetch a fresh target hangs on it. */
 export class SignedUploadError extends Error {
   constructor(readonly status: number) {
     super(`Upload abgelehnt (${status})`);
@@ -31,21 +20,16 @@ export class SignedUploadError extends Error {
 }
 
 /**
- * Legt die Bytes einer Datei unter einer signierten URL ab.
+ * Places the bytes of a file under a signed URL.
  *
- * `headers` sind die Header, die der Server mitsigniert hat, und gehen
- * unverändert hinaus: weicht auch nur einer ab, antwortet der Objektspeicher
- * mit einer Signaturabweichung statt mit einem Hinweis, was fehlt.
- *
- * `fetch` scheidet für diesen einen Aufruf aus. Es kennt in React Native keinen
- * Rumpf aus einem `file://`-URI; die Bytes müssten erst als Base64 durch den
- * JS-Speicher, um sie danach wieder zu verwerfen. `uploadAsync` streamt die
- * Datei nativ und lässt gleichzeitig zu, die Header exakt zu setzen.
+ * `headers` are the ones the server co-signed and go out unchanged: a single
+ * deviation gets a signature mismatch instead of a hint. `fetch` is out of the
+ * question here — in React Native it knows no body from a `file://` URI, while
+ * `uploadAsync` streams natively and still sets the headers exactly.
  */
 export async function putToSignedUrl(uploadUrl: string, fileUri: string, headers: Record<string, string>): Promise<void> {
-  // Ein Foto der Nährwerttabelle geht nie im Klartext hinaus, auch nicht, wenn
-  // die eigene API eine `http`-Adresse nennt. Kein `SignedUploadError`: ein
-  // frisches Ziel von derselben Quelle wäre genauso falsch.
+  // Never in the clear, not even when our own API names an `http` address. No
+  // `SignedUploadError`: a fresh target from the same source would be as wrong.
   if (!uploadUrl.startsWith('https://')) throw new Error('Upload-Ziel ist kein https');
 
   let res;

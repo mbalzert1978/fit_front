@@ -5,11 +5,8 @@ import { clientProblems } from './problems';
 import { language, preferLanguage } from '../language';
 
 /**
- * Was eine Antwort trägt, nachdem der Umschlag ab ist: die Nutzlast aus `data`,
- * die Begleitinformation aus `meta` und die Antwort-Header vollständig. `meta`
- * ist `null`, wo es keinen Rumpf gibt (204). Der `ETag` steht in `headers` wie
- * jeder andere Header auch — es gibt kein zweites Feld daneben, sonst gäbe es
- * zwei Wahrheiten für denselben Wert.
+ * A response with the envelope off. The `ETag` stays in `headers` like any
+ * other header — a second field beside it would be a second truth.
  */
 export type ApiResponse<T> = { data: T; meta: Meta | null; headers: Headers };
 
@@ -17,10 +14,9 @@ const BASE = process.env.EXPO_PUBLIC_API_URL;
 if (!BASE) throw new Error('EXPO_PUBLIC_API_URL fehlt (.env)');
 
 /**
- * Klartext ausschließlich gegen die eigene Maschine — Entwicklungsserver und
- * Pact-Mock. Jede andere Basis muss `https` sein: über sie gehen Bearer-Token,
- * Anmeldedaten und Gesundheitsdaten. Eine `.env` aus der falschen Umgebung soll
- * die App beim Start zerreißen und nicht still im Klartext funken.
+ * A `.env` from the wrong environment tears the app apart at startup rather
+ * than transmitting tokens and health data in the clear (`docs/regeln.md`,
+ * HTTP-Schicht).
  */
 const LOOPBACK = /^http:\/\/(127\.0\.0\.1|localhost|\[::1\]|10\.0\.2\.2)(:\d+)?\/?$/;
 if (!BASE.startsWith('https://') && !LOOPBACK.test(BASE)) {
@@ -28,13 +24,9 @@ if (!BASE.startsWith('https://') && !LOOPBACK.test(BASE)) {
 }
 
 /**
- * Die Fehlerform nach RFC 9457. `type` ist die Kennung der Fehlerart (eine URI,
- * siehe `problems.ts`), `title` benennt die Art, `detail` erklärt **diesen**
- * Vorfall, `instance` benennt ihn. `errors` ist die Erweiterung für die
- * feldweise Begründung: Feldname des Anfrage-Rumpfes auf Sätze.
- *
- * Fehlt `type`, gilt nach RFC `about:blank` — die Antwort sagt dann nur mit
- * ihrem Status, was los ist.
+ * The error shape per RFC 9457; `errors` is the extension for the per-field
+ * reasoning. Without `type`, `about:blank` applies per RFC — the response then
+ * speaks with its status alone.
  */
 export type ProblemDetails = {
   type: string;
@@ -58,13 +50,13 @@ export class ApiError extends Error {
   get errors() {
     return this.problem.errors;
   }
-  /** Der Satz zu diesem Vorfall (RFC 9457). Wo er steht, redet der Server. */
+  /** The sentence about this occurrence (RFC 9457). Where it stands, the server speaks. */
   get detail() {
     return this.problem.detail;
   }
 }
 
-/** Netzwerkfehler: löst keinen Dialog aus, sondern den Rückfall auf die Outbox. */
+/** Network error — triggers no dialog. */
 export class OfflineError extends Error {}
 
 type Options = {
@@ -74,48 +66,40 @@ type Options = {
   ifMatch?: string;
 };
 
-/* Sitzung */
+/* Session */
 
 /**
- * Die Sitzung liegt als **ein** Datensatz unter **einem** Schlüssel. Zwei
- * getrennte Schlüssel konnten einen halben Zustand hinterlassen, wenn der
- * zweite Schreibvorgang scheitert: ein frischer Access-Token neben dem alten
- * Refresh-Token. Der ginge bei der nächsten Erneuerung hinaus, und weil der
- * Server ihn rotiert, gilt er dort als wiederverwendeter — was alle Sitzungen
- * des Nutzers beendet. Ein Datensatz lässt sich nur ganz oder gar nicht
- * schreiben.
+ * One record under one key: a half-written pair — fresh access token beside the
+ * old refresh token — would count at the server as reuse on the next renewal
+ * and end all of the user's sessions.
  */
 type StoredSession = {
   accessToken: string;
   refreshToken: string;
-  /** Millisekunden seit Epoche; `0`, wo der Server keine Laufzeit genannt hat. */
+  /** Milliseconds since the epoch; `0` where the server named no lifetime. */
   accessTokenExpiresAt: number;
   refreshTokenExpiresAt: number;
 };
 
 const SESSION_KEY = 'session';
 
-/** Die getrennten Schlüssel der früheren Fassung. */
+/** The separate keys of the earlier version. */
 const LEGACY_KEYS = ['accessToken', 'refreshToken'] as const;
 
 /**
- * Räumt die Schlüssel der früheren Fassung ab — bei **jedem** Schreiben einer
- * Sitzung, nicht nur beim Abmelden. Wer von der alten Fassung kommt, findet
- * keine Sitzung, meldet sich einmal neu an und meldet sich danach nie ab: der
- * alte Refresh-Token bliebe sonst liegen, bis er von selbst abläuft — gültig,
- * nie entwertet und der App unbekannt, also auch von ihr nicht abzumelden. Ein
- * Löschen ins Leere kostet nichts.
+ * On **every** write, not only on sign-out: whoever comes from the old version
+ * signs in once and never signs out, so the old refresh token would stay valid
+ * and unknown to the app. Deleting into the void costs nothing.
  */
 const clearLegacy = () => Promise.all(LEGACY_KEYS.map((k) => SecureStore.deleteItemAsync(k)));
 
 /**
- * `WHEN_UNLOCKED_THIS_DEVICE_ONLY` hält die Sitzung aus iCloud- und
- * iTunes-Backups heraus. Ohne diese Angabe wandert sie mit einem Backup auf ein
- * zweites Gerät und meldet dort an, ohne dass jemand ein Passwort eingibt.
+ * Keeps the session out of iCloud and iTunes backups — otherwise it travels
+ * onto a second device and signs in there without a password.
  */
 const KEYCHAIN = { keychainAccessible: SecureStore.WHEN_UNLOCKED_THIS_DEVICE_ONLY };
 
-/** Vorlauf, mit dem ein Token als abgelaufen gilt — deckt Uhrenversatz ab. */
+/** Lead time after which a token counts as expired — covers clock skew. */
 const CLOCK_SKEW_MS = 30_000;
 
 async function readSession(): Promise<StoredSession | null> {
@@ -129,7 +113,6 @@ async function readSession(): Promise<StoredSession | null> {
   }
 }
 
-/** Löscht die Sitzung im Gerät, ohne das Backend zu behelligen. */
 async function clearSession() {
   await SecureStore.deleteItemAsync(SESSION_KEY);
   await clearLegacy();
@@ -138,10 +121,8 @@ async function clearSession() {
 const secondsFromNow = (s: unknown) => (typeof s === 'number' && s > 0 ? Date.now() + s * 1000 : 0);
 
 /**
- * Die einzige Stelle, an der eine Sitzung in den sicheren Speicher geht. Beide
- * Token werden geprüft, **bevor** geschrieben wird: eine Antwort ohne
- * vollständiges Paar darf keine halbe Sitzung hinterlassen, die `hasSession()`
- * anschließend für gültig hält.
+ * The only place where a session goes into secure storage. Checked before the
+ * write: half a session would pass `hasSession()` as valid.
  */
 export async function storeSession(t: Session) {
   if (!t?.accessToken || !t?.refreshToken) {
@@ -159,10 +140,9 @@ export async function storeSession(t: Session) {
 }
 
 /**
- * Angemeldet ist, wer einen Refresh-Token hat, der noch läuft. Am Access-Token
- * allein hängt es nicht: der ist nach fünfzehn Minuten hinüber, die Sitzung
- * deshalb aber nicht — und umgekehrt ist ein vorhandener, längst abgelaufener
- * Access-Token kein Grund, die App hinter der Anmeldung zu starten.
+ * Signed in is whoever holds a refresh token that is still running — not
+ * whoever holds an access token, which is done for after fifteen minutes while
+ * the session is not.
  */
 export async function hasSession() {
   const s = await readSession();
@@ -173,21 +153,17 @@ export async function hasSession() {
 let signedOutHandler: (() => void) | null = null;
 
 /**
- * Was zu tun ist, wenn eine Sitzung endet: Cache leeren und zur Anmeldung
- * führen. Registriert wird das genau einmal, in `app/_layout.tsx` — die
- * HTTP-Schicht kennt weder Router noch Query-Cache und soll beide nicht kennen.
+ * Registered exactly once, in `app/_layout.tsx`: the HTTP layer knows neither
+ * router nor query cache and is not meant to.
  */
 export function onSignedOut(fn: () => void) {
   signedOutHandler = fn;
 }
 
 /**
- * Abmelden heißt: der Refresh-Token wird **serverseitig** entwertet und erst
- * danach lokal gelöscht. Nur lokal zu löschen ließe ihn über seine volle
- * Laufzeit gültig — wer ihn aus einem Gerätebackup zieht, hätte damit weiter
- * Zugriff. Scheitert der Aufruf (offline, Server weg), wird trotzdem lokal
- * abgemeldet: ein Gerät, das nicht abmelden kann, darf nicht angemeldet
- * bleiben.
+ * Server-side first, local afterwards: deleted only locally, the refresh token
+ * stays valid for its full lifetime and a device backup still carries access.
+ * If the call fails, sign-out happens locally regardless.
  */
 export async function signOut() {
   const s = await readSession();
@@ -195,27 +171,22 @@ export async function signOut() {
     try {
       await raw('/identity/logout', { method: 'POST', body: { refreshToken: s.refreshToken } }, null);
     } catch {
-      /* Lokal wird trotzdem abgemeldet. */
+      /* Sign-out happens locally regardless. */
     }
   }
   await clearSession();
-  // Die gewählte Sprache gehörte diesem Konto. Bliebe sie stehen, läse der
-  // nächste Nutzer auf demselben Gerät in einer Sprache, die er nie gewählt hat.
+  // The chosen language belonged to this account. If it stayed, the next user on
+  // the same device would read in a language they never chose.
   preferLanguage(null);
   signedOutHandler?.();
 }
 
-/* Anfrage und Antwort */
+/* Request and response */
 
 /**
- * `Accept-Language` steht an **jeder** Anfrage, nicht nur an denen, deren
- * Fehler heute jemand anzeigt. Der Server entscheidet allein an dieser Zeile,
- * in welcher Sprache seine Sätze kommen — `title`, `detail` und jeder Satz in
- * `errors`. Fehlt sie, fällt er auf seine Vorgabe zurück, und ein englischer
- * Nutzer läse deutsche Fehlermeldungen, ohne dass es irgendwo auffiele.
- *
- * Der Wert kommt aus der Naht `src/language.ts` und nicht aus einem Literal
- * hier: dieselbe Sprache reist beim Anlegen eines Kontos als `locale` mit.
+ * `Accept-Language` stands on **every** request (`docs/regeln.md` rule 10). The
+ * value comes from the seam `src/language.ts` and not from a literal here: the
+ * same language travels along as `locale` when an account is created.
  */
 async function raw(path: string, o: Options, access: string | null): Promise<Response> {
   const headers: Record<string, string> = { Accept: 'application/json', 'Accept-Language': language.tag() };
@@ -235,11 +206,9 @@ async function raw(path: string, o: Options, access: string | null): Promise<Res
 }
 
 /**
- * Die Sätze zu den Feldern, so wie ein Screen sie liest: Feldname auf eine Liste
- * von Sätzen. Was diese Form nicht hat, kommt nicht durch — ein einzelner String
- * zerfiele in `Object.entries` in seine Zeichen und stünde im `FormField`
- * Buchstabe für Buchstabe. Eingepackt statt verworfen wird er trotzdem: er ist
- * die Begründung, die der Nutzer lesen soll.
+ * Field name onto a list of sentences. A bare string is wrapped, not discarded:
+ * `Object.entries` would let it fall apart into characters and the `FormField`
+ * would show it letter by letter.
  */
 function asFieldErrors(v: unknown): Record<string, string[]> | undefined {
   if (typeof v !== 'object' || v === null || Array.isArray(v)) return undefined;
@@ -252,13 +221,9 @@ function asFieldErrors(v: unknown): Record<string, string[]> | undefined {
 }
 
 /**
- * Die Fehlernutzlast wird geprüft wie der Umschlag und nicht behauptet: ein
- * `as`-Cast reichte jede Form durch, und ihr erster Leser (`splitHints` in
- * `app/register.tsx`) hat keine zweite Gelegenheit zu prüfen. Taugt ein Feld
- * nicht, gilt der Rückfall — `about:blank` ist nach RFC 9457 die Kennung dafür,
- * dass die Antwort nur mit ihrem Status spricht.
- *
- * Der Status kommt vom Transport, nicht aus dem Rumpf: beobachtet ist nur jener.
+ * Checked, not asserted (`docs/regeln.md`, HTTP-Schicht): its first reader,
+ * `splitHints` in `app/register.tsx`, has no second chance. The status comes
+ * from the transport, not from the body — only the former is observed.
  */
 function asProblem(body: unknown, status: number): ProblemDetails {
   const p = (typeof body === 'object' && body !== null ? body : {}) as Partial<Record<keyof ProblemDetails, unknown>>;
@@ -275,17 +240,11 @@ function asProblem(body: unknown, status: number): ProblemDetails {
 }
 
 /**
- * Die einzige Stelle, an der ein Umschlag aufgeht. Beide Wege nach draußen —
- * `apiWithMeta` und die Erneuerung — kommen hier durch; deshalb steht `data`,
- * `meta` und `headers` genau einmal im Repo zusammengesetzt. Fehler bleiben
- * unberührt (`problem+json` trägt keinen Umschlag), eine Antwort ohne Rumpf
- * (204) hat weder `meta` noch Nutzlast.
- *
- * Der Umschlag wird geprüft, nicht behauptet: ein `as`-Cast hätte eine Antwort
- * ohne `data` als `undefined`-Nutzlast durchgereicht, und die fällt erst
- * irgendwo im Screen auf — oder gar nicht, weil eine leere Liste harmlos
- * aussieht. Der Umschlag ist Vorgabe; fehlt er, ist die Antwort falsch und
- * nicht leer.
+ * The only place where an envelope is opened — both `apiWithMeta` and the
+ * renewal come through here. Errors stay untouched (`problem+json` carries no
+ * envelope). The envelope is checked, not asserted: an `as` cast would pass a
+ * missing `data` through as an `undefined` payload that an empty list makes
+ * look harmless.
  */
 async function unwrap<T>(res: Response): Promise<ApiResponse<T>> {
   const headers = res.headers;
@@ -303,8 +262,8 @@ async function renewOnce(): Promise<string | null> {
   if (!s?.refreshToken) return null;
   const r = await raw('/identity/refresh', { method: 'POST', body: { refreshToken: s.refreshToken } }, null);
   if (!r.ok) return null;
-  // Nur `session`, kein `user`: die Erneuerung läuft bei jedem Start und nach
-  // jedem abgelaufenen Access-Token. Sie soll den User-Store nicht anfassen.
+  // Only `session`, no `user`: the renewal runs at every startup and after every
+  // expired access token. It is not meant to touch the user store.
   const fresh = (await unwrap<{ session: Session }>(r)).data;
   await storeSession(fresh.session);
   return fresh.session.accessToken;
@@ -313,12 +272,10 @@ async function renewOnce(): Promise<string | null> {
 let renewal: Promise<string | null> | null = null;
 
 /**
- * Erneuert höchstens **einmal gleichzeitig**. Beim Start laufen ein halbes
- * Dutzend Abfragen parallel; liefe jede in ihre eigene Erneuerung, gingen sechs
- * Anfragen mit demselben Refresh-Token hinaus. Der Server rotiert ihn, also
- * verbraucht die erste ihn und die übrigen fünf legen einen bereits entwerteten
- * vor — was dort als Wiederverwendung gilt und alle Sitzungen des Nutzers
- * beendet. Alle Wartenden teilen sich deshalb dieselbe Zusage.
+ * At most **once concurrently**: the half dozen queries at startup would
+ * otherwise each go out with the same refresh token, and the five that lose the
+ * race present an already rotated one — which counts as reuse and ends all of
+ * the user's sessions.
  */
 function renew(): Promise<string | null> {
   renewal ??= renewOnce().finally(() => {
@@ -327,20 +284,16 @@ function renew(): Promise<string | null> {
   return renewal;
 }
 
-/** Wiederholbar ist, was der Server zweimal gleich beantwortet. */
+/** Repeatable is what the server answers the same way twice. */
 const IDEMPOTENT = new Set(['GET', 'HEAD', 'PUT', 'DELETE']);
 
 const mayReplay = (o: Options) => IDEMPOTENT.has(o.method ?? 'GET') || !!o.idempotencyKey;
 
 /**
- * Der Token für die nächste Anfrage, vorausschauend erneuert, sobald der alte
- * abgelaufen ist. `null` heißt: es gibt keine Sitzung — bei Anmeldung,
- * Registrierung und Erneuerung ist das der Normalfall.
- *
- * Scheitert die Erneuerung, ist die Sitzung hinüber, und die Antwort steht
- * damit schon fest. Dann wird abgemeldet und geworfen, statt die Anfrage ohne
- * `Authorization` hinausgehen zu lassen: am Ziel hätte sie nichts zu suchen,
- * und zurückkäme dieselbe 401, die hier bereits bekannt ist.
+ * Renewed pre-emptively. `null` means there is no session — normal for sign-in,
+ * registration and renewal. If the renewal fails, sign-out happens and a throw
+ * follows rather than sending the request without `Authorization` to fetch a
+ * 401 that is already settled here (`docs/regeln.md`, HTTP-Schicht).
  */
 async function accessForNext(): Promise<string | null> {
   const s = await readSession();
@@ -353,15 +306,12 @@ async function accessForNext(): Promise<string | null> {
 }
 
 /**
- * Eine einzige fetch-Hülle: Basis-URL, Authorization, Accept-Language,
+ * The single fetch wrapper: base URL, Authorization, Accept-Language,
  * Idempotency-Key, problem+json → ApiError.
  *
- * Erneuert wird **vorab**, sobald der Access-Token abgelaufen ist — damit
- * braucht der Normalfall den 401-Weg gar nicht. Bleibt der 401 trotzdem (der
- * Server hat die Sitzung verworfen), wird einmal erneuert und danach nur
- * wiederholt, was der Server zweimal gleich beantwortet: ein `POST` oder
- * `PATCH` ohne `Idempotency-Key` würde sonst eine bereits angewandte Wirkung
- * ein zweites Mal auslösen. Scheitert die Erneuerung, wird abgemeldet.
+ * Renewal happens up front, so the normal case never touches the 401 path. On a
+ * remaining 401 only what the server answers the same way twice is repeated: a
+ * `POST` without an `Idempotency-Key` would trigger an applied effect again.
  */
 async function send(path: string, o: Options): Promise<Response> {
   const res = await raw(path, o, await accessForNext());
@@ -375,28 +325,20 @@ async function send(path: string, o: Options): Promise<Response> {
   return mayReplay(o) ? raw(path, o, fresh) : res;
 }
 
-/**
- * Antwort samt Umschlag: Nutzlast, `meta` und die Antwort-Header. Der `ETag`
- * kommt aus `headers`, nicht aus dem Rumpf; `meta.requestId` lässt sich hier
- * gegen `X-Request-Id` halten, weil beides denselben Aufruf beschreibt.
- */
+/** Payload, `meta` and the response headers — the `ETag` among them. */
 export async function apiWithMeta<T>(path: string, o: Options = {}): Promise<ApiResponse<T>> {
   return unwrap<T>(await send(path, o));
 }
 
-/** Der übliche Weg: nur die Nutzlast. Wer `meta` oder einen Header braucht, nimmt `apiWithMeta`. */
+/** The usual way: only the payload. Whoever needs `meta` or a header takes `apiWithMeta`. */
 export async function api<T>(path: string, o: Options = {}): Promise<T> {
   return (await apiWithMeta<T>(path, o)).data;
 }
 
-/* Endpunkte, die das Grundgerüst braucht. Der vollständige, typisierte Client
-   wird mit openapi-typescript aus der Swagger-Datei erzeugt (npm run api:types). */
-
 /**
- * Ein Pfadsegment, sicher eingesetzt. Ids kommen aus Deep-Links
- * (`nutritrack://product/<id>`) und Barcodes von der Kamera — beides Eingaben
- * von außen. Unkodiert könnte ein `/` oder ein `..` darin den Pfad verlassen
- * und einen anderen Endpunkt treffen als den gemeinten.
+ * A path segment, safely inserted. Ids come from deep links and barcodes from
+ * the camera; unencoded, a `/` or a `..` in them leaves the path and hits a
+ * different endpoint.
  */
 export const pathSegment = (v: string) => encodeURIComponent(v);
 
