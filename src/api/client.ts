@@ -72,7 +72,6 @@ type Options = {
   body?: unknown;
   idempotencyKey?: string;
   ifMatch?: string;
-  language?: string;
   formData?: FormData;
 };
 
@@ -209,7 +208,7 @@ export async function signOut() {
  * hier: dieselbe Sprache reist beim Anlegen eines Kontos als `locale` mit.
  */
 async function raw(path: string, o: Options, access: string | null): Promise<Response> {
-  const headers: Record<string, string> = { Accept: 'application/json', 'Accept-Language': o.language ?? language.tag() };
+  const headers: Record<string, string> = { Accept: 'application/json', 'Accept-Language': language.tag() };
   if (access) headers.Authorization = `Bearer ${access}`;
   if (o.idempotencyKey) headers['Idempotency-Key'] = o.idempotencyKey;
   if (o.ifMatch) headers['If-Match'] = o.ifMatch;
