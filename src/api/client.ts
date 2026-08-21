@@ -334,6 +334,26 @@ const IDEMPOTENT = new Set(['GET', 'HEAD', 'PUT', 'DELETE']);
 const mayReplay = (o: Options) => IDEMPOTENT.has(o.method ?? 'GET') || !!o.idempotencyKey;
 
 /**
+ * Der Token für die nächste Anfrage, vorausschauend erneuert, sobald der alte
+ * abgelaufen ist. `null` heißt: es gibt keine Sitzung — bei Anmeldung,
+ * Registrierung und Erneuerung ist das der Normalfall.
+ *
+ * Scheitert die Erneuerung, ist die Sitzung hinüber, und die Antwort steht
+ * damit schon fest. Dann wird abgemeldet und geworfen, statt die Anfrage ohne
+ * `Authorization` hinausgehen zu lassen: am Ziel hätte sie nichts zu suchen,
+ * und zurückkäme dieselbe 401, die hier bereits bekannt ist.
+ */
+async function accessForNext(): Promise<string | null> {
+  const s = await readSession();
+  const expired = !!s && s.accessTokenExpiresAt > 0 && Date.now() >= s.accessTokenExpiresAt - CLOCK_SKEW_MS;
+  if (!expired) return s?.accessToken ?? null;
+  const fresh = await renew();
+  if (fresh) return fresh;
+  await signOut();
+  throw new ApiError({ type: clientProblems.sessionExpired, title: 'Anmeldung abgelaufen', status: 401 });
+}
+
+/**
  * Eine einzige fetch-Hülle: Basis-URL, Authorization, Accept-Language,
  * Idempotency-Key, problem+json → ApiError.
  *
@@ -345,11 +365,7 @@ const mayReplay = (o: Options) => IDEMPOTENT.has(o.method ?? 'GET') || !!o.idemp
  * ein zweites Mal auslösen. Scheitert die Erneuerung, wird abgemeldet.
  */
 async function send(path: string, o: Options): Promise<Response> {
-  const s = await readSession();
-  const expired = !!s && s.accessTokenExpiresAt > 0 && Date.now() >= s.accessTokenExpiresAt - CLOCK_SKEW_MS;
-  const access = expired ? await renew() : (s?.accessToken ?? null);
-
-  const res = await raw(path, o, access);
+  const res = await raw(path, o, await accessForNext());
   if (res.status !== 401) return res;
 
   const fresh = await renew();

@@ -60,4 +60,10 @@ export const clientProblems = {
   malformedEnvelope: `${client}malformed-envelope`,
   malformedTokenResponse: `${client}malformed-token-response`,
   preconditionRequired: `${client}precondition-required`,
+  /**
+   * Die Erneuerung ist gescheitert, die Sitzung damit hinüber — festgestellt
+   * **hier**, ehe eine Anfrage hinausging. Deshalb eigener Namensraum und nicht
+   * `token-expired`: dieselbe Lage, aber niemand hat sie uns gesagt.
+   */
+  sessionExpired: `${client}session-expired`,
 } as const;
