@@ -3,6 +3,7 @@ import { Text, TextInput, View } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Screen, ValueField, ConfidenceBadge, confidenceOf, OutlineButton } from '../../src/components';
 import { useTheme } from '../../src/theme/ThemeProvider';
+import { useTexts, type Texts } from '../../src/i18n';
 import { usePhotoJob, useCreateProduct } from '../../src/api/hooks';
 import { newId } from '../../src/api/ids';
 import { ctxParams } from '../../src/nav';
@@ -11,14 +12,14 @@ import type { PhotoJob } from '../../src/api/types';
 
 type Key = 'kcal' | 'fatG' | 'saturatedFatG' | 'carbsG' | 'sugarG' | 'proteinG' | 'saltG';
 
-const rows: { key: Key; label: string; unit: string; required: boolean }[] = [
-  { key: 'kcal', label: 'Energie', unit: 'kcal', required: true },
-  { key: 'fatG', label: 'Fett', unit: 'g', required: true },
-  { key: 'saturatedFatG', label: 'davon gesättigte Fettsäuren', unit: 'g', required: false },
-  { key: 'carbsG', label: 'Kohlenhydrate', unit: 'g', required: true },
-  { key: 'sugarG', label: 'davon Zucker', unit: 'g', required: false },
-  { key: 'proteinG', label: 'Eiweiß', unit: 'g', required: true },
-  { key: 'saltG', label: 'Salz', unit: 'g', required: false },
+const rowsOf = (txt: Texts): { key: Key; label: string; unit: string; required: boolean }[] => [
+  { key: 'kcal', label: txt.energy, unit: 'kcal', required: true },
+  { key: 'fatG', label: txt.macroFat, unit: 'g', required: true },
+  { key: 'saturatedFatG', label: txt.nutrientSaturatedFat, unit: 'g', required: false },
+  { key: 'carbsG', label: txt.macroCarbs, unit: 'g', required: true },
+  { key: 'sugarG', label: txt.nutrientSugar, unit: 'g', required: false },
+  { key: 'proteinG', label: txt.macroProtein, unit: 'g', required: true },
+  { key: 'saltG', label: txt.nutrientSalt, unit: 'g', required: false },
 ];
 
 function ProductHeader({
@@ -33,6 +34,7 @@ function ProductHeader({
   barcode: string | null | undefined;
 }) {
   const t = useTheme();
+  const txt = useTexts();
 
   return (
     <View style={{ flexDirection: 'row', gap: t.space[4] }}>
@@ -41,7 +43,7 @@ function ProductHeader({
         <TextInput
           value={name ?? suggested ?? ''}
           onChangeText={onChangeName}
-          placeholder="Produktname"
+          placeholder={txt.confirmName}
           placeholderTextColor={t.color.textMuted}
           style={[
             t.font.body,
@@ -57,7 +59,7 @@ function ProductHeader({
           ]}
         />
         <Text style={[t.font.micro, t.tabular, { color: t.color.textMuted, marginTop: t.space[2] }]}>
-          {barcode ?? 'ohne Barcode'} · Angaben pro 100 g
+          {barcode ?? txt.confirmNoBarcode} · {txt.confirmPer100g}
         </Text>
       </View>
     </View>
@@ -66,6 +68,8 @@ function ProductHeader({
 
 export default function ConfirmScreen() {
   const t = useTheme();
+  const txt = useTexts();
+  const rows = rowsOf(txt);
   const params = useLocalSearchParams<Record<string, string>>();
   const date = params.date ? parseDiaryDate(params.date) : today();
   const job: PhotoJob | undefined = usePhotoJob(params.photoId ?? '', 99).data;
@@ -154,7 +158,7 @@ export default function ConfirmScreen() {
 
       {/* Kein erklärender Hinweissatz: der Rand und der deaktivierte Knopf sagen genug. */}
       <View style={{ marginTop: t.space[8] }}>
-        <OutlineButton label="Übernehmen" onPress={submit} disabled={missing.length > 0 || create.isPending} />
+        <OutlineButton label={txt.confirmSubmit} onPress={submit} disabled={missing.length > 0 || create.isPending} />
       </View>
     </Screen>
   );

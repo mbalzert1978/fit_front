@@ -3,6 +3,7 @@ import { Text, View } from 'react-native';
 import { router } from 'expo-router';
 import { Screen, OutlineButton, FormField } from '../src/components';
 import { useTheme } from '../src/theme/ThemeProvider';
+import { useTexts, type Texts } from '../src/i18n';
 import { register, registrationRequest, minPasswordLength, maxDisplayNameLength, type RegistrationRequest } from '../src/api/session';
 import { ApiError, OfflineError } from '../src/api/client';
 import { problems } from '../src/api/problems';
@@ -44,11 +45,11 @@ function errorsOf(e: unknown): Record<string, string[]> {
  * die Maske reicht ihn unverändert durch und übersetzt nichts. Eigene Sätze hat
  * sie nur, wo keiner kommt: beim Netzfehler, und als letzter Rückfall.
  */
-function generalHintFor(e: unknown, general: string[]): string | null {
+function generalHintFor(e: unknown, general: string[], txt: Texts): string | null {
   if (general.length > 0) return general.join(' ');
-  if (e instanceof OfflineError) return 'Keine Verbindung';
-  if (e instanceof ApiError) return e.detail ?? 'Registrierung derzeit nicht möglich';
-  return 'Registrierung derzeit nicht möglich';
+  if (e instanceof OfflineError) return txt.noConnection;
+  if (e instanceof ApiError) return e.detail ?? txt.registerFailed;
+  return txt.registerFailed;
 }
 
 /**
@@ -77,6 +78,7 @@ function useIdempotencyKey() {
 
 export default function RegisterScreen() {
   const t = useTheme();
+  const txt = useTexts();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -106,7 +108,7 @@ export default function RegisterScreen() {
       const { fields: benannt, general } = splitHints(errorsOf(e));
       setFields(benannt);
       setConflict(e instanceof ApiError && e.type === problems.emailAlreadyRegistered);
-      setHint(generalHintFor(e, general));
+      setHint(generalHintFor(e, general, txt));
     } finally {
       setBusy(false);
     }
@@ -119,10 +121,10 @@ export default function RegisterScreen() {
 
   return (
     <Screen>
-      <Text style={[t.font.title, { color: t.color.text }]}>Konto anlegen</Text>
+      <Text style={[t.font.title, { color: t.color.text }]}>{txt.registerTitle}</Text>
       <View style={{ gap: t.space[6], marginTop: t.space[8] }}>
         <FormField
-          label="Name"
+          label={txt.registerName}
           hints={fields.displayName}
           value={name}
           onChangeText={setName}
@@ -131,7 +133,7 @@ export default function RegisterScreen() {
           textContentType="name"
         />
         <FormField
-          label="E-Mail"
+          label={txt.loginEmail}
           hints={fields.email}
           invalid={conflict}
           value={email}
@@ -141,9 +143,9 @@ export default function RegisterScreen() {
           textContentType="username"
         />
         <FormField
-          label="Passwort"
+          label={txt.loginPassword}
           hints={fields.password}
-          note={`Mindestens ${minPasswordLength} Zeichen`}
+          note={txt.registerPasswordNote(minPasswordLength)}
           noteInvalid={tooShort}
           value={password}
           onChangeText={setPassword}
@@ -154,13 +156,13 @@ export default function RegisterScreen() {
       {hint ? <Text style={[t.font.micro, { color: t.color.accent, marginTop: t.space[4] }]}>{hint}</Text> : null}
       <View style={{ gap: t.space[4], marginTop: t.space[8] }}>
         <OutlineButton
-          label={busy ? 'Konto wird angelegt …' : 'Konto anlegen'}
+          label={busy ? txt.registerBusy : txt.registerTitle}
           onPress={submit}
           disabled={busy || !nameOk || !email || password.length < minPasswordLength}
         />
         {/* Zurück und nicht ersetzen: sonst stünde die Anmeldemaske zweimal im Stapel. */}
         <OutlineButton
-          label="Ich habe schon ein Konto"
+          label={txt.registerToLogin}
           variant="muted"
           onPress={() => (router.canGoBack() ? router.back() : router.replace('/login'))}
         />

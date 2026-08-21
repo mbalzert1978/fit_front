@@ -1,6 +1,7 @@
 import React from 'react';
 import { Text, View } from 'react-native';
 import { useTheme } from '../theme/ThemeProvider';
+import { useTexts, type Texts } from '../i18n';
 
 export type Confidence = 'sicher' | 'pruefen' | 'unsicher' | 'fehlt';
 
@@ -12,15 +13,12 @@ export function confidenceOf(confidence: number | null | undefined, hasValue: bo
   return 'unsicher';
 }
 
-const text: Record<Confidence, string> = {
-  sicher: 'SICHER',
-  pruefen: 'PRÜFEN',
-  unsicher: 'UNSICHER',
-  fehlt: 'WERT FEHLT',
-};
+const label = (txt: Texts, level: Confidence): string =>
+  ({ sicher: txt.confidenceSure, pruefen: txt.confidenceCheck, unsicher: txt.confidenceUnsure, fehlt: txt.confidenceMissing })[level];
 
 export function ConfidenceBadge({ level }: { level: Confidence }) {
   const t = useTheme();
+  const txt = useTexts();
   const accented = level === 'unsicher' || level === 'fehlt';
   return (
     <View
@@ -34,7 +32,7 @@ export function ConfidenceBadge({ level }: { level: Confidence }) {
         marginTop: 3,
       }}
     >
-      <Text style={[t.font.label, { color: accented ? t.color.accent : t.color.textMuted, fontSize: 10 }]}>{text[level]}</Text>
+      <Text style={[t.font.label, { color: accented ? t.color.accent : t.color.textMuted, fontSize: 10 }]}>{label(txt, level)}</Text>
     </View>
   );
 }

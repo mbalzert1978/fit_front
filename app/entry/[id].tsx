@@ -2,9 +2,9 @@ import React, { useMemo, useState } from 'react';
 import { Text, View } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { format, parseISO } from 'date-fns';
-import { de } from 'date-fns/locale';
 import { Screen, ValueField, ListRow, OutlineButton, SectionHeading } from '../../src/components';
 import { useTheme } from '../../src/theme/ThemeProvider';
+import { useTexts } from '../../src/i18n';
 import { useDiaryDay, useUpdateEntry, useDeleteEntry } from '../../src/api/hooks';
 import { parseDiaryDate, today } from '../../src/api/diaryDate';
 import type { DiaryEntry, MealSlotDay } from '../../src/api/types';
@@ -29,6 +29,7 @@ function labelsOf(found: Found, grams: string | null) {
 
 export default function EntryScreen() {
   const t = useTheme();
+  const txt = useTexts();
   const params = useLocalSearchParams<{ id: string; date?: string }>();
   const date = params.date ? parseDiaryDate(params.date) : today();
   const { data: day } = useDiaryDay(date);
@@ -50,22 +51,22 @@ export default function EntryScreen() {
   return (
     <Screen>
       <Text style={[t.font.label, { color: t.color.textMuted }]}>
-        {slotName} · {format(parseISO(date), 'd. MMMM', { locale: de })}
+        {slotName} · {format(parseISO(date), txt.dayMonthFormat, { locale: txt.dateLocale })}
       </Text>
       <Text style={[t.font.title, { color: t.color.text, marginTop: t.space[2] }]}>{name}</Text>
       <Text style={[t.font.micro, t.tabular, { color: t.color.textMuted, marginTop: t.space[2] }]}>
         {Math.round(per100 * 100)} kcal / 100 g
       </Text>
 
-      <SectionHeading>Menge</SectionHeading>
+      <SectionHeading>{txt.amount}</SectionHeading>
       <ValueField value={gramsValue} onChangeText={setGrams} unit="g" large />
 
-      <SectionHeading>Für diese Menge</SectionHeading>
-      <ListRow title="Energie" value={`${kcal} kcal`} />
+      <SectionHeading>{txt.entryForThisAmount}</SectionHeading>
+      <ListRow title={txt.energy} value={`${kcal} kcal`} />
 
       <View style={{ gap: t.space[4], marginTop: t.space[8] }}>
         <OutlineButton
-          label="Änderung speichern"
+          label={txt.entrySave}
           disabled={!found || update.isPending}
           onPress={async () => {
             await update.mutateAsync({ entryId: params.id, grams: g });
@@ -73,7 +74,7 @@ export default function EntryScreen() {
           }}
         />
         <OutlineButton
-          label="Eintrag löschen"
+          label={txt.entryDelete}
           variant="muted"
           disabled={!found || remove.isPending}
           onPress={async () => {

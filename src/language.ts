@@ -76,6 +76,23 @@ let current: LanguageProvider = deviceLanguage;
 let chosen: Language | null = null;
 
 /**
+ * Wer mitbekommen muss, dass sie sich geändert hat.
+ *
+ * Die Oberfläche liest die Sprache nicht bei jedem Zeichnen neu, sie hängt an
+ * dieser Menge (`src/i18n`). Ohne sie stünde die Maske bis zum Neustart in der
+ * alten Sprache, während der Server schon in der neuen antwortet — und der
+ * Schalter sähe kaputt aus.
+ */
+const listeners = new Set<() => void>();
+
+export function subscribeLanguage(listener: () => void) {
+  listeners.add(listener);
+  return () => listeners.delete(listener);
+}
+
+const announce = () => listeners.forEach((l) => l());
+
+/**
  * Die gelesene oder gerade gespeicherte Vorliebe setzen; `null` nimmt sie
  * zurück. Gerufen wird das dort, wo `/preferences` durchkommt
  * (`src/api/hooks.ts`) und beim Abmelden — die Wahl gehört einem Konto, nicht
@@ -83,17 +100,20 @@ let chosen: Language | null = null;
  */
 export function preferLanguage(tag: Language | null) {
   chosen = tag;
+  announce();
 }
 
 /** Nur für Tests und Prototypen: die Naht von außen besetzen. */
 export function setLanguageProvider(p: LanguageProvider) {
   current = p;
+  announce();
 }
 
 /** Zurück zur Sprache des Geräts, ohne gewählte Vorliebe. */
 export function resetLanguageProvider() {
   current = deviceLanguage;
   chosen = null;
+  announce();
 }
 
 /** Der eine Zugang für allen übrigen Code. */

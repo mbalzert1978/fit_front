@@ -2,6 +2,7 @@ import React from 'react';
 import { Tabs } from 'expo-router';
 import { Text, View } from 'react-native';
 import { useTheme } from '../../src/theme/ThemeProvider';
+import { useTexts } from '../../src/i18n';
 
 /**
  * Vier Ziele, auf jedem Screen sichtbar. Bewusst keine Zurück-Pfeile:
@@ -20,6 +21,7 @@ function TabLabel({ children, focused }: { children: string; focused: boolean })
 
 export default function TabsLayout() {
   const t = useTheme();
+  const txt = useTexts();
   return (
     <Tabs
       screenOptions={{
@@ -33,10 +35,10 @@ export default function TabsLayout() {
         },
       }}
     >
-      <Tabs.Screen name="diary" options={{ tabBarIcon: ({ focused }) => <TabLabel focused={focused}>Tagebuch</TabLabel> }} />
-      <Tabs.Screen name="scan" options={{ tabBarIcon: ({ focused }) => <TabLabel focused={focused}>Scan</TabLabel> }} />
-      <Tabs.Screen name="recipes" options={{ tabBarIcon: ({ focused }) => <TabLabel focused={focused}>Rezepte</TabLabel> }} />
-      <Tabs.Screen name="settings" options={{ tabBarIcon: ({ focused }) => <TabLabel focused={focused}>Mehr</TabLabel> }} />
+      <Tabs.Screen name="diary" options={{ tabBarIcon: ({ focused }) => <TabLabel focused={focused}>{txt.tabDiary}</TabLabel> }} />
+      <Tabs.Screen name="scan" options={{ tabBarIcon: ({ focused }) => <TabLabel focused={focused}>{txt.tabScan}</TabLabel> }} />
+      <Tabs.Screen name="recipes" options={{ tabBarIcon: ({ focused }) => <TabLabel focused={focused}>{txt.tabRecipes}</TabLabel> }} />
+      <Tabs.Screen name="settings" options={{ tabBarIcon: ({ focused }) => <TabLabel focused={focused}>{txt.tabMore}</TabLabel> }} />
     </Tabs>
   );
 }

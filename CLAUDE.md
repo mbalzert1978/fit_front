@@ -17,6 +17,8 @@ Wächst diese Datei um einen Absatz, der etwas über das Repo behauptet, gehört
 - [`src/theme.ts`](src/theme.ts) — das Designsystem. Vor jedem Farb-, Schrift-, Radien- oder
   Abstandswert zuerst hierher; die Regel, wo Literale stehen dürfen, steht in
   [`docs/regeln.md`](docs/regeln.md).
+- [`src/i18n/`](src/i18n/) — die Sätze, die der Nutzer liest. Vor jeder sichtbaren Beschriftung
+  zuerst hierher; welche Sprache gilt, steht in [`src/language.ts`](src/language.ts).
 - [`src/components/index.ts`](src/components/index.ts) — der Baukasten. Bevor eine Komponente neu
   gebaut oder ein zweiter Weg für dasselbe Element geprägt wird, zuerst hierher.
 - [`src/api/types.ts`](src/api/types.ts), [`src/api/hooks.ts`](src/api/hooks.ts),

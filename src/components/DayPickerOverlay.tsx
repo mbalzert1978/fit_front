@@ -1,8 +1,8 @@
 import React, { useMemo } from 'react';
 import { Modal, Pressable, ScrollView, Text } from 'react-native';
 import { addDays, format } from 'date-fns';
-import { de } from 'date-fns/locale';
 import { useTheme } from '../theme/ThemeProvider';
+import { useTexts } from '../i18n';
 import { toDiaryDate, type DiaryDate } from '../api/diaryDate';
 import { time } from '../time';
 
@@ -23,16 +23,19 @@ export function DayPickerOverlay({
   onClose: () => void;
 }) {
   const t = useTheme();
+  const txt = useTexts();
   const days = useMemo(() => {
     const today = time.now();
+    const locale = txt.dateLocale;
     const out: { date: DiaryDate; weekday: string; day: string }[] = [];
     for (let offset = -30; offset <= 14; offset++) {
       const d = addDays(today, offset);
-      const weekday = offset === 0 ? 'Heute' : offset === 1 ? 'Morgen' : offset === -1 ? 'Gestern' : format(d, 'EEEE', { locale: de });
-      out.push({ date: toDiaryDate(d), weekday, day: format(d, 'd. MMMM', { locale: de }) });
+      const named = offset === 0 ? txt.dayToday : offset === 1 ? txt.dayTomorrow : offset === -1 ? txt.dayYesterday : null;
+      const weekday = named ?? format(d, txt.weekdayFormat, { locale });
+      out.push({ date: toDiaryDate(d), weekday, day: format(d, txt.dayMonthFormat, { locale }) });
     }
     return out;
-  }, []);
+  }, [txt]);
 
   return (
     <Modal visible={visible} animationType="fade" transparent onRequestClose={onClose}>

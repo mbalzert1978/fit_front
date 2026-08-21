@@ -2,9 +2,9 @@ import React, { useEffect, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { router } from 'expo-router';
 import { format, parseISO } from 'date-fns';
-import { de } from 'date-fns/locale';
 import { Screen, MacroBar, ListRow, SquareIconButton, DayPickerOverlay } from '../../src/components';
 import { useTheme } from '../../src/theme/ThemeProvider';
+import { useTexts, type Texts } from '../../src/i18n';
 import { today, type DiaryDate } from '../../src/api/diaryDate';
 import { useDiaryDay } from '../../src/api/hooks';
 import type { DiaryDay, MealSlotDay } from '../../src/api/types';
@@ -18,14 +18,15 @@ const EMPTY_DAY = {
   activity: null,
 } satisfies Omit<DiaryDay, 'date'>;
 
-function dayLabel(date: DiaryDate) {
+function dayLabel(date: DiaryDate, txt: Texts) {
   const d = parseISO(date);
-  const prefix = date === today() ? 'HEUTE · ' : '';
-  return prefix + format(d, 'EEEE, d. MMMM', { locale: de }).toUpperCase();
+  const prefix = date === today() ? txt.diaryTodayPrefix : '';
+  return prefix + format(d, txt.dayFormat, { locale: txt.dateLocale }).toUpperCase();
 }
 
 function DayTotals({ totals, goal, remaining }: { totals: DiaryDay['totals']; goal: DiaryDay['goal']; remaining: number }) {
   const t = useTheme();
+  const txt = useTexts();
   const filled = goal.dailyKcal > 0 ? Math.min((totals.kcal / goal.dailyKcal) * 100, 100) : 0;
 
   return (
@@ -36,7 +37,7 @@ function DayTotals({ totals, goal, remaining }: { totals: DiaryDay['totals']; go
           <Text style={[t.font.body, t.tabular, { color: t.color.textMuted }]}>/ {goal.dailyKcal} kcal</Text>
         </View>
         <View style={{ alignItems: 'flex-end' }}>
-          <Text style={[t.font.label, { color: t.color.textMuted }]}>Noch</Text>
+          <Text style={[t.font.label, { color: t.color.textMuted }]}>{txt.diaryRemaining}</Text>
           <Text style={[t.font.body, t.tabular, { color: t.color.text }]}>{remaining}</Text>
         </View>
       </View>
@@ -46,9 +47,9 @@ function DayTotals({ totals, goal, remaining }: { totals: DiaryDay['totals']; go
       </View>
 
       <View style={{ flexDirection: 'row', gap: t.space[6], marginTop: t.space[6] }}>
-        <MacroBar label="Kohlenhydrate" value={totals.carbsG} target={goal.carbsG} />
-        <MacroBar label="Eiweiß" value={totals.proteinG} target={goal.proteinG} />
-        <MacroBar label="Fett" value={totals.fatG} target={goal.fatG} />
+        <MacroBar label={txt.macroCarbs} value={totals.carbsG} target={goal.carbsG} />
+        <MacroBar label={txt.macroProtein} value={totals.proteinG} target={goal.proteinG} />
+        <MacroBar label={txt.macroFat} value={totals.fatG} target={goal.fatG} />
       </View>
     </>
   );
@@ -56,6 +57,7 @@ function DayTotals({ totals, goal, remaining }: { totals: DiaryDay['totals']; go
 
 function SlotBlock({ slot, date }: { slot: MealSlotDay; date: DiaryDate }) {
   const t = useTheme();
+  const txt = useTexts();
 
   return (
     <View style={{ marginTop: t.space[8] }}>
@@ -66,7 +68,7 @@ function SlotBlock({ slot, date }: { slot: MealSlotDay; date: DiaryDate }) {
         </View>
         <SquareIconButton
           glyph="+"
-          label={`Zu ${slot.name} hinzufügen`}
+          label={txt.diaryAddToSlot(slot.name)}
           onPress={() => router.push({ pathname: '/(tabs)/scan', params: { date, slotId: slot.id, target: 'diary' } })}
         />
       </View>
@@ -87,11 +89,12 @@ function SlotBlock({ slot, date }: { slot: MealSlotDay; date: DiaryDate }) {
 
 function ActivityBlock({ activity }: { activity: NonNullable<DiaryDay['activity']> }) {
   const t = useTheme();
+  const txt = useTexts();
 
   return (
     <View style={{ marginTop: t.space[8] }}>
       <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: t.space[3] }}>
-        <Text style={[t.font.label, { color: t.color.text }]}>Aktivität</Text>
+        <Text style={[t.font.label, { color: t.color.text }]}>{txt.diaryActivity}</Text>
         <Text style={[t.font.micro, t.tabular, { color: t.color.textMuted }]}>+{activity.totalKcal}</Text>
       </View>
       <View style={{ height: 1, backgroundColor: t.color.divider, marginTop: t.space[2] }} />
@@ -104,6 +107,7 @@ function ActivityBlock({ activity }: { activity: NonNullable<DiaryDay['activity'
 
 export default function DiaryScreen() {
   const t = useTheme();
+  const txt = useTexts();
   const [date, setDate] = useState<DiaryDate>(today());
   const [pickerOpen, setPickerOpen] = useState(false);
   const [confirmation, setConfirmation] = useState<string | null>(null);
@@ -127,13 +131,13 @@ export default function DiaryScreen() {
         onPress={() => setPickerOpen(true)}
         style={{ flexDirection: 'row', alignItems: 'center', gap: t.space[2], minHeight: t.hit }}
       >
-        <Text style={[t.font.label, { color: t.color.textMuted }]}>{dayLabel(date)}</Text>
+        <Text style={[t.font.label, { color: t.color.textMuted }]}>{dayLabel(date, txt)}</Text>
         <Text style={[t.font.micro, { color: t.color.accent }]}>▾</Text>
       </Pressable>
 
       <DayTotals totals={d.totals} goal={d.goal} remaining={d.remainingKcal} />
 
-      {isFuture ? <Text style={[t.font.micro, { color: t.color.textMuted, marginTop: t.space[6] }]}>Geplanter Tag</Text> : null}
+      {isFuture ? <Text style={[t.font.micro, { color: t.color.textMuted, marginTop: t.space[6] }]}>{txt.diaryPlannedDay}</Text> : null}
 
       {confirmation ? (
         <View
@@ -148,7 +152,7 @@ export default function DiaryScreen() {
             borderRadius: t.radius.md,
           }}
         >
-          <Text style={[t.font.body, { color: t.color.accent }]}>Eintrag gespeichert</Text>
+          <Text style={[t.font.body, { color: t.color.accent }]}>{txt.diaryEntrySaved}</Text>
           <Text style={[t.font.body, { color: t.color.accent }]}>{confirmation}</Text>
         </View>
       ) : null}
