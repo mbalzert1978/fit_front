@@ -65,3 +65,29 @@ export async function register(request: RegistrationRequest, idempotencyKey: str
   await storeSession(signedIn.session);
   return signedIn;
 }
+
+/**
+ * The body of the second step. Assembled here and not in the screen: the
+ * `Idempotency-Key` hangs on the whole of it.
+ */
+export type PasswordReset = { email: string; code: string; password: string };
+
+/**
+ * Step one: ask for a code. Answers **204 in either case** — whether the
+ * address has an account is no information this endpoint gives out
+ * (`docs/decisions/2026-08-22-1100-passwort-vergessen-laeuft-ueber-einen-code-und-antwortet-immer-gleich.md`).
+ * No `Idempotency-Key`: whoever asks twice wants a second mail.
+ */
+export async function requestPasswordReset(email: string): Promise<void> {
+  await api<void>('/identity/password-reset', { method: 'POST', body: { email } });
+}
+
+/**
+ * Step two: redeem the code and set the new password. No session comes back —
+ * the user signs in once with what they just chose. The key comes from outside,
+ * as with `register`: only the form knows whether a second attempt carries the
+ * same data.
+ */
+export async function confirmPasswordReset(request: PasswordReset, idempotencyKey: string): Promise<void> {
+  await api<void>('/identity/password-reset/confirm', { method: 'POST', idempotencyKey, body: request });
+}

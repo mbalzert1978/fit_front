@@ -68,6 +68,8 @@ export default function LoginScreen() {
       <View style={{ gap: t.space[4], marginTop: t.space[8] }}>
         <OutlineButton label={busy ? txt.loginBusy : txt.loginTitle} onPress={submit} disabled={busy || !email || !password} />
         <OutlineButton label={txt.loginToRegister} variant="muted" onPress={() => router.push('/register')} />
+        {/* Here and not in the settings: whoever needs this way cannot sign in and never gets there. */}
+        <OutlineButton label={txt.resetToReset} variant="muted" onPress={() => router.push('/reset')} />
       </View>
     </Screen>
   );

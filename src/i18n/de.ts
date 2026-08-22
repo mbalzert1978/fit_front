@@ -73,6 +73,21 @@ export const de = {
   registerFailed: 'Registrierung derzeit nicht möglich',
   registerToLogin: 'Ich habe schon ein Konto',
 
+  resetTitle: 'Passwort vergessen',
+  resetToReset: 'Passwort vergessen?',
+  resetAskIntro: 'Wir schicken einen Code an deine E-Mail-Adresse.',
+  resetAsk: 'Code anfordern',
+  resetAskBusy: 'Code wird angefordert …',
+  // Stands there whether the account exists or not: the honest answer would be
+  // information about who has an account here.
+  resetSent: 'Falls es ein Konto mit dieser Adresse gibt, ist der Code unterwegs. Schau auch im Spam-Ordner nach.',
+  resetCode: 'Code aus der E-Mail',
+  resetNewPassword: 'Neues Passwort',
+  resetConfirm: 'Passwort setzen',
+  resetConfirmBusy: 'Passwort wird gesetzt …',
+  resetFailed: 'Zurücksetzen derzeit nicht möglich',
+  resetToLogin: 'Zurück zur Anmeldung',
+
   scanHintBarcode: 'BARCODE IN DEN RAHMEN HALTEN',
   scanHintIngredient: 'ZUTAT SCANNEN — BARCODE IN DEN RAHMEN HALTEN',
   scanSearch: 'Suche',
