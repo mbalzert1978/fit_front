@@ -12,7 +12,7 @@ import {
   problems,
 } from './setup';
 import { api, apiWithMeta, signOut, ApiError } from '../src/api/client';
-import { register, registrationRequest, login } from '../src/api/session';
+import { register, registrationRequest, login, requestPasswordReset, confirmPasswordReset } from '../src/api/session';
 import { setTimeProvider, resetTimeProvider } from '../src/time';
 import { setLanguageProvider, resetLanguageProvider } from '../src/language';
 import { __seedSession, __readSession } from './stubs/expoSecureStore';
@@ -443,6 +443,127 @@ describe('Identity', () => {
 
     await against(p, async () => {
       await expect(api('/identity/me', { method: 'DELETE' })).rejects.toMatchObject({ type: problems.tokenExpired, status: 401 });
+    });
+  });
+
+  /**
+   * Password reset — the way back into an account nobody can sign in to
+   * (`docs/decisions/2026-08-22-1100-passwort-vergessen-laeuft-ueber-einen-code-und-antwortet-immer-gleich.md`).
+   * Read by `app/reset.tsx`, which asks in two steps.
+   */
+  it('nimmt die Anforderung eines Codes an', async () => {
+    const p = provider();
+    p.given('Nutzer a@b.de existiert mit Passwort geheim123')
+      .uponReceiving('Code zum Zuruecksetzen anfordern')
+      .withRequest({
+        method: 'POST',
+        path: '/api/v1/identity/password-reset',
+        // No `Idempotency-Key`: whoever asks twice wants a second mail.
+        headers: jsonHeadersIn('de'),
+        body: { email: 'a@b.de' },
+      })
+      // **204 and not 202 with a body**: there is nothing to report that the
+      // asker may know — every field would be a field telling on the account.
+      .willRespondWith({ status: 204 });
+
+    await against(p, async () => {
+      await expect(requestPasswordReset('a@b.de')).resolves.toBeUndefined();
+    });
+  });
+
+  it('antwortet auf eine unbekannte E-Mail genauso', async () => {
+    const p = provider();
+    // **This** interaction is the decision. Without it the backend could answer
+    // honestly here and still verify green — and the endpoint would be a
+    // directory: whoever tries a list of addresses learns for each one whether
+    // it has an account here.
+    p.given('Keine Registrierung mit unbekannt@b.de vorhanden')
+      .uponReceiving('Code fuer eine unbekannte E-Mail anfordern')
+      .withRequest({
+        method: 'POST',
+        path: '/api/v1/identity/password-reset',
+        headers: jsonHeadersIn('de'),
+        body: { email: 'unbekannt@b.de' },
+      })
+      .willRespondWith({ status: 204 });
+
+    await against(p, async () => {
+      await expect(requestPasswordReset('unbekannt@b.de')).resolves.toBeUndefined();
+    });
+  });
+
+  it('loest den Code ein und gibt keine Sitzung zurueck', async () => {
+    const p = provider();
+    p.given('Fuer a@b.de ist ein Code zum Zuruecksetzen angefordert')
+      .uponReceiving('Code einloesen und neues Passwort setzen')
+      .withRequest({
+        method: 'POST',
+        path: '/api/v1/identity/password-reset/confirm',
+        // The key hangs on the whole body: the code burns, and a lost response
+        // would otherwise read "code invalid" on a password already set.
+        headers: { ...jsonHeadersIn('de'), 'Idempotency-Key': anyIdempotencyKey },
+        body: { email: 'a@b.de', code: '482913', password: 'neuesGeheim1!' },
+      })
+      // 204: no session comes back. Whoever chose a password uses it once.
+      .willRespondWith({ status: 204 });
+
+    await against(p, async () => {
+      const request = { email: 'a@b.de', code: '482913', password: 'neuesGeheim1!' };
+      // Nothing comes back: no session to store, hence the sign-in form follows.
+      await expect(confirmPasswordReset(request, attemptKey)).resolves.toBeUndefined();
+    });
+  });
+
+  it('lehnt einen falschen Code mit 401 ab', async () => {
+    const p = provider();
+    p.given('Fuer a@b.de ist ein Code zum Zuruecksetzen angefordert')
+      .uponReceiving('Code einloesen mit falschem Code')
+      .withRequest({
+        method: 'POST',
+        path: '/api/v1/identity/password-reset/confirm',
+        headers: { ...jsonHeadersIn('de'), 'Idempotency-Key': anyIdempotencyKey },
+        body: { email: 'a@b.de', code: '000000', password: 'neuesGeheim1!' },
+      })
+      // The known identifier and no new one: the code **is** a credential, and a
+      // second name for the same thing is a second name to keep in step.
+      .willRespondWith(problem(problems.invalidCredentials, 'Der Code ist ungültig oder abgelaufen', 401));
+
+    await against(p, async () => {
+      const request = { email: 'a@b.de', code: '000000', password: 'neuesGeheim1!' };
+      await expect(confirmPasswordReset(request, attemptKey)).rejects.toMatchObject({
+        type: problems.invalidCredentials,
+        status: 401,
+      });
+    });
+  });
+
+  it('sagt beim Zuruecksetzen feldweise, was am Passwort nicht stimmt', async () => {
+    const p = provider();
+    p.given('Fuer a@b.de ist ein Code zum Zuruecksetzen angefordert')
+      .uponReceiving('Code einloesen mit zu kurzem Passwort')
+      .withRequest({
+        method: 'POST',
+        path: '/api/v1/identity/password-reset/confirm',
+        headers: { ...jsonHeadersIn('de'), 'Idempotency-Key': anyIdempotencyKey },
+        body: { email: 'a@b.de', code: '482913', password: 'kurz' },
+      })
+      // 422 and per field, as everywhere: `app/reset.tsx` marks the password
+      // field and shows the server's sentence at it.
+      .willRespondWith(
+        problem(problems.validationFailed, 'Die Eingabe ist ungültig', 422, {
+          detail: 'Bitte überprüfen Sie die mit Fehlern markierten Felder',
+          errors: { password: M.eachLike('Das Passwort muss mindestens 10 Zeichen lang sein (aktuell: 4)') },
+        }),
+      );
+
+    await against(p, async () => {
+      const request = { email: 'a@b.de', code: '482913', password: 'kurz' };
+      const e = await confirmPasswordReset(request, attemptKey).catch((err: unknown) => err);
+      expect(e).toBeInstanceOf(ApiError);
+      const error = e as ApiError;
+      expect(error.status).toBe(422);
+      // Exactly what the screen reads: field name onto at least one sentence.
+      expect(error.errors?.password?.[0]).toEqual(expect.any(String));
     });
   });
 

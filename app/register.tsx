@@ -1,14 +1,14 @@
-import React, { useRef, useState } from 'react';
+import React, { useState } from 'react';
 import { Text, View } from 'react-native';
 import { router } from 'expo-router';
 import { Screen, OutlineButton, FormField } from '../src/components';
 import { useTheme } from '../src/theme/ThemeProvider';
 import { useTexts } from '../src/i18n';
-import { register, registrationRequest, minPasswordLength, maxDisplayNameLength, type RegistrationRequest } from '../src/api/session';
+import { register, registrationRequest, minPasswordLength, maxDisplayNameLength } from '../src/api/session';
 import { ApiError } from '../src/api/client';
 import { hintFor } from '../src/api/hints';
 import { problems } from '../src/api/problems';
-import { newId } from '../src/api/ids';
+import { useIdempotencyKey } from '../src/api/idempotency';
 
 /** The fields this form shows. What it has none for, it cannot mark up. */
 const visibleFields = ['displayName', 'email', 'password'] as const;
@@ -37,22 +37,6 @@ function errorsOf(e: unknown): Record<string, string[]> {
   return e instanceof ApiError ? (e.errors ?? {}) : {};
 }
 
-/**
- * The idempotency key hangs on the **data**, not on the keypress: typing the
- * same thing twice is the same attempt. And it hangs on the **whole** body,
- * language and zone included — they are no field of the form and can change
- * between attempts anyway, and the same key on another body is an error
- * (`docs/decisions/2026-08-21-1104-der-schluessel-haengt-am-ganzen-rumpf.md`).
- */
-function useIdempotencyKey() {
-  const attempt = useRef<{ payload: string; key: string } | null>(null);
-  return (r: RegistrationRequest) => {
-    const payload = JSON.stringify(r);
-    if (attempt.current?.payload !== payload) attempt.current = { payload, key: newId() };
-    return attempt.current.key;
-  };
-}
-
 export default function RegisterScreen() {
   const t = useTheme();
   const txt = useTexts();
@@ -65,6 +49,8 @@ export default function RegisterScreen() {
   const [conflict, setConflict] = useState(false);
   const [hint, setHint] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  // On the **whole** body, language and zone included: they are no field of the
+  // form and can change between attempts anyway.
   const keyFor = useIdempotencyKey();
 
   /** One call, one outcome — hence success leads straight to the diary and not back to sign-in. */
