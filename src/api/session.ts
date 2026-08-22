@@ -23,6 +23,17 @@ export async function login(email: string, password: string): Promise<SignIn> {
  */
 export const minPasswordLength = 10;
 
+/**
+ * Upper bound of the password. Not a matter of taste: a password of any length
+ * is a hashing cost the caller picks and the other side pays
+ * (`docs/decisions/2026-08-22-1610-das-passwort-hat-eine-obergrenze.md`).
+ *
+ * The form does **not** cut the input off at it — silently truncating a pasted
+ * secret would leave the user with a password they never chose. It marks it and
+ * keeps the button shut.
+ */
+export const maxPasswordLength = 128;
+
 /** Upper bound of the display name. The form observes it, the server checks again. */
 export const maxDisplayNameLength = 60;
 

@@ -57,7 +57,7 @@ export const en: Partial<Texts> = {
   registerTitle: 'Create account',
   registerBusy: 'Creating account …',
   registerName: 'Name',
-  registerPasswordNote: (min: number) => `At least ${min} characters`,
+  registerPasswordNote: (min: number, max: number) => `${min} to ${max} characters`,
   registerFailed: 'Registration is not possible right now',
   registerToLogin: 'I already have an account',
 

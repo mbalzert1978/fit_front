@@ -81,6 +81,13 @@ const anyInstant = M.datetime("yyyy-MM-dd'T'HH:mm:ss'Z'", '2026-09-20T09:14:22Z'
 
 const registration = { email: 'a@b.de', password: 'geheim123!', displayName: 'Markus' };
 
+/**
+ * One character over the bound in `src/api/session.ts`. Written out and not
+ * `maxPasswordLength + 1`: the contract carries the value the other side has to
+ * refuse, and a constant that moves would move the assurance with it silently.
+ */
+const overlongPassword = 'x'.repeat(129);
+
 describe('Identity', () => {
   it('gibt bei Anmeldung Konto und Sitzung im Umschlag zurück', async () => {
     const p = provider();
@@ -219,6 +226,54 @@ describe('Identity', () => {
       const error = e as ApiError;
       expect(error.type).toBe(problems.emailAlreadyRegistered);
       expect(error.detail).toEqual(expect.any(String));
+    });
+  });
+
+  it('prüft die Felder, bevor es die vergebene Adresse bemerkt', async () => {
+    const p = provider();
+    // The same state as the 409 above, word for word: a second wording would be
+    // a second state the provider has to be able to produce.
+    p.given('Nutzer a@b.de existiert mit Passwort geheim123')
+      .uponReceiving('Registrierung mit vergebener E-Mail und zugleich ungültigen Feldern')
+      .withRequest({
+        method: 'POST',
+        path: '/api/v1/identity/register',
+        headers: { ...jsonHeadersIn('de'), 'Idempotency-Key': anyIdempotencyKey },
+        // Taken address **and** two field violations in one body: only this
+        // combination can tell the two checks apart.
+        body: { ...registration, password: 'kurz', displayName: 'a', locale: 'de', timeZoneId: anyTimeZoneId },
+      })
+      // **422 and not 409** — that is the whole point of this interaction.
+      // Without it the order of the two checks is open, and the backend would
+      // be free to answer 409 first. Then `password: "kurz"` becomes an oracle:
+      // whoever gets 422 knows the address is free, whoever gets 409 knows it
+      // is taken — and learns it without ever sending a password that could
+      // create an account.
+      .willRespondWith(
+        problem(problems.validationFailed, 'Die Eingabe ist ungültig', 422, {
+          detail: 'Bitte überprüfen Sie die mit Fehlern markierten Felder',
+          errors: {
+            // No `email` entry: the address itself breaks no field rule. That
+            // it is taken stays unsaid here — it is the conflict check's word,
+            // and that one has not run yet.
+            password: M.eachLike('Das Passwort muss mindestens 10 Zeichen lang sein (aktuell: 4)'),
+            displayName: M.eachLike('Der Name muss mindestens 2 Zeichen lang sein (aktuell: 1)'),
+          },
+        }),
+      );
+
+    await against(p, async () => {
+      const e = await register(registrationRequest({ email: registration.email, password: 'kurz', displayName: 'a' }), attemptKey).catch(
+        (err: unknown) => err,
+      );
+      expect(e).toBeInstanceOf(ApiError);
+      const error = e as ApiError;
+      expect(error.status).toBe(422);
+      expect(error.type).toBe(problems.validationFailed);
+      // Explicitly **not** the conflict: field validation comes first.
+      expect(error.type).not.toBe(problems.emailAlreadyRegistered);
+      expect(error.errors?.password?.[0]).toEqual(expect.any(String));
+      expect(error.errors?.displayName?.[0]).toEqual(expect.any(String));
     });
   });
 
@@ -366,6 +421,99 @@ describe('Identity', () => {
       // reader this endpoint would be an assurance nobody needs.
       const me = await api<AccountUser>('/identity/me');
       expect(me.displayName).toBeTruthy();
+      expect(me.email).toBeTruthy();
+    });
+  });
+
+  it('lehnt ein Passwort über der Obergrenze feldweise ab', async () => {
+    const p = provider();
+    p.given('Keine Registrierung mit a@b.de vorhanden')
+      .uponReceiving('Registrierung mit einem Passwort über der Obergrenze')
+      .withRequest({
+        method: 'POST',
+        path: '/api/v1/identity/register',
+        headers: { ...jsonHeadersIn('de'), 'Idempotency-Key': anyIdempotencyKey },
+        body: { ...registration, password: overlongPassword, locale: 'de', timeZoneId: anyTimeZoneId },
+      })
+      // Without an upper bound the caller picks how much work the other side
+      // does per attempt: a megabyte of password is one hash over a megabyte,
+      // and a handful of requests is a machine. **422** and not 400 — the body
+      // is readable, the value in it breaks a rule, and the form has a field to
+      // mark for it. The bound itself is the assurance, not the wording.
+      .willRespondWith(
+        problem(problems.validationFailed, 'Die Eingabe ist ungültig', 422, {
+          detail: 'Bitte überprüfen Sie die mit Fehlern markierten Felder',
+          errors: {
+            password: M.eachLike('Das Passwort darf höchstens 128 Zeichen lang sein (aktuell: 129)'),
+          },
+        }),
+      );
+
+    await against(p, async () => {
+      // Past the form on purpose: it keeps the bound itself, and the contract
+      // exists precisely because it must not be the only one who does.
+      const e = await register(registrationRequest({ ...registration, password: overlongPassword }), attemptKey).catch(
+        (err: unknown) => err,
+      );
+      expect(e).toBeInstanceOf(ApiError);
+      const error = e as ApiError;
+      expect(error.status).toBe(422);
+      expect(error.errors?.password?.[0]).toEqual(expect.any(String));
+    });
+  });
+
+  it('gibt auf einen schon vergebenen Schlüssel mit anderem Rumpf keine zweite Antwort', async () => {
+    const p = provider();
+    p.given('Unter dem Registrierungs-Schlüssel liegt schon ein Versuch mit anderem Rumpf')
+      .uponReceiving('Registrierung unter einem schon vergebenen Schlüssel')
+      .withRequest({
+        method: 'POST',
+        path: '/api/v1/identity/register',
+        // The key as a **value** and no matcher: the state names the key that
+        // was spent, and the assurance is about this one and no other.
+        headers: { ...jsonHeadersIn('de'), 'Idempotency-Key': attemptKey },
+        body: { ...registration, password: 'einanderes123!', locale: 'de', timeZoneId: anyTimeZoneId },
+      })
+      // No screen tells this case apart, and the form cannot produce it — the
+      // key hangs on the whole body. It stands here for what the other side
+      // would otherwise be free to do: **replay** the first response. The user
+      // corrects their password, tries again, reads 201 and a session — and the
+      // account carries the password from the first attempt, which they never
+      // learn. **409** and not 400: the body is sound, the state it lands in is
+      // not.
+      .willRespondWith(
+        problem(problems.idempotencyKeyReused, 'Dieser Schlüssel gehört zu einem anderen Versuch', 409, {
+          detail: 'Unter diesem Idempotency-Key wurde bereits ein Aufruf mit anderem Inhalt beantwortet',
+        }),
+      );
+
+    await against(p, async () => {
+      const e = await register(registrationRequest({ ...registration, password: 'einanderes123!' }), attemptKey).catch(
+        (err: unknown) => err,
+      );
+      expect(e).toBeInstanceOf(ApiError);
+      const error = e as ApiError;
+      expect(error.status).toBe(409);
+      expect(error.type).toBe(problems.idempotencyKeyReused);
+    });
+  });
+
+  it('lässt ein frisch angelegtes Konto sofort an seine eigenen Daten', async () => {
+    const p = provider();
+    // Its own state: the account exists, its address was never proven. The
+    // session out of `/identity/register` is the only thing standing behind it.
+    p.given('Nutzer a@b.de ist frisch registriert und hat seine Adresse nicht bestätigt')
+      .uponReceiving('Eigenes Konto direkt nach der Registrierung laden')
+      .withRequest({ method: 'GET', path: '/api/v1/identity/me', headers: authHeadersIn('de') })
+      // Without this assurance the backend would be free to hold an unconfirmed
+      // account at arm's length — a 403 here, and the diary the screen jumps to
+      // after registering would stand empty with no way forward. What a proof
+      // of address changes about this is a decision of its own
+      // (`docs/decisions/2026-08-22-1520-die-registrierung-liefert-eine-sitzung-ohne-nachweis-ueber-die-adresse.md`).
+      .willRespondWith({ status: 200, headers: privateHeaders, body: enveloped(user) });
+
+    await against(p, async () => {
+      const me = await api<AccountUser>('/identity/me');
       expect(me.email).toBeTruthy();
     });
   });
