@@ -48,6 +48,9 @@ const anyIdempotencyKey = M.uuid();
 /** The value the form draws in this run; the contract carries it as a form. */
 const attemptKey = '3f2a1b0c-4d5e-4f60-8a91-b2c3d4e5f607';
 
+/** A second attempt draws a second key; the code stays the same one. */
+const secondAttemptKey = '7c1d2e3f-8a9b-4c0d-9e1f-2a3b4c5d6e70';
+
 const session = {
   tokenType: 'Bearer',
   accessToken: M.string('eyJhbGciOi...'),
@@ -564,6 +567,103 @@ describe('Identity', () => {
       expect(error.status).toBe(422);
       // Exactly what the screen reads: field name onto at least one sentence.
       expect(error.errors?.password?.[0]).toEqual(expect.any(String));
+    });
+  });
+
+  it('beendet die alten Sitzungen mit dem Zuruecksetzen', async () => {
+    const p = provider();
+    // Without this interaction the provider may let the old sessions run on: a
+    // stolen refresh token would survive the very act meant to get rid of it,
+    // and the reset would take back the password without taking back the access.
+    p.given('Fuer a@b.de ist ein Code eingeloest')
+      .uponReceiving('Sitzung mit einem Refresh-Token von vor dem Zuruecksetzen erneuern')
+      .withRequest({
+        method: 'POST',
+        path: '/api/v1/identity/refresh',
+        headers: jsonHeadersIn('de'),
+        body: { refreshToken: M.string('rt_vor_dem_zuruecksetzen') },
+      })
+      .willRespondWith(unauthorized());
+
+    await against(p, async () => {
+      await expect(
+        apiWithMeta<{ session: Session }>('/identity/refresh', { method: 'POST', body: { refreshToken: 'rt_vor_dem_zuruecksetzen' } }),
+      ).rejects.toMatchObject({ type: problems.tokenExpired, status: 401 });
+    });
+  });
+
+  it('gibt beim Einloesen kein Verzeichnis her', async () => {
+    const p = provider();
+    // The protection against enumeration stands only at `/password-reset`. Left
+    // out here, a `404 "kein Konto"` at the second endpoint verifies green — and
+    // the same list of addresses is answered one call further along.
+    p.given('Keine Registrierung mit unbekannt@b.de vorhanden')
+      .uponReceiving('Code einloesen fuer eine unbekannte E-Mail')
+      .withRequest({
+        method: 'POST',
+        path: '/api/v1/identity/password-reset/confirm',
+        headers: { ...jsonHeadersIn('de'), 'Idempotency-Key': anyIdempotencyKey },
+        body: { email: 'unbekannt@b.de', code: '482913', password: 'neuesGeheim1!' },
+      })
+      // The **same** answer as for a wrong code, down to the identifier.
+      .willRespondWith(problem(problems.invalidCredentials, 'Der Code ist ungültig oder abgelaufen', 401));
+
+    await against(p, async () => {
+      const request = { email: 'unbekannt@b.de', code: '482913', password: 'neuesGeheim1!' };
+      await expect(confirmPasswordReset(request, attemptKey)).rejects.toMatchObject({
+        type: problems.invalidCredentials,
+        status: 401,
+      });
+    });
+  });
+
+  it('prueft den Code vor den Feldern', async () => {
+    const p = provider();
+    // The two error cases above each change one thing at a time and leave the
+    // order open. Checking the fields first makes a deliberately short password
+    // an oracle for the code: the 422 tells the code was right, and a rejected
+    // body does not burn it — the attempt is free and repeatable.
+    p.given('Fuer a@b.de ist ein Code zum Zuruecksetzen angefordert')
+      .uponReceiving('Code einloesen mit falschem Code und zu kurzem Passwort')
+      .withRequest({
+        method: 'POST',
+        path: '/api/v1/identity/password-reset/confirm',
+        headers: { ...jsonHeadersIn('de'), 'Idempotency-Key': anyIdempotencyKey },
+        body: { email: 'a@b.de', code: '000000', password: 'kurz' },
+      })
+      // 401 and not 422: the credential decides, the fields come after.
+      .willRespondWith(problem(problems.invalidCredentials, 'Der Code ist ungültig oder abgelaufen', 401));
+
+    await against(p, async () => {
+      const request = { email: 'a@b.de', code: '000000', password: 'kurz' };
+      await expect(confirmPasswordReset(request, attemptKey)).rejects.toMatchObject({
+        type: problems.invalidCredentials,
+        status: 401,
+      });
+    });
+  });
+
+  it('verbrennt den Code beim Einloesen', async () => {
+    const p = provider();
+    // That the code is used up stood only in a comment. The **different** key is
+    // the point: on the same key and the same body the server would repeat its
+    // stored first answer, and a code valid for ever would verify green.
+    p.given('Der Code 482913 wurde bereits eingeloest')
+      .uponReceiving('Denselben Code ein zweites Mal einloesen')
+      .withRequest({
+        method: 'POST',
+        path: '/api/v1/identity/password-reset/confirm',
+        headers: { ...jsonHeadersIn('de'), 'Idempotency-Key': anyIdempotencyKey },
+        body: { email: 'a@b.de', code: '482913', password: 'nochEinAnderes1!' },
+      })
+      .willRespondWith(problem(problems.invalidCredentials, 'Der Code ist ungültig oder abgelaufen', 401));
+
+    await against(p, async () => {
+      const request = { email: 'a@b.de', code: '482913', password: 'nochEinAnderes1!' };
+      await expect(confirmPasswordReset(request, secondAttemptKey)).rejects.toMatchObject({
+        type: problems.invalidCredentials,
+        status: 401,
+      });
     });
   });
 

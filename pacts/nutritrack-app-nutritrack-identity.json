@@ -271,6 +271,91 @@
       }
     },
     {
+      "description": "Code einloesen fuer eine unbekannte E-Mail",
+      "providerStates": [
+        {
+          "name": "Keine Registrierung mit unbekannt@b.de vorhanden"
+        }
+      ],
+      "request": {
+        "body": {
+          "code": "482913",
+          "email": "unbekannt@b.de",
+          "password": "neuesGeheim1!"
+        },
+        "generators": {
+          "header": {
+            "Idempotency-Key": {
+              "type": "Uuid"
+            }
+          }
+        },
+        "headers": {
+          "Accept-Language": "de",
+          "Content-Type": "application/json",
+          "Idempotency-Key": "e2490de5-5bd3-43d5-b7c4-526e33f71304"
+        },
+        "matchingRules": {
+          "header": {
+            "Idempotency-Key": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
+                }
+              ]
+            }
+          }
+        },
+        "method": "POST",
+        "path": "/api/v1/identity/password-reset/confirm"
+      },
+      "response": {
+        "body": {
+          "detail": "Der Code ist ungültig oder abgelaufen",
+          "instance": "/api/v1/example",
+          "status": 401,
+          "title": "Der Code ist ungültig oder abgelaufen",
+          "type": "tag:nutritrack.app,2026:problems/invalid-credentials"
+        },
+        "headers": {
+          "Content-Language": "de-DE",
+          "Content-Type": "application/problem+json"
+        },
+        "matchingRules": {
+          "body": {
+            "$.detail": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.instance": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "^/api/v1/.+"
+                }
+              ]
+            },
+            "$.title": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            }
+          }
+        },
+        "status": 401
+      }
+    },
+    {
       "description": "Code einloesen mit falschem Code",
       "providerStates": [
         {
@@ -282,6 +367,91 @@
           "code": "000000",
           "email": "a@b.de",
           "password": "neuesGeheim1!"
+        },
+        "generators": {
+          "header": {
+            "Idempotency-Key": {
+              "type": "Uuid"
+            }
+          }
+        },
+        "headers": {
+          "Accept-Language": "de",
+          "Content-Type": "application/json",
+          "Idempotency-Key": "e2490de5-5bd3-43d5-b7c4-526e33f71304"
+        },
+        "matchingRules": {
+          "header": {
+            "Idempotency-Key": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
+                }
+              ]
+            }
+          }
+        },
+        "method": "POST",
+        "path": "/api/v1/identity/password-reset/confirm"
+      },
+      "response": {
+        "body": {
+          "detail": "Der Code ist ungültig oder abgelaufen",
+          "instance": "/api/v1/example",
+          "status": 401,
+          "title": "Der Code ist ungültig oder abgelaufen",
+          "type": "tag:nutritrack.app,2026:problems/invalid-credentials"
+        },
+        "headers": {
+          "Content-Language": "de-DE",
+          "Content-Type": "application/problem+json"
+        },
+        "matchingRules": {
+          "body": {
+            "$.detail": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.instance": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "^/api/v1/.+"
+                }
+              ]
+            },
+            "$.title": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            }
+          }
+        },
+        "status": 401
+      }
+    },
+    {
+      "description": "Code einloesen mit falschem Code und zu kurzem Passwort",
+      "providerStates": [
+        {
+          "name": "Fuer a@b.de ist ein Code zum Zuruecksetzen angefordert"
+        }
+      ],
+      "request": {
+        "body": {
+          "code": "000000",
+          "email": "a@b.de",
+          "password": "kurz"
         },
         "generators": {
           "header": {
@@ -541,6 +711,91 @@
       },
       "response": {
         "status": 204
+      }
+    },
+    {
+      "description": "Denselben Code ein zweites Mal einloesen",
+      "providerStates": [
+        {
+          "name": "Der Code 482913 wurde bereits eingeloest"
+        }
+      ],
+      "request": {
+        "body": {
+          "code": "482913",
+          "email": "a@b.de",
+          "password": "nochEinAnderes1!"
+        },
+        "generators": {
+          "header": {
+            "Idempotency-Key": {
+              "type": "Uuid"
+            }
+          }
+        },
+        "headers": {
+          "Accept-Language": "de",
+          "Content-Type": "application/json",
+          "Idempotency-Key": "e2490de5-5bd3-43d5-b7c4-526e33f71304"
+        },
+        "matchingRules": {
+          "header": {
+            "Idempotency-Key": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
+                }
+              ]
+            }
+          }
+        },
+        "method": "POST",
+        "path": "/api/v1/identity/password-reset/confirm"
+      },
+      "response": {
+        "body": {
+          "detail": "Der Code ist ungültig oder abgelaufen",
+          "instance": "/api/v1/example",
+          "status": 401,
+          "title": "Der Code ist ungültig oder abgelaufen",
+          "type": "tag:nutritrack.app,2026:problems/invalid-credentials"
+        },
+        "headers": {
+          "Content-Language": "de-DE",
+          "Content-Type": "application/problem+json"
+        },
+        "matchingRules": {
+          "body": {
+            "$.detail": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.instance": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "^/api/v1/.+"
+                }
+              ]
+            },
+            "$.title": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            }
+          }
+        },
+        "status": 401
       }
     },
     {
@@ -1783,6 +2038,80 @@
           }
         },
         "status": 200
+      }
+    },
+    {
+      "description": "Sitzung mit einem Refresh-Token von vor dem Zuruecksetzen erneuern",
+      "providerStates": [
+        {
+          "name": "Fuer a@b.de ist ein Code eingeloest"
+        }
+      ],
+      "request": {
+        "body": {
+          "refreshToken": "rt_vor_dem_zuruecksetzen"
+        },
+        "headers": {
+          "Accept-Language": "de",
+          "Content-Type": "application/json"
+        },
+        "matchingRules": {
+          "body": {
+            "$.refreshToken": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            }
+          }
+        },
+        "method": "POST",
+        "path": "/api/v1/identity/refresh"
+      },
+      "response": {
+        "body": {
+          "detail": "Anmeldung abgelaufen",
+          "instance": "/api/v1/example",
+          "status": 401,
+          "title": "Anmeldung abgelaufen",
+          "type": "tag:nutritrack.app,2026:problems/token-expired"
+        },
+        "headers": {
+          "Content-Language": "de-DE",
+          "Content-Type": "application/problem+json"
+        },
+        "matchingRules": {
+          "body": {
+            "$.detail": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.instance": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "^/api/v1/.+"
+                }
+              ]
+            },
+            "$.title": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            }
+          }
+        },
+        "status": 401
       }
     }
   ],
