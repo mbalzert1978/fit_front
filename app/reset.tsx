@@ -4,7 +4,7 @@ import { router } from 'expo-router';
 import { Screen, OutlineButton, FormField } from '../src/components';
 import { useTheme } from '../src/theme/ThemeProvider';
 import { useTexts, type Texts } from '../src/i18n';
-import { requestPasswordReset, confirmPasswordReset, minPasswordLength } from '../src/api/session';
+import { requestPasswordReset, confirmPasswordReset, minPasswordLength, maxPasswordLength } from '../src/api/session';
 import { ApiError } from '../src/api/client';
 import { hintFor } from '../src/api/hints';
 import { problems } from '../src/api/problems';
@@ -38,6 +38,7 @@ function ConfirmStep({
   const [code, setCode] = useState('');
   const [password, setPassword] = useState('');
   const tooShort = password.length > 0 && password.length < minPasswordLength;
+  const tooLong = password.length > maxPasswordLength;
 
   return (
     <>
@@ -54,8 +55,8 @@ function ConfirmStep({
         <FormField
           label={txt.resetNewPassword}
           hints={passwordHints}
-          note={txt.registerPasswordNote(minPasswordLength)}
-          noteInvalid={tooShort}
+          note={txt.registerPasswordNote(minPasswordLength, maxPasswordLength)}
+          noteInvalid={tooShort || tooLong}
           value={password}
           onChangeText={setPassword}
           secureTextEntry
@@ -66,7 +67,7 @@ function ConfirmStep({
         <OutlineButton
           label={busy ? txt.resetConfirmBusy : txt.resetConfirm}
           onPress={() => onConfirm(code, password)}
-          disabled={busy || !code || password.length < minPasswordLength}
+          disabled={busy || !code || password.length < minPasswordLength || tooLong}
         />
       </View>
     </>

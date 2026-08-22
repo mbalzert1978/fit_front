@@ -20,6 +20,15 @@ export const problems = {
    */
   malformedRequest: `${server}malformed-request`,
   emailAlreadyRegistered: `${server}email-already-registered`,
+  /**
+   * The same `Idempotency-Key` came back on a **different** body — **409**, and
+   * not the 400 of a broken body: the body is readable and well formed, it is
+   * the pairing with an already spent key that the state on the other side
+   * rules out. No screen tells this case apart; it stands here because without
+   * it the other side would be free to replay the first response instead
+   * (`docs/decisions/2026-08-22-1620-der-schluessel-bindet-den-rumpf-und-ein-zweiter-rumpf-ist-ein-konflikt.md`).
+   */
+  idempotencyKeyReused: `${server}idempotency-key-reused`,
   invalidCredentials: `${server}invalid-credentials`,
   tokenExpired: `${server}token-expired`,
   forbidden: `${server}forbidden`,

@@ -4,7 +4,7 @@ import { router } from 'expo-router';
 import { Screen, OutlineButton, FormField } from '../src/components';
 import { useTheme } from '../src/theme/ThemeProvider';
 import { useTexts } from '../src/i18n';
-import { register, registrationRequest, minPasswordLength, maxDisplayNameLength } from '../src/api/session';
+import { register, registrationRequest, minPasswordLength, maxPasswordLength, maxDisplayNameLength } from '../src/api/session';
 import { ApiError } from '../src/api/client';
 import { hintFor } from '../src/api/hints';
 import { problems } from '../src/api/problems';
@@ -73,8 +73,11 @@ export default function RegisterScreen() {
     }
   }
 
-  // The one own rule stands before the call; everything else the server checks.
+  // The two own rules stand before the call; everything else the server checks.
+  // No `maxLength` on the field instead: cutting a pasted secret off in silence
+  // would sign the user up with a password they never chose.
   const tooShort = password.length > 0 && password.length < minPasswordLength;
+  const tooLong = password.length > maxPasswordLength;
   const nameOk = name.trim().length > 0;
 
   return (
@@ -103,8 +106,8 @@ export default function RegisterScreen() {
         <FormField
           label={txt.loginPassword}
           hints={fields.password}
-          note={txt.registerPasswordNote(minPasswordLength)}
-          noteInvalid={tooShort}
+          note={txt.registerPasswordNote(minPasswordLength, maxPasswordLength)}
+          noteInvalid={tooShort || tooLong}
           value={password}
           onChangeText={setPassword}
           secureTextEntry
@@ -116,7 +119,7 @@ export default function RegisterScreen() {
         <OutlineButton
           label={busy ? txt.registerBusy : txt.registerTitle}
           onPress={submit}
-          disabled={busy || !nameOk || !email || password.length < minPasswordLength}
+          disabled={busy || !nameOk || !email || password.length < minPasswordLength || tooLong}
         />
         {/* Back and not replace: otherwise the sign-in form would stand twice in the stack. */}
         <OutlineButton

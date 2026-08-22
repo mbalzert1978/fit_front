@@ -97,8 +97,20 @@ export const privateHeaders = { ...jsonHeaders, 'Cache-Control': 'no-store' };
  */
 export const authResponseHeaders = { ...privateHeaders, 'X-Request-Id': M.string(REQUEST_ID) };
 
-/** Errors carry no envelope: `problem+json` stays as RFC 9457 describes it. */
-export const problemHeaders = { 'Content-Type': 'application/problem+json' };
+/**
+ * Errors carry no envelope: `problem+json` stays as RFC 9457 describes it.
+ *
+ * `no-store` stands on **every** error, not only where one looks personal: the
+ * 409 of registration carries the email address in plain text in its body, and
+ * without the header NSURLCache and OkHttp put it unencrypted into the cache
+ * directory — the same reasoning as on `privateHeaders`. Which error carries
+ * personal data is decided by the wording of a `detail` that belongs to the
+ * other side, so the assurance cannot hang on a case-by-case judgement here.
+ */
+export const problemHeaders = {
+  'Content-Type': 'application/problem+json',
+  'Cache-Control': 'no-store',
+};
 
 /**
  * The language the server answered in, as it names it: a full tag with region.

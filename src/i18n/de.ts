@@ -69,7 +69,7 @@ export const de = {
   registerTitle: 'Konto anlegen',
   registerBusy: 'Konto wird angelegt …',
   registerName: 'Name',
-  registerPasswordNote: (min: number) => `Mindestens ${min} Zeichen`,
+  registerPasswordNote: (min: number, max: number) => `${min} bis ${max} Zeichen`,
   registerFailed: 'Registrierung derzeit nicht möglich',
   registerToLogin: 'Ich habe schon ein Konto',
 

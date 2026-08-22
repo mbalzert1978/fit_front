@@ -49,6 +49,7 @@
           "type": "tag:nutritrack.app,2026:problems/forbidden"
         },
         "headers": {
+          "Cache-Control": "no-store",
           "Content-Language": "de-DE",
           "Content-Type": "application/problem+json"
         },
@@ -681,6 +682,7 @@
           "type": "tag:nutritrack.app,2026:problems/concurrency-conflict"
         },
         "headers": {
+          "Cache-Control": "no-store",
           "Content-Language": "de-DE",
           "Content-Type": "application/problem+json"
         },
@@ -1443,6 +1445,7 @@
           "type": "tag:nutritrack.app,2026:problems/token-expired"
         },
         "headers": {
+          "Cache-Control": "no-store",
           "Content-Language": "de-DE",
           "Content-Type": "application/problem+json"
         },
