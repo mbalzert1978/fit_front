@@ -5,7 +5,7 @@ import { en } from './en';
 
 /**
  * The layer in front of the resource files; which language applies is decided by
- * the seam in `src/language.ts` (`docs/regeln.md`, Beschriftungen).
+ * the seam in `src/language.ts` (`.rules/app/beschriftungen.md`).
  *
  * The fallback is a spread and no lookup: the German version is complete, so a
  * missing sentence is German and never a key.

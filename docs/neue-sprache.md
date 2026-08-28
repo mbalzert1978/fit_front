@@ -1,23 +1,15 @@
 # Eine neue Sprache beitragen
 
 Anleitung für einen Agenten, der dieser App eine Sprache hinzufügt und das Ergebnis als Pull
-Request auf GitHub einreicht. Sie ersetzt nicht [`regeln.md`](regeln.md) — was dort steht, gilt
+Request auf GitHub einreicht. Sie ersetzt nicht das Regelwerk unter [`../.rules/`](../.rules/) — was dort steht, gilt
 auch hier.
 
 Beispiel durchgehend: Französisch, `fr`. Ersetze die Kennung durch deine.
 
-## 0. Vorbedingung — vor der ersten Zeile Code prüfen
-
-`supportedLanguages` in [`../src/language.ts`](../src/language.ts) ist **eine Zusage der
-Gegenseite, kein Wunsch von hier**: das Backend nimmt beim Anlegen eines Kontos genau diese
-Kennungen als `locale` an und lehnt jede andere ab.
-
-Nimmt das Backend `fr` **nicht** an, bricht die Registrierung für jeden, der die Sprache wählt.
-Dann wird hier nichts eingetragen. Öffne stattdessen ein Issue, das die Kennung dort einfordert,
-und verlinke es. Das ist kein Blocker aus Vorsicht, sondern ein kaputter Ablauf.
-
-Bist du unsicher, ob das Backend die Kennung kennt: **frag nach, statt es anzunehmen.** Es gibt
-keine Quelle außerhalb dieses Repositories, in der du das nachschlagen könntest.
+Die Kennung wird eingetragen, nicht abgestimmt: `supportedLanguages` in
+[`../src/language.ts`](../src/language.ts) fährt als `locale` in die Registrierung, und der Vertrag
+bestellt sie damit beim Provider. Auf eine Zusage von drüben wird nicht gewartet (Regel 8 in
+[`../.rules/app/vertraege.md`](../.rules/app/vertraege.md)).
 
 ## 1. Branch
 
@@ -75,23 +67,22 @@ letzte fasst zwei an. Die sechste kommt weiter unten dazu, unter „4. Prüfen".
 
 - **Die Verträge.** `git diff pacts/` muss nach `./make.ps1 test` leer bleiben. Eine dritte Sprache
   sichert nichts zu, was die beiden vorhandenen Interaktionen nicht schon zeigen (Regel 10 in
-  [`regeln.md`](regeln.md)); ein zusätzlicher Fall in [`../pact/`](../pact/) bläht den Vertrag,
+  [`../.rules/app/vertraege.md`](../.rules/app/vertraege.md)); ein zusätzlicher Fall in [`../pact/`](../pact/) bläht den Vertrag,
   ohne etwas zu belegen.
-- **Sätze des Servers.** `title`, `detail` und jeder Satz in `errors` kommen in der Sprache der
-  Anfrage und gehen unverändert auf den Schirm. Übersetze sie nicht, und lege keine Tabelle dafür
-  an.
+- **Sätze des Servers.** Sie werden nicht übersetzt, und eine Tabelle dafür gibt es nicht
+  ([`../.rules/app/beschriftungen.md`](../.rules/app/beschriftungen.md)).
 - **Die deutsche Fassung.** [`de.ts`](../src/i18n/de.ts) ist die vollständige Liste und der
   Rückfall. Sie ändert sich nur, wenn ein neuer Schlüssel entsteht.
-- **Die Reihenfolge, in der die Sprache gilt** (gewählte Vorliebe vor Gerätesprache, sonst
-  Deutsch). Sie steht in [`../src/language.ts`](../src/language.ts) und ist nicht Teil eines
-  Sprachbeitrags.
+- **Die Reihenfolge, in der die Sprache gilt.** Sie steht als Regel in
+  [`../.rules/app/http-schicht.md`](../.rules/app/http-schicht.md), gebaut in
+  [`../src/language.ts`](../src/language.ts), und ist nicht Teil eines Sprachbeitrags.
 
 ## 4. Prüfen
 
 Hier kommt die sechste Datei dazu.
 
 ```sh
-./make.ps1 ci        # lint, format-check, typecheck, complexity, test
+./make.ps1 ci            # der Lauf vor jedem Push
 git diff --stat pacts/   # muss leer sein
 ```
 
@@ -119,8 +110,6 @@ gh pr create --base main --fill  # Titel und Beschreibung deutsch
 In die Beschreibung gehören:
 
 - die Kennung und der Stand der Übersetzung („vollständig" oder „N Schlüssel offen"),
-- der Beleg, dass das Backend `locale = 'fr'` annimmt (Schritt 0) — oder der Link auf das Issue,
-  das es einfordert,
 - die Zeile, dass `./make.ps1 ci` grün lief und `pacts/` unverändert blieb.
 
 Kein Push auf `main`, kein Merge des eigenen PR. Hast du kein Schreibrecht, arbeite auf einem Fork
@@ -128,7 +117,7 @@ und öffne den PR von dort.
 
 ## Fertig, wenn
 
-- [ ] Die Kennung steht in `supportedLanguages`, und das Backend nimmt sie an.
+- [ ] Die Kennung steht in `supportedLanguages`.
 - [ ] `src/i18n/<kennung>.ts` liegt vor, ist `Partial<Texts>`, und nichts darin ist geraten.
 - [ ] Das Bündel ist in `src/i18n/index.ts` registriert, der Schalter zeigt die Sprache.
 - [ ] Der Rückfalltest für die neue Sprache läuft.

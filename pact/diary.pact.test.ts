@@ -6,7 +6,7 @@ import { parseDiaryDate } from '../src/api/diaryDate';
  * Needed by: `app/(tabs)/diary.tsx`, `app/entry/[id].tsx`,
  * `app/(tabs)/settings.tsx` (meal slots) and `app/(tabs)/scan.tsx`.
  *
- * Assured is only what these screens read (`docs/regeln.md` rule 2).
+ * Assured is only what these screens read (`.rules/app/vertraege.md` rule 2).
  * `sourceType`/`sourceId` on the entry are missing deliberately — no screen
  * touches them; `isFuture` too, see
  * `docs/decisions/2026-08-20-0925-kalendertag-ist-reine-client-sache.md`;

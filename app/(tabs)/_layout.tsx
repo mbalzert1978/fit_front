@@ -6,7 +6,7 @@ import { useTexts } from '../../src/i18n';
 
 /**
  * Four destinations, visible on every screen, without back arrows
- * (`docs/regeln.md`, Prüfliste). Detail screens lie above as a stack and leave
+ * (`.rules/app/abnahme.md`). Detail screens lie above as a stack and leave
  * their tab active.
  */
 function TabLabel({ children, focused }: { children: string; focused: boolean }) {

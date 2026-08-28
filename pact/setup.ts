@@ -5,12 +5,12 @@ import { useBaseUrl } from '../src/api/client';
 import { problems } from '../src/api/problems';
 import type { Language } from '../src/language';
 
-/** From the app's own source and not a second literal here (`docs/regeln.md` rule 3). */
+/** From the app's own source and not a second literal here (`.rules/app/vertraege.md` rule 3). */
 export { problems };
 
 export const M = MatchersV3;
 
-/** One pact per consumer/provider pair; the versioned file in ./pacts is the handover (`docs/regeln.md` rule 7). */
+/** One pact per consumer/provider pair; the versioned file in ./pacts is the handover (`.rules/app/vertraege.md` rule 7). */
 export function pact(provider: string) {
   return new PactV3({
     consumer: 'nutritrack-app',
@@ -37,7 +37,7 @@ export function against(p: PactV3, run: (mock: V3MockServer) => Promise<unknown>
 const REQUEST_ID = '01JQ8Z3K7V9XW2P4M6N8R0T5YB';
 
 /**
- * The envelope (`docs/regeln.md` rule 9). No screen reads `meta`, so it carries
+ * The envelope (`.rules/app/vertraege.md` rule 9). No screen reads `meta`, so it carries
  * loose matchers throughout: a new ULID or another timestamp must not break a
  * verification.
  */
@@ -56,7 +56,7 @@ export const jsonHeaders = { 'Content-Type': 'application/json' };
 /**
  * Stands in **every** contract of a protected endpoint, not only where a screen
  * notices it: without it a backend serving the same endpoint unauthenticated
- * would verify green (`docs/regeln.md` rule 2).
+ * would verify green (`.rules/app/vertraege.md` rule 2).
  *
  * Not exported: only the forms **with** a language go out, because the client
  * always names one.
@@ -66,7 +66,7 @@ const authHeaders = { Authorization: M.regex('Bearer .+', 'Bearer eyJ...') };
 /**
  * A **fixed value** and not a matcher: an assurance about the form ("some
  * language tag") would say nothing about which language the server answers in
- * (`docs/regeln.md` rule 10).
+ * (`.rules/app/vertraege.md` rule 10).
  */
 export const acceptLanguage = (tag: Language) => ({ 'Accept-Language': tag });
 
@@ -123,7 +123,7 @@ const negotiated: Record<Language, string> = { de: 'de-DE', en: 'en-US' };
 
 /**
  * An error as an assurance, in the full RFC 9457 shape that stands in **every**
- * error assurance (`docs/regeln.md` rules 2 and 3). `type` is a fixed value:
+ * error assurance (`.rules/app/vertraege.md` rules 2 and 3). `type` is a fixed value:
  * the client decides on it, and another value is another kind of error.
  * `title`, `detail` and `instance` are matchers — their wording belongs to the
  * other side.
@@ -154,7 +154,7 @@ export const problem = (
 /**
  * The whole renewal in `src/api/client.ts` hangs on this **401**: a 200 with an
  * empty body, a redirect or a 500 would run the app into a dead session without
- * it noticing. Hence the case stands in every context (`docs/regeln.md` rule 4).
+ * it noticing. Hence the case stands in every context (`.rules/app/vertraege.md` rule 4).
  */
 export const unauthorized = () => problem(problems.tokenExpired, 'Anmeldung abgelaufen', 401);
 
