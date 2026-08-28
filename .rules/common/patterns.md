@@ -12,8 +12,8 @@ Vor einer neuen Implementierung:
 4. Innerhalb der erprobten Struktur weiterarbeiten
 
 Ein zweiter Weg für dasselbe Element ist der Befund, nicht die Lösung: kein zweiter `fetch` neben
-[`src/api/client.ts`](../../src/api/client.ts), keine zweite Komponente für einen Knopf, den es
-gibt ([`CLAUDE.md`](../../CLAUDE.md)).
+[`src/api/client.ts`](../../src/api/client.ts) ([`../app/http-schicht.md`](../app/http-schicht.md)),
+keine zweite Komponente für einen Knopf, den es gibt.
 
 ## Entwurfsmuster
 

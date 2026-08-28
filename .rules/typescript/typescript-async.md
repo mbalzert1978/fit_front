@@ -52,7 +52,7 @@ useQuery({
 
 Die `Options` in [`src/api/client.ts`](../../src/api/client.ts) kennen `signal` heute nicht. Wer
 Abbruch braucht, ergänzt es **dort** — nicht mit einem zweiten `fetch` daneben
-([`CLAUDE.md`](../../CLAUDE.md)).
+([`../app/http-schicht.md`](../app/http-schicht.md)).
 
 Don't:
 ```ts

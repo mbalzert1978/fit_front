@@ -4,7 +4,7 @@ Mobile Anwendung zur Ernährungserfassung: Barcode scannen oder Nährwerttabelle
 fotografieren, der Eintrag landet im Tagebuch und zählt gegen ein Tagesziel.
 Expo und React Native, ein Code für iOS und Android, iOS zuerst.
 
-Das Backend liegt in einem eigenen Repository und wird von hier aus nur gelesen.
+Das Backend liegt in einem eigenen Repository, das von hier aus niemand liest.
 Die API dazwischen ist consumer-driven mit Pact zugesichert: Diese App schreibt
 die Verträge nach [`pacts/`](pacts/) und ist damit fertig — verifiziert werden sie
 drüben.

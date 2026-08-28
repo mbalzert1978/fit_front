@@ -16,7 +16,8 @@
 Kein generisches `useResource<T>(url)` und kein `gateway.get(SomeType)`-Locator. Jede Operation wird
 über einen **benannten, schmalen Hook** mit fachlicher Bezeichnung erreicht. Der eine gemeinsame
 Weg nach draußen ist [`src/api/client.ts`](../../src/api/client.ts) — er trägt Auth, Fehlerform und
-Wiederholung, und daneben steht kein zweiter `fetch` ([`CLAUDE.md`](../../CLAUDE.md)).
+Wiederholung, und daneben steht kein zweiter `fetch`
+([`../app/http-schicht.md`](../app/http-schicht.md)).
 
 Do:
 ```ts

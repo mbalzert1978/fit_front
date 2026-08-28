@@ -4,6 +4,9 @@ Was hier steht, gilt für [`src/api/client.ts`](../../src/api/client.ts) und all
 hinausgeht. Die Begründung steht in
 [`docs/decisions/2026-08-18-1600-auth-und-fehlerfaelle-sind-vertragsvorgabe.md`](../../docs/decisions/2026-08-18-1600-auth-und-fehlerfaelle-sind-vertragsvorgabe.md).
 
+- **Diese Naht ist der einzige Weg hinaus.** Kein zweiter `fetch` daneben, in keiner Datei. Wer an
+  ihr vorbei anfragt, umgeht Auth, Erneuerung, Fehlerform, Sprache und Wiederholung auf einmal.
+  Fehlt der Naht etwas, wird es **dort** ergänzt.
 - **Die Basis-URL ist `https`.** Klartext gilt nur gegen `127.0.0.1`, `localhost`, `[::1]` und
   `10.0.2.2`; jede andere Basis lässt die App beim Start scheitern.
 - **Die Sitzung ist ein Datensatz unter einem Schlüssel**, geräteintern abgelegt

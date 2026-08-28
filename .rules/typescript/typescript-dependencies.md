@@ -89,7 +89,7 @@ exportierte Naht** angeboten und hineingereicht, nicht die interne Implementieru
 Für den Baukasten ist die Grenze zusätzlich benannt: Komponenten kommen aus
 [`src/components/index.ts`](../../src/components/index.ts), nicht aus der Datei dahinter. Wer an der
 Sammelstelle vorbei importiert, hängt an einem Dateinamen statt an einer Zusage — und prägt beim
-nächsten Umbenennen den zweiten Weg, den [`CLAUDE.md`](../../CLAUDE.md) verbietet.
+nächsten Umbenennen den zweiten Weg, den [`../common/patterns.md`](../common/patterns.md) verbietet.
 
 Do:
 ```ts

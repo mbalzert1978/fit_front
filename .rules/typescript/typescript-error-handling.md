@@ -1,12 +1,13 @@
 # TypeScript Error Handling
 
 > Übersetzt `python-error-handling.md` sinngemäß. Eine Abweichung gilt für die ganze Datei und
-> steht deshalb vorn: **dieses Repo hat keinen `Result`-Typ und bekommt hier keinen erfunden.** An
-> der HTTP-Naht ist der Fehlerkanal die abgelehnte Promise — `ApiError` und `OfflineError` aus
+> steht deshalb vorn: **an der HTTP-Naht gibt es keinen `Result`-Typ, und dort wird auch keiner
+> erfunden.** Der Fehlerkanal ist dort die abgelehnte Promise — `ApiError` und `OfflineError` aus
 > [`src/api/client.ts`](../../src/api/client.ts) —, weil TanStack Query genau darauf gebaut ist:
 > `isError` und `error` eines Hooks kommen aus dem `reject`, nicht aus einem Rückgabewert. Diese
 > Naht ist die begründete Ausnahme. Überall sonst gilt die Regel der Vorlage unverändert: ein
-> erwarteter Fehlschlag ist ein **Wert**, kein `throw`.
+> erwarteter Fehlschlag ist ein **Wert**, kein `throw` — in der Form, die unten steht. Im Code gibt
+> es diese Form heute noch nicht; sie entsteht bei der ersten Prüfung, die sie braucht.
 
 ## Rückgabe statt Ausnahme für erwartete Fälle
 
@@ -126,9 +127,8 @@ Nutzermeldung wird: die Meldung eines geworfenen `Error` in der Naht, ein Log-Te
 Infrastruktur-Fehlschlags. Faustregel: erreicht die Formulierung je einen Bildschirm, ist sie ein
 typisierter Fall.
 
-**Und was der Server sagt, wird nicht übersetzt.** `title`, `detail` und jeder Satz in `errors`
-kommen in der Sprache der Anfrage und gehen unverändert auf den Schirm
-([`app/beschriftungen.md`](../app/beschriftungen.md)). Dort einen eigenen Satz danebenzustellen wäre die
+**Und was der Server sagt, wird nicht übersetzt**
+([`app/beschriftungen.md`](../app/beschriftungen.md)). Einen eigenen Satz danebenzustellen wäre die
 zweite Quelle, die diese Regel gerade verhindert.
 
 ## Jede Verzweigung ist vollständig — der Abschluss wirft

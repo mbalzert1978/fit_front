@@ -67,7 +67,8 @@ Consumer-driven: die App schreibt den Vertrag, das Backend verifiziert ihn.
    ein Vertrag ohne `data`/`meta` ist ein Fehler, kein Sonderfall, und ein Vertrag ohne
    `Authorization` an einem geschützten Endpunkt genauso. Wo eine Antwort eine Sitzung trägt,
    heißt sie `session` und trägt dieselben fünf Felder; wo sie ein Konto trägt, heißt es `user`.
-   Eine `201` nennt die erzeugte Ressource per `Location`.
+   Eine `201` nennt die erzeugte Ressource per `Location`, wo diese einen festen Ort hat — unter
+   der Bedingung aus Regel 2 und nicht darüber hinaus.
 10. **Die Sprache steht an jeder Anfrage und ist ein fester Wert.** Der Server entscheidet allein
     an `Accept-Language`, in welcher Sprache `title`, `detail` und jeder Satz in `errors` kommen;
     die App zeigt sie unverändert und übersetzt nichts. Deshalb nennt jede Interaktion die Sprache,

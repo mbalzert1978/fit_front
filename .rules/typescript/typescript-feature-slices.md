@@ -21,10 +21,8 @@ Die Abhängigkeitsrichtung ist strikt einseitig: **`app/` → `src/` → nichts*
 | [`src/api/hooks.ts`](../../src/api/hooks.ts), [`queryKeys.ts`](../../src/api/queryKeys.ts) | je Operation ein benannter Hook samt Cache-Schlüssel und Entwertung | die Naht |
 | [`app/**`](../../app/) | der Screen: Darstellung und Bedienung | Hooks, [`src/components/`](../../src/components/), [`src/i18n/`](../../src/i18n/), [`src/theme.ts`](../../src/theme.ts) |
 
-Ein **Bounded Context** ist hier die Vertragsgrenze: ein Pact je Context (`nutritrack-identity`,
-`-catalog`, `-diary`, `-recipes`, `-goals`, `-health`), nicht einer für die ganze API — so bricht
-eine Änderung im Katalog nicht die Verifikation des Tagebuchs
-([`app/vertraege.md`](../app/vertraege.md), Regel 1).
+Ein **Bounded Context** ist hier die Vertragsgrenze: ein Pact je Context. Welche das sind und
+warum, steht in [`app/vertraege.md`](../app/vertraege.md) (Regel 1).
 
 **Der Fehlertyp folgt dieser Grenze nicht.** Er gehört der **Operation**: jede Antwort trägt die
 Kennungen ihrer eigenen erwarteten Ausgänge, nicht einen Sammeltyp über alles, was die App kennt.
@@ -36,10 +34,9 @@ längst, hat nur niemand behandelt" unterscheiden
 ## Der Vertrag prüft das Ergebnis, nicht den Weg dorthin
 
 Ein Vertragstest sichert zu, was ein Screen wirklich liest — plus das, was als **Form** vorgegeben
-ist (Umschlag, Auth-Antwort, `Authorization`, `Cache-Control: no-store`, `Idempotency-Key`,
-`Location`, `Accept-Language`, `Content-Language`, Status und Fehlerform). Die Aufzählung ist
-abschließend und wächst nur durch eine Entscheidung unter
-[`docs/decisions/`](../../docs/decisions/) ([`app/vertraege.md`](../app/vertraege.md), Regel 2).
+ist. Welche Formen das sind, steht abschließend in [`app/vertraege.md`](../app/vertraege.md)
+(Regel 2) und nirgends sonst; die Aufzählung wächst nur durch eine Entscheidung unter
+[`docs/decisions/`](../../docs/decisions/).
 
 **Viele Eingabefälle sind kein Grund, tiefer zu prüfen.** Vierzig gültige und ungültige Adressen
 sind Eingaben, keine neue Testebene. Ein Test gegen eine interne Funktion bindet an deren Namen und

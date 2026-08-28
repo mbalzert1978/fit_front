@@ -28,8 +28,8 @@ Wächst diese Datei um einen Absatz, der etwas über das Repo behauptet, gehört
   gebaut oder ein zweiter Weg für dasselbe Element geprägt wird, zuerst hierher.
 - [`src/api/types.ts`](src/api/types.ts), [`src/api/hooks.ts`](src/api/hooks.ts),
   [`src/api/queryKeys.ts`](src/api/queryKeys.ts) — vor jeder Annahme über Endpunkt, Nutzlast oder
-  Cache-Schlüssel. [`src/api/client.ts`](src/api/client.ts) trägt Auth, Fehlerform und Wiederholung;
-  kein zweiter `fetch`-Weg daneben.
+  Cache-Schlüssel. Was für [`src/api/client.ts`](src/api/client.ts) und alles dahinter gilt, steht
+  in [`.rules/app/http-schicht.md`](.rules/app/http-schicht.md).
 - [`src/api/diaryDate.ts`](src/api/diaryDate.ts) — bevor ein Kalendertag angefasst wird.
 - [`src/nav.ts`](src/nav.ts) — bevor Zustand durch den Aufnahme-Ablauf gereicht wird.
 - [`pact/`](pact/) — die zugesicherten Verträge; die Regeln, unter denen sie geschrieben werden,
@@ -39,7 +39,8 @@ Wächst diese Datei um einen Absatz, der etwas über das Repo behauptet, gehört
 **Es gibt keine Quelle außerhalb dieses Repositories.** Was die API leistet, steht in
 [`pact/`](pact/) und in den daraus erzeugten Verträgen unter [`pacts/`](pacts/) — nirgends sonst.
 Kein anderes Repository wird gelesen, zitiert oder als Spezifikation herangezogen, und keine
-Änderung hier wartet auf eine Abstimmung dort.
+Änderung hier wartet auf eine Abstimmung dort (Regel 8 in
+[`.rules/app/vertraege.md`](.rules/app/vertraege.md)).
 
 Nennt eine dieser Quellen ihrerseits eine Datei, die nicht im Zugriff liegt, wird ihr Inhalt nicht
 geraten und nicht ersatzweise erfunden — es wird nachgefragt.
@@ -51,8 +52,8 @@ geraten und nicht ersatzweise erfunden — es wird nachgefragt.
 [`package.json`](package.json) und werden von dort aufgerufen. Beides benutzen statt
 Ad-hoc-Kommandos; fehlt ein Weg, wird er dort ergänzt und nicht daneben improvisiert.
 
-Kein Ziel greift über die Repo-Grenze: dieses Repo erzeugt Verträge, es verifiziert keine und
-startet nichts im Provider-Repo.
+Kein Ziel greift über die Repo-Grenze (Regel 7 in
+[`.rules/app/vertraege.md`](.rules/app/vertraege.md)).
 
 ## Entscheidungen und Memory-Policy
 

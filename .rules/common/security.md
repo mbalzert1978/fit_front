@@ -8,18 +8,16 @@ Vor JEDEM Commit:
       `EXPO_PUBLIC_*`-Variable wird in das Bundle gebacken und ist damit öffentlich — dort gehört
       nur hinein, was jeder lesen darf ([`.env.example`](../../.env.example))
 - [ ] Alle Nutzereingaben geprüft
-- [ ] Fremde Werte kodiert in den Pfad (`pathSegment` in
-      [`src/api/client.ts`](../../src/api/client.ts)) — Ids kommen aus Deep-Links, Barcodes aus der
-      Kamera. Das ist hier das Gegenstück zur SQL-Injection der Vorlage: die Einschleusung
-      passiert nicht in eine Abfrage, sondern in eine URL
+- [ ] Fremde Werte kodiert in den Pfad (`pathSegment`) — das Gegenstück zur SQL-Injection der
+      Vorlage: die Einschleusung passiert nicht in eine Abfrage, sondern in eine URL
+      ([`app/http-schicht.md`](../app/http-schicht.md))
 - [ ] Keine Fremdzeichenkette in eine Auszeichnung gerendert (kein `dangerouslySetInnerHTML`, kein
       zusammengebautes `WebView`-HTML) — das Gegenstück zu XSS
-- [ ] Die Basis-URL ist `https`; Klartext nur gegen `127.0.0.1`, `localhost`, `[::1]`, `10.0.2.2`
+- [ ] Die Basis-URL ist `https` ([`app/http-schicht.md`](../app/http-schicht.md))
+- [ ] Die Sitzung liegt geräteintern unter **einem** Schlüssel und wird nicht in ein Backup gereicht
       ([`app/http-schicht.md`](../app/http-schicht.md))
-- [ ] Die Sitzung liegt als **ein** Datensatz unter **einem** Schlüssel, geräteintern
-      (`WHEN_UNLOCKED_THIS_DEVICE_ONLY`), und wird nicht in ein Backup gereicht
 - [ ] `Cache-Control: no-store` an jeder Antwort mit personenbezogenen Daten — zugesichert im
-      Vertrag, nicht gehofft
+      Vertrag, nicht gehofft ([`app/vertraege.md`](../app/vertraege.md), Regeln 2 und 9)
 - [ ] Fehlermeldungen geben nichts Sensibles preis
 
 Authentifizierung, Autorisierung, CSRF-Schutz und Rate Limiting setzt der Provider durch; dieses

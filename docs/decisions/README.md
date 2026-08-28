@@ -30,7 +30,8 @@ Die vier Abschnitte sind Pflicht, stehen in dieser Reihenfolge, und **andere gib
 
 Insbesondere gibt es keinen Abschnitt für eine Abweichung von einer fremden Spezifikation. Früher
 war einer vorgesehen; er ist entfallen, weil es nichts gibt, wovon abzuweichen wäre — der Vertrag
-unter [`../../pact/`](../../pact/) legt fest, was gilt (Regel 8 in [`../regeln.md`](../regeln.md)).
+unter [`../../pact/`](../../pact/) legt fest, was gilt (Regel 8 in
+[`../../.rules/app/vertraege.md`](../../.rules/app/vertraege.md)).
 Ältere Dateien tragen den Abschnitt noch; sie bleiben unverändert liegen.
 
 Eine Entscheidung wird nicht überschrieben. Ändert sie sich, entsteht eine neue Datei, die die

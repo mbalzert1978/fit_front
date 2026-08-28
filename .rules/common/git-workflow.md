@@ -27,8 +27,8 @@ Beim Erstellen eines PR:
 4. Einen Testplan mit offenen Punkten beilegen
 5. Bei einem neuen Branch mit `-u` pushen
 
-Vor dem Push läuft `./make.ps1 ci` — lint, format-check, typecheck, complexity, test — und ist
-grün. Was dort nicht durchläuft, ist nicht fertig ([`make.ps1`](../../make.ps1)).
+Vor dem Push läuft `./make.ps1 ci` und ist grün. Was dort nicht durchläuft, ist nicht fertig; die
+Schritte des Laufs stehen in [performance.md](./performance.md).
 
 ## Worktrees: nur auf ausdrückliche Bitte
 
