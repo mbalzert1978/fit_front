@@ -2,7 +2,7 @@ import React from 'react';
 import { Pressable, Text } from 'react-native';
 import { useTheme } from '../theme/ThemeProvider';
 
-/** The one button shape of the app; a filled one does not exist (`docs/regeln.md`, Prüfliste). */
+/** The one button shape of the app; a filled one does not exist (`.rules/app/abnahme.md`). */
 export function OutlineButton({
   label,
   onPress,

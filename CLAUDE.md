@@ -8,15 +8,19 @@ Wächst diese Datei um einen Absatz, der etwas über das Repo behauptet, gehört
 ## Wo die Dinge liegen
 
 - [`README.md`](README.md) — der Einstieg: was diese App ist, in fünf Sätzen, und von dort weiter.
-- [`docs/regeln.md`](docs/regeln.md) — was für jede Änderung gilt: wo Literale stehen dürfen, unter
-  welchen Regeln Verträge geschrieben werden, was vor der Abnahme durchlaufen sein muss. Vor jeder
-  Änderung an Oberfläche oder Verträgen zuerst hierher.
+- [`.rules/`](.rules/) — das Regelwerk und die einzige Stelle, an der eine Regel steht. Drei
+  Schichten: [`.rules/common/`](.rules/common/) allgemeine Prinzipien,
+  [`.rules/typescript/`](.rules/typescript/) das Idiom dieses Stacks,
+  [`.rules/app/`](.rules/app/) was für diese App gilt — wo Literale stehen dürfen, unter welchen
+  Regeln Verträge geschrieben werden, was vor der Abnahme durchlaufen sein muss. Vor jeder Änderung
+  an Oberfläche, Code oder Verträgen zuerst hierher; das Speziellere gewinnt
+  ([`.rules/README.md`](.rules/README.md)).
 - **Die Issues dieses Repositories auf GitHub** — vor jeder Annahme darüber, ob etwas fehlt oder
   bewusst offen gelassen wurde. Was dort offen steht, ist nicht vergessen, sondern aufgeschoben.
   Offene Punkte werden ausschließlich dort geführt, nicht als Datei im Repo.
 - [`src/theme.ts`](src/theme.ts) — das Designsystem. Vor jedem Farb-, Schrift-, Radien- oder
   Abstandswert zuerst hierher; die Regel, wo Literale stehen dürfen, steht in
-  [`docs/regeln.md`](docs/regeln.md).
+  [`.rules/app/farben-und-masse.md`](.rules/app/farben-und-masse.md).
 - [`src/i18n/`](src/i18n/) — die Sätze, die der Nutzer liest. Vor jeder sichtbaren Beschriftung
   zuerst hierher; welche Sprache gilt, steht in [`src/language.ts`](src/language.ts). Wie eine
   weitere Sprache dazukommt, steht in [`docs/neue-sprache.md`](docs/neue-sprache.md).
@@ -29,7 +33,7 @@ Wächst diese Datei um einen Absatz, der etwas über das Repo behauptet, gehört
 - [`src/api/diaryDate.ts`](src/api/diaryDate.ts) — bevor ein Kalendertag angefasst wird.
 - [`src/nav.ts`](src/nav.ts) — bevor Zustand durch den Aufnahme-Ablauf gereicht wird.
 - [`pact/`](pact/) — die zugesicherten Verträge; die Regeln, unter denen sie geschrieben werden,
-  stehen in [`docs/regeln.md`](docs/regeln.md).
+  stehen in [`.rules/app/vertraege.md`](.rules/app/vertraege.md).
 - [`docs/decisions/`](docs/decisions/) — je eine Datei pro Entscheidung, siehe unten.
 
 **Es gibt keine Quelle außerhalb dieses Repositories.** Was die API leistet, steht in

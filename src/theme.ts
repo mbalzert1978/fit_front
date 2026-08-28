@@ -1,6 +1,6 @@
 /**
  * The "Nocturne" design system — the only source for colours, typography and
- * spacing (`docs/regeln.md`, Farb- und Maßliterale). Two palettes with
+ * spacing (`.rules/app/farben-und-masse.md`). Two palettes with
  * identical keys; typography, radii and spacing do not depend on the mode.
  */
 

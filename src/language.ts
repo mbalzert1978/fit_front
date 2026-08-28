@@ -3,7 +3,7 @@ import { getLocales } from 'expo-localization';
 /**
  * The seam to the user's language: the one place where the value arises that
  * goes out twice — as `Accept-Language` on every request and as `locale` when
- * an account is created (`docs/regeln.md`, Beschriftungen).
+ * an account is created (`.rules/app/beschriftungen.md`).
  */
 
 /**

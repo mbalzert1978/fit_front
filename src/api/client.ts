@@ -13,8 +13,8 @@ export type ApiResponse<T> = { data: T; meta: Meta | null; headers: Headers };
 
 /**
  * A `.env` from the wrong environment tears the app apart at startup rather
- * than transmitting tokens and health data in the clear (`docs/regeln.md`,
- * HTTP-Schicht).
+ * than transmitting tokens and health data in the clear
+ * (`.rules/app/http-schicht.md`).
  */
 const LOOPBACK = /^http:\/\/(127\.0\.0\.1|localhost|\[::1\]|10\.0\.2\.2)(:\d+)?\/?$/;
 
@@ -198,7 +198,7 @@ export async function signOut() {
 /* Request and response */
 
 /**
- * `Accept-Language` stands on **every** request (`docs/regeln.md` rule 10). The
+ * `Accept-Language` stands on **every** request (`.rules/app/vertraege.md` rule 10). The
  * value comes from the seam `src/language.ts` and not from a literal here: the
  * same language travels along as `locale` when an account is created.
  */
@@ -235,7 +235,7 @@ function asFieldErrors(v: unknown): Record<string, string[]> | undefined {
 }
 
 /**
- * Checked, not asserted (`docs/regeln.md`, HTTP-Schicht): its first reader,
+ * Checked, not asserted (`.rules/app/http-schicht.md`): its first reader,
  * `splitHints` in `app/register.tsx`, has no second chance. The status comes
  * from the transport, not from the body — only the former is observed.
  */
@@ -307,7 +307,7 @@ const mayReplay = (o: Options) => IDEMPOTENT.has(o.method ?? 'GET') || !!o.idemp
  * Renewed pre-emptively. `null` means there is no session — normal for sign-in,
  * registration and renewal. If the renewal fails, sign-out happens and a throw
  * follows rather than sending the request without `Authorization` to fetch a
- * 401 that is already settled here (`docs/regeln.md`, HTTP-Schicht).
+ * 401 that is already settled here (`.rules/app/http-schicht.md`).
  */
 async function accessForNext(): Promise<string | null> {
   const s = await readSession();

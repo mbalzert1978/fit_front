@@ -13,7 +13,7 @@ drüben.
 
 - [`CLAUDE.md`](CLAUDE.md) — wohin man vor einer Annahme schaut. Der Einstieg für
   alles Weitere, für Menschen wie für Agenten.
-- [`docs/regeln.md`](docs/regeln.md) — was für jede Änderung gilt.
+- [`.rules/`](.rules/) — das Regelwerk: was für jede Änderung gilt, in drei Schichten.
 - [`docs/neue-sprache.md`](docs/neue-sprache.md) — wie eine weitere Sprache dazukommt, Schritt für
   Schritt bis zum Pull Request.
 - Die Issues dieses Repositories auf GitHub — was bewusst offen ist.

@@ -1,7 +1,7 @@
 # Eine neue Sprache beitragen
 
 Anleitung für einen Agenten, der dieser App eine Sprache hinzufügt und das Ergebnis als Pull
-Request auf GitHub einreicht. Sie ersetzt nicht [`regeln.md`](regeln.md) — was dort steht, gilt
+Request auf GitHub einreicht. Sie ersetzt nicht das Regelwerk unter [`../.rules/`](../.rules/) — was dort steht, gilt
 auch hier.
 
 Beispiel durchgehend: Französisch, `fr`. Ersetze die Kennung durch deine.
@@ -75,7 +75,7 @@ letzte fasst zwei an. Die sechste kommt weiter unten dazu, unter „4. Prüfen".
 
 - **Die Verträge.** `git diff pacts/` muss nach `./make.ps1 test` leer bleiben. Eine dritte Sprache
   sichert nichts zu, was die beiden vorhandenen Interaktionen nicht schon zeigen (Regel 10 in
-  [`regeln.md`](regeln.md)); ein zusätzlicher Fall in [`../pact/`](../pact/) bläht den Vertrag,
+  [`../.rules/app/vertraege.md`](../.rules/app/vertraege.md)); ein zusätzlicher Fall in [`../pact/`](../pact/) bläht den Vertrag,
   ohne etwas zu belegen.
 - **Sätze des Servers.** `title`, `detail` und jeder Satz in `errors` kommen in der Sprache der
   Anfrage und gehen unverändert auf den Schirm. Übersetze sie nicht, und lege keine Tabelle dafür
